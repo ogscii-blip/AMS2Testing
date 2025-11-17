@@ -1,4 +1,3 @@
-<script>
         // Tab switching functionality
         function showTab(tabName) {
             // Hide all tabs
@@ -1107,38 +1106,3 @@
             checkExistingSession();
             updateSubmitTabVisibility();
         });
-    </script>
-
-<!-- Firebase SDK -->
-<script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, onValue, set, push, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyBSDmq3qjRU0kQR0k0pau3nOiFUa1j8Xpg",
-        authDomain: "ams2abo.firebaseapp.com",
-        databaseURL: "https://ams2abo-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "ams2abo",
-        storageBucket: "ams2abo.firebasestorage.app",
-        messagingSenderId: "1008932609178",
-        appId: "1:1008932609178:web:a56b8d1acbeacfc0c61323"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-
-    window.firebaseDB = database;
-    window.firebaseRef = ref;
-    window.firebaseOnValue = onValue;
-    window.firebaseSet = set;
-    window.firebasePush = push;
-    window.firebaseGet = get;
-
-    console.log('✅ Firebase initialized successfully!');
-    
-    loadConfig();
-    checkExistingSession();
-    loadLeaderboard();
-    setupSectorTimeInputs();
-    loadTracksAndCars();
-</script>
