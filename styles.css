@@ -999,4 +999,39 @@ header p {
     .stat-card-driver .stat-value {
         font-size: 2em;
     }
+    
+    /* Mobile Driver Records */
+    .driver-records-section {
+        padding: 15px;
+        margin: 20px 0;
+    }
+    
+    .section-title {
+        font-size: 1.1em;
+    }
+    
+    .lap-records {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .personal-best,
+    .quick-stats {
+        padding: 15px;
+    }
+    
+    .h2h-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .h2h-card {
+        padding: 15px;
+    }
+    
+    .record-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
 }
