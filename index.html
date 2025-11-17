@@ -2866,106 +2866,264 @@ async function loadRoundData() {
             return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
         }
 
-        document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Check if user is signed in
-            if (!currentUser) {
-                const messageDiv = document.getElementById('lapTimeMessage');
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Please sign in to submit lap times.';
-                return;
-            }
-            
-            const seasonNumber = document.getElementById('seasonNumber').value;
-            const roundNumber = document.getElementById('roundNumber2').value;
-            const sector1 = getSectorTimeValue('sector1');
-            const sector2 = getSectorTimeValue('sector2');
-            const sector3 = getSectorTimeValue('sector3');
-            
-            const messageDiv = document.getElementById('lapTimeMessage');
-            
-            // Check if any time is empty
-            if (!sector1 || !sector2 || !sector3) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Please fill in all sector times.';
-                return;
-            }
-            
-            // Validate format (should be mm:ss,mmm)
-            const timePattern = /^\d{2}:\d{2},\d{3}$/;
-            if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Invalid time format. Please ensure all sectors are filled in correctly.';
-                return;
-            }
-            
-            // Show submitting message
-            messageDiv.style.display = 'block';
-            messageDiv.style.background = '#d1ecf1';
-            messageDiv.style.color = '#0c5460';
-            messageDiv.textContent = '⏳ Submitting lap time...';
-            
-            try {
-                // Check if Apps Script URL is configured
-                if (!APPS_SCRIPT_URL) {
-                    throw new Error('Apps Script URL not configured. Please add apps_script_url to Config sheet.');
-                }
-                
-                // Format timestamp as DD/MM/YYYY HH:MM:SS
-                const now = new Date();
-                const day = String(now.getDate()).padStart(2, '0');
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const year = now.getFullYear();
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const seconds = String(now.getSeconds()).padStart(2, '0');
-                const formattedTimestamp = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-                
-                // Submit to Google Apps Script Web App
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        timestamp: formattedTimestamp,
-                        driver: currentUser.name,
-                        season: seasonNumber,
-                        round: roundNumber,
-                        sector1: sector1,
-                        sector2: sector2,
-                        sector3: sector3
-                    })
-                });
-                
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#d4edda';
-                messageDiv.style.color = '#155724';
-                messageDiv.textContent = `✅ Lap time submitted successfully by ${currentUser.name}!`;
-                
-                // Clear form
-                document.getElementById('lapTimeForm').reset();
-                
-                // Hide message after 3 seconds
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                }, 3000);
-            } catch (error) {
-                console.error('Error submitting lap time:', error);
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ ' + error.message;
-            }
+       
+document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        const messageDiv = document.getElementById('lapTimeMessage');
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Please sign in to submit lap times.';
+        return;
+    }
+    
+    const seasonNumber = document.getElementById('seasonNumber').value;
+    const roundNumber = document.getElementById('roundNumber2').value;
+    const sector1 = getSectorTimeValue('sector1');
+    const sector2 = getSectorTimeValue('sector2');
+    const sector3 = getSectorTimeValue('sector3');
+    
+    const messageDiv = document.getElementById('lapTimeMessage');
+    
+    if (!sector1 || !sector2 || !sector3) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Please fill in all sector times.';
+        return;
+    }
+    
+    const timePattern = /^\d{2}:\d{2},\d{3}$/;
+    if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Invalid time format.';
+        return;
+    }
+    
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = '#d1ecf1';
+    messageDiv.style.color = '#0c5460';
+    messageDiv.textContent = '⏳ Submitting lap time...';
+    
+    try {
+        // Convert times to seconds for storage
+        const sector1Seconds = timeToSeconds(sector1);
+        const sector2Seconds = timeToSeconds(sector2);
+        const sector3Seconds = timeToSeconds(sector3);
+        const totalTime = sector1Seconds + sector2Seconds + sector3Seconds;
+        
+        // Get track and car info for this round
+        const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+        const setupSnapshot = await window.firebaseGet(setupRef);
+        const setupData = setupSnapshot.val() || [];
+        
+        const roundSetup = setupData.find(s => 
+            s.Round_Number == roundNumber && s.Season == seasonNumber
+        );
+        
+        if (!roundSetup) {
+            throw new Error(`Round ${roundNumber} Season ${seasonNumber} not configured yet!`);
+        }
+        
+        // Create the lap time entry
+        const lapTimeData = {
+            Timestamp: new Date().toISOString(),
+            Driver: currentUser.name,
+            Season: parseInt(seasonNumber),
+            Round: parseInt(roundNumber),
+            Sector_1: sector1Seconds,
+            Sector_2: sector2Seconds,
+            Sector_3: sector3Seconds,
+            Total_Lap_Time: totalTime,
+            'Track-Layout': roundSetup['Track-Layout'],
+            Car_Name: roundSetup.Car_Name,
+            Position: null,  // Will be calculated
+            Purple_Sectors: null,  // Will be calculated
+            Total_Points: null,  // Will be calculated
+            Best_Lap: null  // Will be calculated
+        };
+        
+        // Add to Firebase
+        const lapTimesRef = window.firebaseRef(window.firebaseDB, 'Form_responses_1');
+        await window.firebasePush(lapTimesRef, lapTimeData);
+        
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = `✅ Lap time submitted! Calculating positions...`;
+        
+        // Trigger recalculation
+        await recalculateStandings();
+        
+        messageDiv.textContent = `✅ Lap time submitted successfully by ${currentUser.name}!`;
+        document.getElementById('lapTimeForm').reset();
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error submitting lap time:', error);
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ ' + error.message;
+    }
+});
+
+// Helper function to convert time string to seconds
+function timeToSeconds(timeStr) {
+    // Format: "00:17,520" → 17.520 seconds
+    const parts = timeStr.split(':');
+    const minutes = parseInt(parts[0]);
+    const secondsParts = parts[1].split(',');
+    const seconds = parseInt(secondsParts[0]);
+    const milliseconds = parseInt(secondsParts[1]);
+    
+    return minutes * 60 + seconds + (milliseconds / 1000);
+}
+
+        async function recalculateStandings() {
+    console.log('🔄 Recalculating standings...');
+    
+    // Get all lap times
+    const lapTimesRef = window.firebaseRef(window.firebaseDB, 'Form_responses_1');
+    const lapTimesSnapshot = await window.firebaseGet(lapTimesRef);
+    const allLapTimes = [];
+    
+    const lapTimesData = lapTimesSnapshot.val();
+    if (lapTimesData) {
+        Object.keys(lapTimesData).forEach(key => {
+            allLapTimes.push({
+                id: key,
+                ...lapTimesData[key]
+            });
         });
+    }
+    
+    // Group by round and season, keep only best lap per driver
+    const roundGroups = {};
+    
+    allLapTimes.forEach(lap => {
+        const key = `${lap.Season}_${lap.Round}`;
+        if (!roundGroups[key]) {
+            roundGroups[key] = {};
+        }
+        
+        const driver = lap.Driver;
+        if (!roundGroups[key][driver] || lap.Total_Lap_Time < roundGroups[key][driver].Total_Lap_Time) {
+            roundGroups[key][driver] = lap;
+        }
+    });
+    
+    // Calculate positions and purple sectors for each round
+    const updatedLapTimes = [];
+    
+    Object.keys(roundGroups).forEach(roundKey => {
+        const driversInRound = Object.values(roundGroups[roundKey]);
+        
+        // Sort by total time
+        driversInRound.sort((a, b) => a.Total_Lap_Time - b.Total_Lap_Time);
+        
+        // Find best sectors
+        const bestS1 = Math.min(...driversInRound.map(d => d.Sector_1));
+        const bestS2 = Math.min(...driversInRound.map(d => d.Sector_2));
+        const bestS3 = Math.min(...driversInRound.map(d => d.Sector_3));
+        
+        // Assign positions and calculate points
+        driversInRound.forEach((lap, index) => {
+            const position = index + 1;
+            let purpleSectors = 0;
+            
+            if (lap.Sector_1 === bestS1) purpleSectors++;
+            if (lap.Sector_2 === bestS2) purpleSectors++;
+            if (lap.Sector_3 === bestS3) purpleSectors++;
+            
+            // Calculate points
+            let points = 0;
+            if (position === 1) {
+                points = 10;
+            } else if (position === 2) {
+                points = 6 + Math.min(purpleSectors, 2);
+            } else if (position === 3) {
+                points = 4 + (Math.min(purpleSectors, 2) * 2);
+            }
+            
+            updatedLapTimes.push({
+                id: lap.id,
+                Position: position,
+                Purple_Sectors: purpleSectors,
+                Total_Points: points,
+                Best_Lap: 'YES'
+            });
+        });
+    });
+    
+    // Update Firebase Round_Data
+    const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+    const existingRoundData = (await window.firebaseGet(roundDataRef)).val() || [];
+    
+    // Clear and rebuild Round_Data with best laps only
+    await window.firebaseSet(roundDataRef, null);  // Clear
+    
+    const newRoundData = [];
+    Object.values(roundGroups).forEach(round => {
+        Object.values(round).forEach(lap => {
+            const update = updatedLapTimes.find(u => u.id === lap.id);
+            newRoundData.push({
+                ...lap,
+                Position: update.Position,
+                Purple_Sectors: update.Purple_Sectors,
+                Total_Points: update.Total_Points,
+                Best_Lap: update.Best_Lap
+            });
+            delete newRoundData[newRoundData.length - 1].id;
+        });
+    });
+    
+    await window.firebaseSet(roundDataRef, newRoundData);
+    
+    // Calculate leaderboard
+    await recalculateLeaderboard(newRoundData);
+    
+    console.log('✅ Standings recalculated!');
+}
+
+async function recalculateLeaderboard(roundData) {
+    const driverStats = {};
+    
+    roundData.forEach(lap => {
+        if (!driverStats[lap.Driver]) {
+            driverStats[lap.Driver] = {
+                Driver: lap.Driver,
+                Total_Points: 0,
+                Total_Purple_Sectors: 0,
+                Total_Wins: 0,
+                Season: lap.Season
+            };
+        }
+        
+        driverStats[lap.Driver].Total_Points += lap.Total_Points || 0;
+        driverStats[lap.Driver].Total_Purple_Sectors += lap.Purple_Sectors || 0;
+        if (lap.Position === 1) {
+            driverStats[lap.Driver].Total_Wins++;
+        }
+    });
+    
+    const leaderboard = Object.values(driverStats);
+    
+    // Sort by points, then wins, then purple sectors
+    leaderboard.sort((a, b) => {
+        if (b.Total_Points !== a.Total_Points) return b.Total_Points - a.Total_Points;
+        if (b.Total_Wins !== a.Total_Wins) return b.Total_Wins - a.Total_Wins;
+        return b.Total_Purple_Sectors - a.Total_Purple_Sectors;
+    });
+    
+    const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
+    await window.firebaseSet(leaderboardRef, leaderboard);
+}
 
         // Load tracks and cars for the Round Setup form
         async function loadTracksAndCars() {
@@ -3012,80 +3170,50 @@ async function loadRoundData() {
 }
         // Handle Round Setup form submission
         document.getElementById('roundSetupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const roundNumber = document.getElementById('roundNumber').value;
-            const trackLayout = document.getElementById('trackLayout').value;
-            const carName = document.getElementById('carName').value;
-            const season = document.getElementById('season').value;
-            
-            const messageDiv = document.getElementById('setupMessage');
-            
-            // Build the Google Form URL with pre-filled values
-            const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSdP88O7I3j91DmY7ef1nqpZqoQFSfxjfV8my32nG-cfuxSCeA/formResponse';
-            const params = new URLSearchParams({
-                'entry.1125205573': roundNumber,
-                'entry.1175251604': trackLayout,
-                'entry.1987106463': carName,
-                'entry.1264862378': season
-            });
-            
-            try {
-                // Create a hidden iframe to submit the form
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.name = 'hidden_iframe';
-                document.body.appendChild(iframe);
-                
-                // Create a temporary form
-                const tempForm = document.createElement('form');
-                tempForm.target = 'hidden_iframe';
-                tempForm.method = 'POST';
-                tempForm.action = formUrl;
-                
-                // Add form fields
-                params.forEach((value, key) => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = value;
-                    tempForm.appendChild(input);
-                });
-                
-                document.body.appendChild(tempForm);
-                tempForm.submit();
-                
-                // Clean up
-                setTimeout(() => {
-                    document.body.removeChild(tempForm);
-                    document.body.removeChild(iframe);
-                }, 1000);
-                
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#d4edda';
-                messageDiv.style.color = '#155724';
-                messageDiv.textContent = '✅ Round setup submitted successfully!';
-                
-                // Clear form
-                document.getElementById('roundSetupForm').reset();
-                
-                // Hide message after 3 seconds
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                }, 3000);
-                
-                // Refresh the configurations table
-                setTimeout(() => {
-                    loadRoundSetupWithBestTimes();
-                }, 3000);
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Error submitting round setup. Please try again.';
-            }
-        });
+    e.preventDefault();
+    
+    const roundNumber = parseInt(document.getElementById('roundNumber').value);
+    const trackLayout = document.getElementById('trackLayout').value;
+    const carName = document.getElementById('carName').value;
+    const season = parseInt(document.getElementById('season').value);
+    
+    const messageDiv = document.getElementById('setupMessage');
+    
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = '#d1ecf1';
+    messageDiv.style.color = '#0c5460';
+    messageDiv.textContent = '⏳ Saving round configuration...';
+    
+    try {
+        const setupData = {
+            Timestamp: new Date().toISOString(),
+            Round_Number: roundNumber,
+            'Track-Layout': trackLayout,
+            Car_Name: carName,
+            Season: season
+        };
+        
+        const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+        await window.firebasePush(setupRef, setupData);
+        
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = '✅ Round configuration saved!';
+        
+        document.getElementById('roundSetupForm').reset();
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+            loadRoundSetup();  // Refresh the display
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error saving round setup:', error);
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Error: ' + error.message;
+    }
+});
 
         // Load Round Setup configurations with best times
         async function loadRoundSetupWithBestTimes() {
