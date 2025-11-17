@@ -1,4 +1,3 @@
-<script>
         // Tab switching functionality
         function showTab(tabName) {
             // Hide all tabs
@@ -1141,4 +1140,4 @@
     loadLeaderboard();
     setupSectorTimeInputs();
     loadTracksAndCars();
-</script>
+
