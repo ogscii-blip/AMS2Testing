@@ -113,21 +113,35 @@
         let DRIVER_PROFILES = {};
         let currentUser = null;
 
+// --- Helper: normalize firebase snapshot value to array ---
+function toArray(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) {
+        // Filter out empty holes if any
+        return val.filter(item => item !== undefined && item !== null);
+    }
+    // Object case: return array of values
+    return Object.values(val);
+}
+
+
         // Load configuration from Firebase
         async function loadConfig() {
             const configRef = window.firebaseRef(window.firebaseDB, 'Config');
             window.firebaseOnValue(configRef, (snapshot) => {
-                const configData = snapshot.val();
-                if (!configData) return;
-
+               const configDataObj = snapshot.val();
+                const configArray = toArray(configDataObj);
+                if (configArray.length === 0) return;
+                
                 const configMap = {};
-                configData.forEach(row => {
+                configArray.forEach(row => {
                     const setting = row['Setting']?.trim();
                     const value = row['Value']?.trim();
                     if (setting && value) {
                         configMap[setting] = value;
                     }
                 });
+
 
                 APPS_SCRIPT_URL = configMap['apps_script_url'];
 
@@ -146,22 +160,15 @@
 
             const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
             window.firebaseOnValue(profilesRef, (snapshot) => {
-                const profilesData = snapshot.val();
-                if (!profilesData) return;
-
+                const profilesObj = snapshot.val();
+                const profilesArr = toArray(profilesObj);
+                if (profilesArr.length === 0) return;
+                
                 DRIVER_PROFILES = {};
-                profilesData.forEach(profile => {
-                    const email = profile['Email']?.trim();
-                    if (email) {
-                        DRIVER_PROFILES[email] = {
-                            name: profile['Name']?.trim() || '',
-                            surname: profile['Surname']?.trim() || '',
-                            number: profile['Number']?.toString() || '',
-                            photoUrl: profile['Photo_URL']?.trim() || '',
-                            bio: profile['Bio']?.trim() || ''
-                        };
-                    }
+                profilesArr.forEach(profile => {
+                   ...
                 });
+
 
                 console.log('Driver profiles loaded from Firebase:', Object.keys(DRIVER_PROFILES).length);
             });
@@ -172,15 +179,23 @@
             const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
             
             window.firebaseGet(leaderboardRef).then((snapshot) => {
-                const leaderboardData = snapshot.val();
-                if (!leaderboardData) {
-                    console.log('No leaderboard data found');
-                    return;
-                }
+               const leaderboardObj = snapshot.val();
+const leaderboardArr = toArray(leaderboardObj);
+if (leaderboardArr.length === 0) {
+    console.log('No leaderboard data found');
+    return;
+}
 
-                const data = leaderboardData
-                    .filter(row => row.Driver)
-                    .map((row, index) => ({
+        const leaderboardObj = snapshot.val();
+        const leaderboardArr = toArray(leaderboardObj);
+        if (leaderboardArr.length === 0) {
+            console.log('No leaderboard data found');
+            return;
+        }
+        
+        const data = leaderboardArr
+            .filter(row => row && row.Driver)
+            .map((row, index) => ((
                         position: index + 1,
                         driver: row.Driver,
                         points: parseInt(row['Total_Points']) || 0,
@@ -206,11 +221,13 @@
         async function loadRoundsCount() {
             const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
             window.firebaseGet(roundDataRef).then((snapshot) => {
-                const roundData = snapshot.val();
-                if (roundData) {
-                    const rounds = [...new Set(roundData.map(r => r.Round))];
+                const roundObj = snapshot.val();
+                const roundArr = toArray(roundObj);
+                if (roundArr.length) {
+                    const rounds = [...new Set(roundArr.map(r => r.Round))];
                     document.getElementById('totalRounds').textContent = rounds.length;
                 }
+
             });
         }
 
@@ -261,10 +278,10 @@
                     window.firebaseGet(carsRef)
                 ]);
                 
-                const roundData = roundSnapshot.val() || [];
-                const tracksData = tracksSnapshot.val() || [];
-                const carsData = carsSnapshot.val() || [];
-                
+                const roundData = toArray(roundSnapshot.val());
+                const tracksData = toArray(tracksSnapshot.val());
+                const carsData = toArray(carsSnapshot.val());
+
                 const tracksMap = {};
                 tracksData.forEach(row => {
                     const trackCombo = row['Track_Combos'];
@@ -714,8 +731,9 @@
                 const setupSnapshot = await window.firebaseGet(setupRef);
                 const setupData = setupSnapshot.val() || [];
                 
+                const setupData = toArray(setupSnapshot.val());
                 const roundSetup = setupData.find(s => 
-                    s.Round_Number == roundNumber && s.Season == seasonNumber
+                    Number(s.Round_Number) === roundNumber && Number(s.Season) === seasonNumber
                 );
                 
                 if (!roundSetup) {
@@ -872,8 +890,8 @@
                     window.firebaseGet(carsRef)
                 ]);
                 
-                const setupData = (setupSnapshot.val() || [])
-                    .filter(row => row['Round_Number'])
+                const setupRaw = toArray(setupSnapshot.val());
+                const setupData = setupRaw.filter(row => row['Round_Number'])
                     .map(row => ({
                         timestamp: new Date(row.Timestamp),
                         round: row['Round_Number'],
