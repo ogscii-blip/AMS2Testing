@@ -2402,6 +2402,16 @@ async function loadRoundData() {
             });
         }
 
+// Helper function to convert time format MM:SS,mmm to seconds
+function timeToSeconds(timeStr) {
+    const parts = timeStr.split(':');
+    const minutes = parseInt(parts[0]);
+    const secondsParts = parts[1].split(',');
+    const seconds = parseInt(secondsParts[0]);
+    const milliseconds = parseInt(secondsParts[1]);
+    return minutes * 60 + seconds + (milliseconds / 1000);
+}
+        
         function login() {
             const driverName = document.getElementById('driverNameInput').value.trim();
             const password = document.getElementById('passwordInput').value;
@@ -2867,200 +2877,12 @@ async function loadRoundData() {
         }
 
        
-document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (!currentUser) {
-        const messageDiv = document.getElementById('lapTimeMessage');
-        messageDiv.style.display = 'block';
-        messageDiv.style.background = '#f8d7da';
-        messageDiv.style.color = '#721c24';
-        messageDiv.textContent = '❌ Please sign in to submit lap times.';
-        return;
-    }
-    
-    const seasonNumber = document.getElementById('seasonNumber').value;
-    const roundNumber = document.getElementById('roundNumber2').value;
-    const sector1 = getSectorTimeValue('sector1');
-    const sector2 = getSectorTimeValue('sector2');
-    const sector3 = getSectorTimeValue('sector3');
-    
-    const messageDiv = document.getElementById('lapTimeMessage');
-    
-    if (!sector1 || !sector2 || !sector3) {
-        messageDiv.style.display = 'block';
-        messageDiv.style.background = '#f8d7da';
-        messageDiv.style.color = '#721c24';
-        messageDiv.textContent = '❌ Please fill in all sector times.';
-        return;
-    }
-    
-    const timePattern = /^\d{2}:\d{2},\d{3}$/;
-    if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
-        messageDiv.style.display = 'block';
-        messageDiv.style.background = '#f8d7da';
-        messageDiv.style.color = '#721c24';
-        messageDiv.textContent = '❌ Invalid time format.';
-        return;
-    }
-    
-    messageDiv.style.display = 'block';
-    messageDiv.style.background = '#d1ecf1';
-    messageDiv.style.color = '#0c5460';
-    messageDiv.textContent = '⏳ Submitting lap time...';
-    
-    try {
-        // Convert times to seconds for storage
-        const sector1Seconds = timeToSeconds(sector1);
-        const sector2Seconds = timeToSeconds(sector2);
-        const sector3Seconds = timeToSeconds(sector3);
-        const totalTime = sector1Seconds + sector2Seconds + sector3Seconds;
-        
-        // Get track and car info for this round
-        const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
-        const setupSnapshot = await window.firebaseGet(setupRef);
-        const setupData = setupSnapshot.val() || [];
-        
-        const roundSetup = setupData.find(s => 
-            s.Round_Number == roundNumber && s.Season == seasonNumber
-        );
-        
-        if (!roundSetup) {
-            throw new Error(`Round ${roundNumber} Season ${seasonNumber} not configured yet!`);
-        }
-        
-        // Create the lap time entry
-        const lapTimeData = {
-            Timestamp: new Date().toISOString(),
-            Driver: currentUser.name,
-            Season: parseInt(seasonNumber),
-            Round: parseInt(roundNumber),
-            Sector_1: sector1Seconds,
-            Sector_2: sector2Seconds,
-            Sector_3: sector3Seconds,
-            Total_Lap_Time: totalTime,
-            'Track-Layout': roundSetup['Track-Layout'],
-            Car_Name: roundSetup.Car_Name,
-            Position: null,  // Will be calculated
-            Purple_Sectors: null,  // Will be calculated
-            Total_Points: null,  // Will be calculated
-            Best_Lap: null  // Will be calculated
-        };
-        
-        // Add to Firebase
-        const lapTimesRef = window.firebaseRef(window.firebaseDB, 'Form_responses_1');
-        await window.firebasePush(lapTimesRef, lapTimeData);
-        
-        messageDiv.style.background = '#d4edda';
-        messageDiv.style.color = '#155724';
-        messageDiv.textContent = `✅ Lap time submitted! Calculating positions...`;
-        
-        // Trigger recalculation
-        await recalculateStandings();
-        
-        messageDiv.textContent = `✅ Lap time submitted successfully by ${currentUser.name}!`;
-        document.getElementById('lapTimeForm').reset();
-        
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Error submitting lap time:', error);
-        messageDiv.style.background = '#f8d7da';
-        messageDiv.style.color = '#721c24';
-        messageDiv.textContent = '❌ ' + error.message;
-    }
-});
+//document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
 
 // Helper function to convert time string to seconds
-function timeToSeconds(timeStr) {
-    // Format: "00:17,520" → 17.520 seconds
-    const parts = timeStr.split(':');
-    const minutes = parseInt(parts[0]);
-    const secondsParts = parts[1].split(',');
-    const seconds = parseInt(secondsParts[0]);
-    const milliseconds = parseInt(secondsParts[1]);
-    
-    return minutes * 60 + seconds + (milliseconds / 1000);
-}
-
-        async function recalculateStandings() {
-    console.log('🔄 Recalculating standings...');
-    
-    // Get all lap times
-    const lapTimesRef = window.firebaseRef(window.firebaseDB, 'Form_responses_1');
-    const lapTimesSnapshot = await window.firebaseGet(lapTimesRef);
-    const allLapTimes = [];
-    
-    const lapTimesData = lapTimesSnapshot.val();
-    if (lapTimesData) {
-        Object.keys(lapTimesData).forEach(key => {
-            allLapTimes.push({
-                id: key,
-                ...lapTimesData[key]
-            });
-        });
-    }
-    
-    // Group by round and season, keep only best lap per driver
-    const roundGroups = {};
-    
-    allLapTimes.forEach(lap => {
-        const key = `${lap.Season}_${lap.Round}`;
-        if (!roundGroups[key]) {
-            roundGroups[key] = {};
-        }
+//
+        // async function recalculateStandings() {
         
-        const driver = lap.Driver;
-        if (!roundGroups[key][driver] || lap.Total_Lap_Time < roundGroups[key][driver].Total_Lap_Time) {
-            roundGroups[key][driver] = lap;
-        }
-    });
-    
-    // Calculate positions and purple sectors for each round
-    const updatedLapTimes = [];
-    
-    Object.keys(roundGroups).forEach(roundKey => {
-        const driversInRound = Object.values(roundGroups[roundKey]);
-        
-        // Sort by total time
-        driversInRound.sort((a, b) => a.Total_Lap_Time - b.Total_Lap_Time);
-        
-        // Find best sectors
-        const bestS1 = Math.min(...driversInRound.map(d => d.Sector_1));
-        const bestS2 = Math.min(...driversInRound.map(d => d.Sector_2));
-        const bestS3 = Math.min(...driversInRound.map(d => d.Sector_3));
-        
-        // Assign positions and calculate points
-        driversInRound.forEach((lap, index) => {
-            const position = index + 1;
-            let purpleSectors = 0;
-            
-            if (lap.Sector_1 === bestS1) purpleSectors++;
-            if (lap.Sector_2 === bestS2) purpleSectors++;
-            if (lap.Sector_3 === bestS3) purpleSectors++;
-            
-            // Calculate points
-            let points = 0;
-            if (position === 1) {
-                points = 10;
-            } else if (position === 2) {
-                points = 6 + Math.min(purpleSectors, 2);
-            } else if (position === 3) {
-                points = 4 + (Math.min(purpleSectors, 2) * 2);
-            }
-            
-            updatedLapTimes.push({
-                id: lap.id,
-                Position: position,
-                Purple_Sectors: purpleSectors,
-                Total_Points: points,
-                Best_Lap: 'YES'
-            });
-        });
-    });
-    
     // Update Firebase Round_Data
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     const existingRoundData = (await window.firebaseGet(roundDataRef)).val() || [];
@@ -3091,32 +2913,7 @@ function timeToSeconds(timeStr) {
     console.log('✅ Standings recalculated!');
 }
 
-async function recalculateLeaderboard(roundData) {
-    const driverStats = {};
-    
-    roundData.forEach(lap => {
-            // Skip laps with no driver name
-        if (!lap.Driver || lap.Driver.trim() === '') {
-            console.warn('Skipping lap with no driver:', lap);
-            return;
-        }
-        
-        if (!driverStats[lap.Driver]) {
-            driverStats[lap.Driver] = {
-                Driver: lap.Driver,
-                Total_Points: 0,
-                Total_Purple_Sectors: 0,
-                Total_Wins: 0,
-                Season: lap.Season
-            };
-        }
-        
-        driverStats[lap.Driver].Total_Points += lap.Total_Points || 0;
-        driverStats[lap.Driver].Total_Purple_Sectors += lap.Purple_Sectors || 0;
-        if (lap.Position === 1) {
-            driverStats[lap.Driver].Total_Wins++;
-        }
-    });
+//async function recalculateLeaderboard(roundData) {
     
     // Filter out any entries with undefined/empty driver names
     const leaderboard = Object.values(driverStats).filter(driver => {
