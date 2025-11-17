@@ -633,6 +633,97 @@ header p {
     font-size: 1.5em;
 }
 
+/* Driver Records Sections */
+.driver-records-section {
+    margin: 30px 0;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.section-title {
+    color: #2c3e50;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+.lap-records {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.personal-best {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.quick-stats {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+}
+
+.quick-stat-item {
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.track-car-records {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.record-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.record-item strong {
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.h2h-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.h2h-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.h2h-card .opponent {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.h2h-card .record {
+    font-size: 1.5em;
+    color: #667eea;
+    font-weight: bold;
+}
+
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
     .driver-card {
@@ -655,6 +746,14 @@ header p {
     .stats-grid-driver {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
+    }
+    
+    .lap-records {
+        grid-template-columns: 1fr;
+    }
+    
+    .h2h-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
