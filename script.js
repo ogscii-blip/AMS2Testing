@@ -1,3 +1,4 @@
+<script>
         // Tab switching functionality
         function showTab(tabName) {
             // Hide all tabs
@@ -113,35 +114,21 @@
         let DRIVER_PROFILES = {};
         let currentUser = null;
 
-// --- Helper: normalize firebase snapshot value to array ---
-function toArray(val) {
-    if (!val) return [];
-    if (Array.isArray(val)) {
-        // Filter out empty holes if any
-        return val.filter(item => item !== undefined && item !== null);
-    }
-    // Object case: return array of values
-    return Object.values(val);
-}
-
-
         // Load configuration from Firebase
         async function loadConfig() {
             const configRef = window.firebaseRef(window.firebaseDB, 'Config');
             window.firebaseOnValue(configRef, (snapshot) => {
-               const configDataObj = snapshot.val();
-                const configArray = toArray(configDataObj);
-                if (configArray.length === 0) return;
-                
+                const configData = snapshot.val();
+                if (!configData) return;
+
                 const configMap = {};
-                configArray.forEach(row => {
+                configData.forEach(row => {
                     const setting = row['Setting']?.trim();
                     const value = row['Value']?.trim();
                     if (setting && value) {
                         configMap[setting] = value;
                     }
                 });
-
 
                 APPS_SCRIPT_URL = configMap['apps_script_url'];
 
@@ -160,15 +147,22 @@ function toArray(val) {
 
             const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
             window.firebaseOnValue(profilesRef, (snapshot) => {
-                const profilesObj = snapshot.val();
-                const profilesArr = toArray(profilesObj);
-                if (profilesArr.length === 0) return;
-                
-                DRIVER_PROFILES = {};
-                profilesArr.forEach(profile => {
-                   ...
-                });
+                const profilesData = snapshot.val();
+                if (!profilesData) return;
 
+                DRIVER_PROFILES = {};
+                profilesData.forEach(profile => {
+                    const email = profile['Email']?.trim();
+                    if (email) {
+                        DRIVER_PROFILES[email] = {
+                            name: profile['Name']?.trim() || '',
+                            surname: profile['Surname']?.trim() || '',
+                            number: profile['Number']?.toString() || '',
+                            photoUrl: profile['Photo_URL']?.trim() || '',
+                            bio: profile['Bio']?.trim() || ''
+                        };
+                    }
+                });
 
                 console.log('Driver profiles loaded from Firebase:', Object.keys(DRIVER_PROFILES).length);
             });
@@ -179,23 +173,15 @@ function toArray(val) {
             const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
             
             window.firebaseGet(leaderboardRef).then((snapshot) => {
-               const leaderboardObj = snapshot.val();
-const leaderboardArr = toArray(leaderboardObj);
-if (leaderboardArr.length === 0) {
-    console.log('No leaderboard data found');
-    return;
-}
+                const leaderboardData = snapshot.val();
+                if (!leaderboardData) {
+                    console.log('No leaderboard data found');
+                    return;
+                }
 
-        const leaderboardObj = snapshot.val();
-        const leaderboardArr = toArray(leaderboardObj);
-        if (leaderboardArr.length === 0) {
-            console.log('No leaderboard data found');
-            return;
-        }
-        
-        const data = leaderboardArr
-            .filter(row => row && row.Driver)
-            .map((row, index) => ((
+                const data = leaderboardData
+                    .filter(row => row.Driver)
+                    .map((row, index) => ({
                         position: index + 1,
                         driver: row.Driver,
                         points: parseInt(row['Total_Points']) || 0,
@@ -221,13 +207,11 @@ if (leaderboardArr.length === 0) {
         async function loadRoundsCount() {
             const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
             window.firebaseGet(roundDataRef).then((snapshot) => {
-                const roundObj = snapshot.val();
-                const roundArr = toArray(roundObj);
-                if (roundArr.length) {
-                    const rounds = [...new Set(roundArr.map(r => r.Round))];
+                const roundData = snapshot.val();
+                if (roundData) {
+                    const rounds = [...new Set(roundData.map(r => r.Round))];
                     document.getElementById('totalRounds').textContent = rounds.length;
                 }
-
             });
         }
 
@@ -278,10 +262,10 @@ if (leaderboardArr.length === 0) {
                     window.firebaseGet(carsRef)
                 ]);
                 
-                const roundData = toArray(roundSnapshot.val());
-                const tracksData = toArray(tracksSnapshot.val());
-                const carsData = toArray(carsSnapshot.val());
-
+                const roundData = roundSnapshot.val() || [];
+                const tracksData = tracksSnapshot.val() || [];
+                const carsData = carsSnapshot.val() || [];
+                
                 const tracksMap = {};
                 tracksData.forEach(row => {
                     const trackCombo = row['Track_Combos'];
@@ -731,9 +715,8 @@ if (leaderboardArr.length === 0) {
                 const setupSnapshot = await window.firebaseGet(setupRef);
                 const setupData = setupSnapshot.val() || [];
                 
-                const setupData = toArray(setupSnapshot.val());
                 const roundSetup = setupData.find(s => 
-                    Number(s.Round_Number) === roundNumber && Number(s.Season) === seasonNumber
+                    s.Round_Number == roundNumber && s.Season == seasonNumber
                 );
                 
                 if (!roundSetup) {
@@ -890,8 +873,8 @@ if (leaderboardArr.length === 0) {
                     window.firebaseGet(carsRef)
                 ]);
                 
-                const setupRaw = toArray(setupSnapshot.val());
-                const setupData = setupRaw.filter(row => row['Round_Number'])
+                const setupData = (setupSnapshot.val() || [])
+                    .filter(row => row['Round_Number'])
                     .map(row => ({
                         timestamp: new Date(row.Timestamp),
                         round: row['Round_Number'],
@@ -1124,3 +1107,38 @@ if (leaderboardArr.length === 0) {
             checkExistingSession();
             updateSubmitTabVisibility();
         });
+    </script>
+
+<!-- Firebase SDK -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getDatabase, ref, onValue, set, push, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBSDmq3qjRU0kQR0k0pau3nOiFUa1j8Xpg",
+        authDomain: "ams2abo.firebaseapp.com",
+        databaseURL: "https://ams2abo-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ams2abo",
+        storageBucket: "ams2abo.firebasestorage.app",
+        messagingSenderId: "1008932609178",
+        appId: "1:1008932609178:web:a56b8d1acbeacfc0c61323"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    window.firebaseDB = database;
+    window.firebaseRef = ref;
+    window.firebaseOnValue = onValue;
+    window.firebaseSet = set;
+    window.firebasePush = push;
+    window.firebaseGet = get;
+
+    console.log('✅ Firebase initialized successfully!');
+    
+    loadConfig();
+    checkExistingSession();
+    loadLeaderboard();
+    setupSectorTimeInputs();
+    loadTracksAndCars();
+</script>
