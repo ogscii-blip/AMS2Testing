@@ -3095,6 +3095,12 @@ async function recalculateLeaderboard(roundData) {
     const driverStats = {};
     
     roundData.forEach(lap => {
+            // Skip laps with no driver name
+        if (!lap.Driver || lap.Driver.trim() === '') {
+            console.warn('Skipping lap with no driver:', lap);
+            return;
+        }
+        
         if (!driverStats[lap.Driver]) {
             driverStats[lap.Driver] = {
                 Driver: lap.Driver,
@@ -3112,7 +3118,19 @@ async function recalculateLeaderboard(roundData) {
         }
     });
     
-    const leaderboard = Object.values(driverStats);
+    // Filter out any entries with undefined/empty driver names
+    const leaderboard = Object.values(driverStats).filter(driver => {
+        const hasDriver = driver.Driver && driver.Driver.trim() !== '';
+        if (!hasDriver) {
+            console.warn('Skipping invalid driver entry:', driver);
+        }
+        return hasDriver;
+    });
+    
+    if (leaderboard.length === 0) {
+        console.warn('⚠️ No valid drivers in leaderboard, skipping update');
+        return;
+    }
     
     // Sort by points, then wins, then purple sectors
     leaderboard.sort((a, b) => {
