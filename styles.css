@@ -46,6 +46,13 @@ header p {
     color: #5568d3 !important;
 }
 
+/* Purple sector styling */
+.purple-sector {
+    color: #9c27b0;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(156, 39, 176, 0.3);
+}
+
 @media screen and (max-width: 480px) {
     #overall .leaderboard-table tr {
         cursor: pointer;
@@ -536,59 +543,121 @@ header p {
     margin: 0;
 }
 
-.records-section {
-    margin: 30px 0;
+/* Mobile Driver Card Styles */
+.driver-header-mobile {
+    display: none;
 }
 
-.records-section h3 {
+.driver-photo-container-mobile {
+    position: relative;
+    margin: 0 auto 15px;
+    width: fit-content;
+}
+
+.driver-photo-mobile {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #667eea;
+    display: block;
+}
+
+.driver-number-badge-mobile {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.driver-name-mobile {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
     color: #2c3e50;
-    border-bottom: 2px solid #667eea;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-.record-item {
+.driver-stats-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
     background: #f8f9fa;
     padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+.stat-compact-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 8px 0;
 }
 
-.record-item strong {
-    color: #667eea;
-}
-
-.head-to-head-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+.stat-compact-row {
+    display: flex;
     gap: 15px;
-    margin-top: 20px;
 }
 
-.h2h-card {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
+.stat-compact-row .stat-compact-item {
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.h2h-card .opponent {
-    font-size: 1.1em;
+.stat-compact-label {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-compact-value {
+    font-size: 1.3em;
     font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
-
-.h2h-card .record {
-    font-size: 1.5em;
     color: #667eea;
-    font-weight: bold;
+}
+
+.stat-compact-row .stat-compact-value {
+    font-size: 1.5em;
 }
 
 /* Mobile responsive styles */
+@media screen and (max-width: 768px) {
+    .driver-card {
+        padding: 20px;
+    }
+    
+    .driver-header {
+        display: none;
+    }
+    
+    .driver-header-mobile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #667eea;
+        margin-bottom: 20px;
+    }
+    
+    .stats-grid-driver {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+}
+
 @media screen and (max-width: 480px) {
     #desktopLogo {
         display: none !important;
@@ -808,5 +877,27 @@ header p {
 
     #userInfo button:last-of-type {
         order: 4 !important;
+    }
+    
+    /* Mobile Driver Card */
+    .driver-card {
+        padding: 15px;
+    }
+    
+    .stats-grid-driver {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .stat-card-driver {
+        padding: 15px 10px;
+    }
+    
+    .stat-card-driver h3 {
+        font-size: 0.75em;
+    }
+    
+    .stat-card-driver .stat-value {
+        font-size: 2em;
     }
 }
