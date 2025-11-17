@@ -332,7 +332,10 @@ async function loadRoundData() {
                 points: parseInt(row['Total_Points']) || 0,
                 timestamp: index,
                 trackLayout: row['Track-Layout'] || '',
-                car: row['Car_Name'] || ''
+                car: row['Car_Name'] || '',
+                purpleSector1: row['Purple_Sector_1'] === 'TRUE' || row['Purple_Sector_1'] === true,
+                purpleSector2: row['Purple_Sector_2'] === 'TRUE' || row['Purple_Sector_2'] === true,
+                purpleSector3: row['Purple_Sector_3'] === 'TRUE' || row['Purple_Sector_3'] === true
             }));
         
         const roundGroups = {};
@@ -438,6 +441,17 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
             
             const formattedName = getFormattedDriverName(row.driver);
             
+            // Format sector times with purple highlighting
+            const sector1Html = row.purpleSector1 
+                ? `<span class="purple-sector">${formatTime(row.sector1)}</span>` 
+                : formatTime(row.sector1);
+            const sector2Html = row.purpleSector2 
+                ? `<span class="purple-sector">${formatTime(row.sector2)}</span>` 
+                : formatTime(row.sector2);
+            const sector3Html = row.purpleSector3 
+                ? `<span class="purple-sector">${formatTime(row.sector3)}</span>` 
+                : formatTime(row.sector3);
+            
             tr.innerHTML = `
                 <td data-label="Driver">
                     <strong 
@@ -448,9 +462,9 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
                         ${formattedName || row.driver}
                     </strong>
                 </td>
-                <td data-label="Sector 1">${formatTime(row.sector1)}</td>
-                <td data-label="Sector 2">${formatTime(row.sector2)}</td>
-                <td data-label="Sector 3">${formatTime(row.sector3)}</td>
+                <td data-label="Sector 1">${sector1Html}</td>
+                <td data-label="Sector 2">${sector2Html}</td>
+                <td data-label="Sector 3">${sector3Html}</td>
                 <td data-label="Total Time"><strong>${formatTime(row.totalTime)}</strong></td>
                 <td data-label="Position">${row.position}</td>
                 <td data-label="Purple Sectors">${row.purpleSectors}</td>
@@ -1141,6 +1155,12 @@ async function loadDriverStats() {
                 ? `${profile.name} ${profile.surname}` 
                 : driverName;
             
+            const formattedShortName = profile && profile.surname 
+                ? `${profile.name.charAt(0)}. ${profile.surname}` 
+                : driverName;
+            
+            const championshipPosition = leaderboardData.findIndex(l => l.Driver === driverName) + 1 || 'N/A';
+            
             const card = document.createElement('div');
             card.className = 'driver-card';
             card.setAttribute('data-driver', driverName);
@@ -1153,21 +1173,32 @@ async function loadDriverStats() {
                     photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
                 }
                 photoHtml = `
-                    <div class="driver-photo-container">
-                        <img src="${photoUrl}" alt="${formattedName}" class="driver-photo">
-                        <div class="driver-number-badge">${profile.number || '?'}</div>
+                    <div class="driver-photo-container-mobile">
+                        <img src="${photoUrl}" alt="${formattedName}" class="driver-photo-mobile">
+                        <div class="driver-number-badge-mobile">${profile.number || '?'}</div>
                     </div>
                 `;
             }
             
             card.innerHTML = `
-                <div class="driver-header">
+                <div class="driver-header-mobile">
                     ${photoHtml}
-                    <div class="driver-info">
-                        <h2>${formattedName}</h2>
-                        ${profile && profile.number ? `<p style="color: #667eea; font-weight: bold; font-size: 1.1em;">#${profile.number}</p>` : ''}
-                        <p class="driver-position">Championship Position: ${leaderboardData.findIndex(l => l.Driver === driverName) + 1 || 'N/A'}</p>
-                        ${profile && profile.bio ? `<p style="margin-top: 10px; font-style: italic; color: #666;">${profile.bio}</p>` : ''}
+                    <div class="driver-name-mobile">${formattedShortName}</div>
+                    <div class="driver-stats-compact">
+                        <div class="stat-compact-item">
+                            <span class="stat-compact-label">Championship Position:</span>
+                            <span class="stat-compact-value">${championshipPosition}</span>
+                        </div>
+                        <div class="stat-compact-row">
+                            <div class="stat-compact-item">
+                                <span class="stat-compact-label">Total Points:</span>
+                                <span class="stat-compact-value">${totalPoints}</span>
+                            </div>
+                            <div class="stat-compact-item">
+                                <span class="stat-compact-label">Races:</span>
+                                <span class="stat-compact-value">${totalRounds}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1190,7 +1221,7 @@ async function loadDriverStats() {
                     </div>
                 </div>
                 
-                ${profile && profile.bio ? '' : '<p style="text-align: center; color: #999; margin: 20px 0;">No bio available</p>'}
+                ${profile && profile.bio ? `<p style="text-align: center; color: #666; margin: 20px 0; font-style: italic;">"${profile.bio}"</p>` : ''}
             `;
             
             driversContent.appendChild(card);
@@ -1340,8 +1371,6 @@ document.getElementById('photoFile').addEventListener('change', function(e) {
         document.getElementById('photoPreviewImg').src = e.target.result;
         document.getElementById('photoPreview').style.display = 'block';
         
-        // Note: You'll need to implement actual image upload to Google Drive or Firebase Storage
-        // For now, we'll just show a message
         alert('⚠️ Photo upload to storage not yet implemented. Please upload to Google Drive and paste the sharing link in the Photo URL field.');
     };
     reader.readAsDataURL(file);
