@@ -1,4 +1,4 @@
-        // Tab switching functionality
+ // Tab switching functionality
         function showTab(tabName) {
             // Hide all tabs
             const tabs = document.querySelectorAll('.tab-content');
