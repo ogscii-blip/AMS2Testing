@@ -1106,7 +1106,7 @@
             checkExistingSession();
             updateSubmitTabVisibility();
         });
-    </script>
+    
 
 <!-- Firebase SDK -->
 <script type="module">
