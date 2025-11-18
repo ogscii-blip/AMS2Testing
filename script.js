@@ -320,23 +320,34 @@ async function loadRoundData() {
         
         const allData = roundData
             .filter(row => row.Driver && row.Position)
-            .map((row, index) => ({
-                round: row.Round,
-                driver: row.Driver,
-                sector1: row['Sector_1']?.toString() || '',
-                sector2: row['Sector_2']?.toString() || '',
-                sector3: row['Sector_3']?.toString() || '',
-                totalTime: row['Total_Lap_Time']?.toString() || '',
-                position: parseInt(row.Position) || 0,
-                purpleSectors: parseInt(row['Purple_Sectors']) || 0,
-                points: parseInt(row['Total_Points']) || 0,
-                timestamp: index,
-                trackLayout: row['Track-Layout'] || '',
-                car: row['Car_Name'] || '',
-                purpleSector1: row['Purple_Sector_1'] === 'TRUE' || row['Purple_Sector_1'] === true,
-                purpleSector2: row['Purple_Sector_2'] === 'TRUE' || row['Purple_Sector_2'] === true,
-                purpleSector3: row['Purple_Sector_3'] === 'TRUE' || row['Purple_Sector_3'] === true
-            }));
+            .map((row, index) => {
+                // Parse purple sector values - handle string "TRUE" or boolean true
+                const ps1 = row['Purple_Sector_1'];
+                const ps2 = row['Purple_Sector_2'];
+                const ps3 = row['Purple_Sector_3'];
+                
+                const purpleSector1 = ps1 === 'TRUE' || ps1 === true || ps1 === 'true';
+                const purpleSector2 = ps2 === 'TRUE' || ps2 === true || ps2 === 'true';
+                const purpleSector3 = ps3 === 'TRUE' || ps3 === true || ps3 === 'true';
+                
+                return {
+                    round: row.Round,
+                    driver: row.Driver,
+                    sector1: row['Sector_1']?.toString() || '',
+                    sector2: row['Sector_2']?.toString() || '',
+                    sector3: row['Sector_3']?.toString() || '',
+                    totalTime: row['Total_Lap_Time']?.toString() || '',
+                    position: parseInt(row.Position) || 0,
+                    purpleSectors: parseInt(row['Purple_Sectors']) || 0,
+                    points: parseInt(row['Total_Points']) || 0,
+                    timestamp: index,
+                    trackLayout: row['Track-Layout'] || '',
+                    car: row['Car_Name'] || '',
+                    purpleSector1: purpleSector1,
+                    purpleSector2: purpleSector2,
+                    purpleSector3: purpleSector3
+                };
+            });
         
         const roundGroups = {};
         allData.forEach(row => {
@@ -491,6 +502,20 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
             });
         });
     }, 100);
+    
+    // Auto-expand the latest (highest numbered) round
+    if (sortedRounds.length > 0) {
+        const latestRound = sortedRounds[sortedRounds.length - 1]; // Last in sorted array is highest
+        setTimeout(() => {
+            const details = document.getElementById(`details-${latestRound}`);
+            const icon = document.getElementById(`toggle-${latestRound}`);
+            if (details && icon) {
+                details.classList.add('expanded');
+                icon.classList.add('expanded');
+                console.log(`Auto-expanded Round ${latestRound}`);
+            }
+        }, 200);
+    }
 }
 
 function toggleRound(round) {
