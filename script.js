@@ -357,7 +357,23 @@ async function loadRoundData() {
             roundGroups[row.round].push(row);
         });
         
+        // Calculate purple sectors for each round
         Object.keys(roundGroups).forEach(round => {
+            const results = roundGroups[round];
+            
+            // Find fastest sector times in this round
+            const fastestSector1 = Math.min(...results.map(r => parseFloat(r.sector1) || Infinity));
+            const fastestSector2 = Math.min(...results.map(r => parseFloat(r.sector2) || Infinity));
+            const fastestSector3 = Math.min(...results.map(r => parseFloat(r.sector3) || Infinity));
+            
+            // Mark purple sectors
+            results.forEach(result => {
+                result.purpleSector1 = parseFloat(result.sector1) === fastestSector1;
+                result.purpleSector2 = parseFloat(result.sector2) === fastestSector2;
+                result.purpleSector3 = parseFloat(result.sector3) === fastestSector3;
+            });
+            
+            // Sort results
             roundGroups[round].sort((a, b) => {
                 if (b.points !== a.points) return b.points - a.points;
                 if (b.purpleSectors !== a.purpleSectors) return b.purpleSectors - a.purpleSectors;
