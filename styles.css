@@ -48,8 +48,8 @@ header p {
 
 /* Purple sector styling */
 .purple-sector {
-    color: #9c27b0;
-    font-weight: bold;
+    color: #9c27b0 !important;
+    font-weight: bold !important;
     text-shadow: 0 0 2px rgba(156, 39, 176, 0.3);
 }
 
