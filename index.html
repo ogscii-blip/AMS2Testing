@@ -289,11 +289,12 @@
         <div id="rules" class="tab-content">
             <h2>📜 Rules & Scoring System</h2>
             
-            <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #1565c0;">
-                <h3 style="color: #1565c0; margin-bottom: 15px;">🏁 How It Works</h3>
-                <ul style="margin-left: 20px; line-height: 1.8;">
+            <div class="rules-section">
+                <h3>🏁 How It Works</h3>
+                <ul>
                     <li>Sign in with your registered email to participate</li>
                     <li>Complete hot laps on configured tracks and record your sector times</li>
+                    <li>Enter times using split inputs: <strong>Seconds</strong> (up to 2 digits) and <strong>Milliseconds</strong> (up to 3 digits)</li>
                     <li>Submit your times through the form - you can submit multiple attempts per round</li>
                     <li><strong>Only your fastest lap per round counts for points</strong></li>
                     <li>Compete across multiple seasons - each season has its own championship standings</li>
@@ -301,14 +302,65 @@
                 </ul>
             </div>
 
-            <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #6a1b9a;">
-                <h3 style="color: #6a1b9a; margin-bottom: 15px;">🎯 Points System</h3>
-                <p style="margin-bottom: 15px; line-height: 1.6;">Points are awarded to the top 3 finishers in each round.</p>
-                <table style="width: 100%; margin-top: 10px;">
-                    <tr><td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥇 1st Place:</td><td style="padding: 10px; color: #6a1b9a;">10 points</td></tr>
-                    <tr><td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥈 2nd Place:</td><td style="padding: 10px; color: #6a1b9a;">6 points + 1 point per purple sector (max 2)</td></tr>
-                    <tr><td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥉 3rd Place:</td><td style="padding: 10px; color: #6a1b9a;">4 points + 2 points per purple sector (max 2)</td></tr>
+            <div class="points-section">
+                <h3>🎯 Points System</h3>
+                <p>Points are awarded to the top 3 finishers in each round. Your position is determined by your <strong>best lap time</strong> for that round.</p>
+                <table class="points-table">
+                    <tr>
+                        <td>🥇 1st Place:</td>
+                        <td>10 points (no purple sector bonus)</td>
+                    </tr>
+                    <tr>
+                        <td>🥈 2nd Place:</td>
+                        <td>6 points + 1 point per purple sector (max 2 purple sectors counted)</td>
+                    </tr>
+                    <tr>
+                        <td>🥉 3rd Place:</td>
+                        <td>4 points + 2 points per purple sector (max 2 purple sectors counted)</td>
+                    </tr>
                 </table>
+                <p class="points-example"><strong>Example:</strong> If you finish 2nd with 2 purple sectors, you earn 6 + 1 + 1 = 8 points total.</p>
+            </div>
+
+            <div class="purple-sectors-section">
+                <h3>⚡ Purple Sectors</h3>
+                <p>
+                    A <strong>Purple Sector</strong> is awarded when you set the fastest time in a specific sector (Sector 1, 2, or 3) 
+                    <strong>among all drivers' best laps in that round</strong>. You can earn up to 3 purple sectors per round (one for each sector).
+                </p>
+                <p style="margin-top: 10px;">
+                    Purple sectors are calculated by comparing each driver's fastest lap for the round - not all submitted attempts.
+                </p>
+                <div class="note-text">
+                    <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors in the points calculation, but purple sectors are still tracked for tiebreakers and statistics!
+                </div>
+            </div>
+
+            <div class="championship-section">
+                <h3>🏆 Championship & Tie-Breakers</h3>
+                <p>
+                    Your championship position is determined by your <strong>total points</strong> accumulated across all rounds in a season.
+                </p>
+                <p>
+                    If two or more drivers have the same number of points, the following tie-breakers are used <strong>in order</strong>:
+                </p>
+                <ol>
+                    <li><strong>Total Wins:</strong> Driver with more 1st place finishes ranks higher</li>
+                    <li><strong>Total Purple Sectors:</strong> If still tied, driver with more purple sectors ranks higher</li>
+                    <li><strong>Head-to-Head:</strong> If still tied, head-to-head record between tied drivers in rounds they both competed</li>
+                </ol>
+            </div>
+
+            <div class="seasons-section">
+                <h3>📅 Seasons</h3>
+                <p>
+                    The league is organized into <strong>seasons</strong>. Each season contains multiple rounds with different track/car combinations.
+                </p>
+                <ul style="margin-top: 10px;">
+                    <li>Use the season filter in Overall Standings to view results for specific seasons or all seasons combined</li>
+                    <li>Round Setup requires a season designation when configuring new rounds</li>
+                    <li>Only laps submitted for the correct round and season count toward standings</li>
+                </ul>
             </div>
         </div>
     </div>
