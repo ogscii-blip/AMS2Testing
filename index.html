@@ -94,6 +94,14 @@
         <!-- Round Results Tab -->
         <div id="round" class="tab-content">
             <h2>📊 Round-by-Round Results</h2>
+            
+            <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                <label for="roundSeasonSelect" style="font-weight: bold; color: #333;">Season:</label>
+                <select id="roundSeasonSelect" onchange="loadRoundData()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                    <option value="">All Seasons</option>
+                </select>
+            </div>
+            
             <div id="round-loading" class="loading">Loading round data...</div>
             <div id="round-content" style="display: none;"></div>
         </div>
