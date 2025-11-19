@@ -167,6 +167,14 @@
             
             <div style="margin-bottom: 30px;">
                 <h3>📋 Configured Rounds</h3>
+                
+                <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                    <label for="setupSeasonSelect" style="font-weight: bold; color: #333;">Filter by Season:</label>
+                    <select id="setupSeasonSelect" onchange="loadRoundSetup()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                        <option value="">All Seasons</option>
+                    </select>
+                </div>
+                
                 <div id="setup-cards-loading" class="loading">Loading round configurations...</div>
                 <div id="setup-cards-content" style="display: none;">
                     <div id="round-cards-grid" class="round-cards-grid"></div>
