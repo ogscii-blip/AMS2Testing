@@ -1,5 +1,5 @@
 // Tab switching functionality
-function showTab(tabName, evt) {
+function showTab(tabName) {
     // Hide all tabs
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
@@ -9,13 +9,10 @@ function showTab(tabName, evt) {
     buttons.forEach(btn => btn.classList.remove('active'));
     
     // Show selected tab
-    const tabEl = document.getElementById(tabName);
-    if (tabEl) tabEl.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
     
-    // Add active class to clicked button (evt may be undefined)
-    if (evt && evt.target) {
-        evt.target.classList.add('active');
-    }
+    // Add active class to clicked button
+    event.target.classList.add('active');
     
     // Load data if needed
     if (tabName === 'overall') {
@@ -91,17 +88,14 @@ function goToDriverProfile(driverName) {
 
 // Format driver name as "N. Surname - #"
 function getFormattedDriverName(driverLoginName) {
-    if (!driverLoginName) return '';
     let profile = null;
     
-    if (typeof ALLOWED_USERS === 'object' && ALLOWED_USERS) {
-        for (const loginName in ALLOWED_USERS) {
-            if (loginName === driverLoginName) {
-                const email = ALLOWED_USERS[loginName]?.email;
-                if (email && DRIVER_PROFILES && DRIVER_PROFILES[email]) {
-                    profile = DRIVER_PROFILES[email];
-                    break;
-                }
+    for (const loginName in ALLOWED_USERS) {
+        if (loginName === driverLoginName) {
+            const email = ALLOWED_USERS[loginName].email;
+            if (DRIVER_PROFILES[email]) {
+                profile = DRIVER_PROFILES[email];
+                break;
             }
         }
     }
@@ -111,87 +105,6 @@ function getFormattedDriverName(driverLoginName) {
     }
     
     return driverLoginName;
-}
-
-// Normalizer: convert Firebase snapshots (object or array) to array
-function asArray(data) {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    // If object with numeric keys or push IDs => use values
-    return Object.values(data);
-}
-
-// Helper: convert seconds/format string to seconds as Number
-function lapTimeToSeconds(value) {
-    if (value == null || value === "") return NaN;
-    // if it's already in MM:SS,mmm format, parse it
-    if (typeof value === 'string' && value.includes(':')) {
-        try {
-            return timeToSeconds(value);
-        } catch (e) {
-            return NaN;
-        }
-    }
-    // otherwise, assume numeric seconds (string or number)
-    const n = Number(value);
-    return isFinite(n) ? n : NaN;
-}
-
-// Format time: accepts either seconds number (or numeric string) or already-formatted "MM:SS,mmm"
-function formatTime(value) {
-    if (value == null || value === "") return "";
-    if (typeof value === 'string' && value.includes(':')) {
-        // assume already formatted
-        return value;
-    }
-    const totalSeconds = Number(value);
-    if (!isFinite(totalSeconds)) return "";
-    const minutes = Math.floor(totalSeconds / 60);
-    const secs = Math.floor(totalSeconds % 60);
-    const milliseconds = Math.round((totalSeconds % 1) * 1000);
-    
-    const mm = String(minutes).padStart(2, '0');
-    const ss = String(secs).padStart(2, '0');
-    const ms = String(milliseconds).padStart(3, '0');
-    
-    return `${mm}:${ss},${ms}`;
-}
-
-// Helper function to convert time format MM:SS,mmm to seconds
-function timeToSeconds(timeStr) {
-    if (timeStr == null || timeStr === '') return 0;
-    if (typeof timeStr === 'number') return timeStr;
-    if (typeof timeStr !== 'string') return NaN;
-    // Accept "MM:SS,mmm" or "M:SS,mmm"
-    const parts = timeStr.split(':');
-    if (parts.length !== 2) {
-        // maybe it's already seconds as string
-        const v = Number(timeStr);
-        return isFinite(v) ? v : NaN;
-    }
-    const minutes = parseInt(parts[0], 10);
-    const secondsParts = parts[1].split(',');
-    const seconds = parseInt(secondsParts[0], 10);
-    const milliseconds = parseInt(secondsParts[1] || '0', 10);
-    if (isNaN(minutes) || isNaN(seconds) || isNaN(milliseconds)) return NaN;
-    return minutes * 60 + seconds + (milliseconds / 1000);
-}
-
-// Robust Google Drive file id parser
-function extractDriveThumbnail(photoUrl) {
-    if (!photoUrl || typeof photoUrl !== 'string') return null;
-    // direct uc id
-    if (photoUrl.includes('drive.google.com/uc?id=')) {
-        const params = new URLSearchParams(photoUrl.split('?')[1] || '');
-        const id = params.get('id');
-        if (id) return `https://lh3.googleusercontent.com/d/${id}=s200`;
-    }
-    // share link formats
-    // e.g. https://drive.google.com/file/d/FILEID/view?usp=sharing
-    const match = photoUrl.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-    if (match) return `https://lh3.googleusercontent.com/d/${match[1]}=s200`;
-    // fallback to original
-    return photoUrl;
 }
 
 // Global variables
@@ -204,59 +117,51 @@ let currentUser = null;
 async function loadConfig() {
     const configRef = window.firebaseRef(window.firebaseDB, 'Config');
     window.firebaseOnValue(configRef, (snapshot) => {
-        const configDataRaw = snapshot.val();
-        if (!configDataRaw) return;
-
-        const configData = asArray(configDataRaw);
+        const configData = snapshot.val();
+        if (!configData) return;
 
         const configMap = {};
         configData.forEach(row => {
-            const setting = (row['Setting'] || '').toString().trim();
-            const value = (row['Value'] || '').toString().trim();
+            const setting = row['Setting']?.trim();
+            const value = row['Value']?.trim();
             if (setting && value) {
                 configMap[setting] = value;
             }
         });
 
-        APPS_SCRIPT_URL = configMap['apps_script_url'] || null;
+        APPS_SCRIPT_URL = configMap['apps_script_url'];
 
-        const newAllowed = {};
         for (let i = 1; i <= 10; i++) {
             const name = configMap['allowed_name_' + i];
             const email = configMap['allowed_email_' + i];
             const password = configMap['allowed_password_' + i];
             
             if (name && email && password) {
-                newAllowed[name] = { email, password };
+                ALLOWED_USERS[name] = { email, password };
             }
         }
-        ALLOWED_USERS = newAllowed;
 
         console.log('Config loaded from Firebase:', Object.keys(ALLOWED_USERS).length, 'users');
     });
 
     const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
     window.firebaseOnValue(profilesRef, (snapshot) => {
-        const profilesDataRaw = snapshot.val();
-        if (!profilesDataRaw) return;
+        const profilesData = snapshot.val();
+        if (!profilesData) return;
 
-        const profilesData = asArray(profilesDataRaw);
-
-        const newProfiles = {};
+        DRIVER_PROFILES = {};
         profilesData.forEach(profile => {
-            const email = (profile['Email'] || '').toString().trim();
+            const email = profile['Email']?.trim();
             if (email) {
-                newProfiles[email] = {
-                    name: (profile['Name'] || '').toString().trim(),
-                    surname: (profile['Surname'] || '').toString().trim(),
-                    number: (profile['Number'] != null) ? profile['Number'].toString() : '',
-                    photoUrl: (profile['Photo_URL'] || '').toString().trim(),
-                    bio: (profile['Bio'] || '').toString().trim()
+                DRIVER_PROFILES[email] = {
+                    name: profile['Name']?.trim() || '',
+                    surname: profile['Surname']?.trim() || '',
+                    number: profile['Number']?.toString() || '',
+                    photoUrl: profile['Photo_URL']?.trim() || '',
+                    bio: profile['Bio']?.trim() || ''
                 };
             }
         });
-
-        DRIVER_PROFILES = newProfiles;
 
         console.log('Driver profiles loaded from Firebase:', Object.keys(DRIVER_PROFILES).length);
     });
@@ -269,28 +174,21 @@ async function loadLeaderboard() {
     
     const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
     
-    try {
-        const snapshot = await window.firebaseGet(leaderboardRef);
-        const raw = snapshot.val();
-        if (!raw) {
+    window.firebaseGet(leaderboardRef).then((snapshot) => {
+        const leaderboardData = snapshot.val();
+        if (!leaderboardData) {
             console.log('No leaderboard data found');
-            document.getElementById('leaderboard-loading').style.display = 'none';
-            document.getElementById('leaderboard-content').style.display = 'block';
-            displayLeaderboard([]);
             return;
         }
 
-        let leaderboardData = asArray(raw);
-
-        // defensive: ensure objects contain Driver
-        leaderboardData = leaderboardData.filter(row => row && row.Driver);
-
+        let data = leaderboardData.filter(row => row.Driver);
+        
         // Apply season filter if selected
         if (selectedSeason) {
-            leaderboardData = leaderboardData.filter(row => row.Season == selectedSeason);
+            data = data.filter(row => row.Season == selectedSeason);
         }
         
-        let data = leaderboardData
+        data = data
             .map((row, index) => ({
                 position: index + 1,
                 driver: row.Driver,
@@ -307,33 +205,25 @@ async function loadLeaderboard() {
 
         displayLeaderboard(data);
         
-        const totalDriversEl = document.getElementById('totalDrivers');
-        if (totalDriversEl) totalDriversEl.textContent = data.length;
+        document.getElementById('totalDrivers').textContent = data.length;
         const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
-        const totalPointsEl = document.getElementById('totalPoints');
-        if (totalPointsEl) totalPointsEl.textContent = totalPoints;
+        document.getElementById('totalPoints').textContent = totalPoints;
         
         loadRoundsCount();
         populateSeasonFilter();
-    } catch (err) {
-        console.error('Error loading leaderboard:', err);
-        document.getElementById('leaderboard-loading').innerHTML = '<p style="color: red;">Error loading leaderboard</p>';
-    }
+    });
 }
 
 // Populate season dropdown
 async function populateSeasonFilter() {
     const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
-    try {
-        const snapshot = await window.firebaseGet(setupRef);
-        const raw = snapshot.val();
-        if (!raw) return;
+    window.firebaseGet(setupRef).then((snapshot) => {
+        const setupData = snapshot.val();
+        if (!setupData) return;
         
-        const setupData = asArray(raw);
-        const seasons = [...new Set(setupData.map(s => s.Season))].filter(s => s != null && s !== '').sort((a, b) => a - b);
+        const seasons = [...new Set(setupData.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
         
         const seasonSelect = document.getElementById('seasonSelect');
-        if (!seasonSelect) return;
         const currentValue = seasonSelect.value;
         
         seasonSelect.innerHTML = '<option value="">All Seasons</option>';
@@ -345,33 +235,22 @@ async function populateSeasonFilter() {
         });
         
         seasonSelect.value = currentValue;
-    } catch (err) {
-        console.error('Error populating seasons:', err);
-    }
+    });
 }
 
 async function loadRoundsCount() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
-    try {
-        const snapshot = await window.firebaseGet(roundDataRef);
-        const raw = snapshot.val();
-        if (!raw) {
-            const el = document.getElementById('totalRounds');
-            if (el) el.textContent = '0';
-            return;
+    window.firebaseGet(roundDataRef).then((snapshot) => {
+        const roundData = snapshot.val();
+        if (roundData) {
+            const rounds = [...new Set(roundData.map(r => r.Round))];
+            document.getElementById('totalRounds').textContent = rounds.length;
         }
-        const roundData = asArray(raw);
-        const rounds = [...new Set(roundData.map(r => r.Round))].filter(r => r != null && r !== '');
-        const el = document.getElementById('totalRounds');
-        if (el) el.textContent = rounds.length;
-    } catch (err) {
-        console.error('Error loading rounds count:', err);
-    }
+    });
 }
 
 function displayLeaderboard(data) {
     const tbody = document.getElementById('leaderboard-body');
-    if (!tbody) return;
     tbody.innerHTML = '';
     
     data.forEach((row, index) => {
@@ -394,16 +273,14 @@ function displayLeaderboard(data) {
     });
 
     document.querySelectorAll('.driver-link').forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function() {
             const driverName = this.getAttribute('data-driver');
             goToDriverCurrentRound(driverName);
         });
     });
     
-    const loadingEl = document.getElementById('leaderboard-loading');
-    const contentEl = document.getElementById('leaderboard-content');
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (contentEl) contentEl.style.display = 'block';
+    document.getElementById('leaderboard-loading').style.display = 'none';
+    document.getElementById('leaderboard-content').style.display = 'block';
 }
 
 // Load round data
@@ -419,16 +296,16 @@ async function loadRoundData() {
             window.firebaseGet(carsRef)
         ]);
         
-        const roundData = asArray(roundSnapshot.val());
-        const tracksData = asArray(tracksSnapshot.val());
-        const carsData = asArray(carsSnapshot.val());
+        const roundData = roundSnapshot.val() || [];
+        const tracksData = tracksSnapshot.val() || [];
+        const carsData = carsSnapshot.val() || [];
         
         const tracksMap = {};
         tracksData.forEach(row => {
             const trackCombo = row['Track_Combos'];
             const trackImage = row['Track_Image_URL'];
             if (trackCombo) {
-                tracksMap[trackCombo.toString().trim()] = trackImage || 'https://via.placeholder.com/60x60?text=Track';
+                tracksMap[trackCombo.trim()] = trackImage || 'https://via.placeholder.com/60x60?text=Track';
             }
         });
         
@@ -437,20 +314,20 @@ async function loadRoundData() {
             const carName = row['Car_Name'];
             const carImage = row['Car_Image_URL'];
             if (carName) {
-                carsMap[carName.toString().trim()] = carImage || 'https://via.placeholder.com/60x60?text=Car';
+                carsMap[carName.trim()] = carImage || 'https://via.placeholder.com/60x60?text=Car';
             }
         });
         
         const allData = roundData
-            .filter(row => row && row.Driver && row.Position != null)
+            .filter(row => row.Driver && row.Position)
             .map((row, index) => ({
                 round: row.Round,
                 driver: row.Driver,
-                sector1: row['Sector_1'] != null ? row['Sector_1'].toString() : '',
-                sector2: row['Sector_2'] != null ? row['Sector_2'].toString() : '',
-                sector3: row['Sector_3'] != null ? row['Sector_3'].toString() : '',
-                totalTime: (row['Total_Lap_Time'] != null) ? row['Total_Lap_Time'] : '',
-                position: parseInt(row.Position, 10) || 0,
+                sector1: row['Sector_1']?.toString() || '',
+                sector2: row['Sector_2']?.toString() || '',
+                sector3: row['Sector_3']?.toString() || '',
+                totalTime: row['Total_Lap_Time']?.toString() || '',
+                position: parseInt(row.Position) || 0,
                 purpleSectors: parseInt(row['Purple_Sectors']) || 0,
                 points: parseInt(row['Total_Points']) || 0,
                 timestamp: index,
@@ -463,11 +340,10 @@ async function loadRoundData() {
         
         const roundGroups = {};
         allData.forEach(row => {
-            const r = row.round != null ? row.round : 'Unknown';
-            if (!roundGroups[r]) {
-                roundGroups[r] = [];
+            if (!roundGroups[row.round]) {
+                roundGroups[row.round] = [];
             }
-            roundGroups[r].push(row);
+            roundGroups[row.round].push(row);
         });
         
         Object.keys(roundGroups).forEach(round => {
@@ -482,29 +358,26 @@ async function loadRoundData() {
         
     } catch (error) {
         console.error('Error loading round data:', error);
-        const el = document.getElementById('round-loading');
-        if (el) el.innerHTML = '<p style="color: red;">Error loading round data</p>';
     }
 }
 
 function displayRoundData(roundGroups, tracksMap, carsMap) {
     const container = document.getElementById('round-content');
-    if (!container) return;
     container.innerHTML = '';
 
     const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
     const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
     
     const sortedRounds = Object.keys(roundGroups).sort((a, b) => {
-        const numA = parseInt(a.toString().replace(/\D/g, ''), 10) || 0;
-        const numB = parseInt(b.toString().replace(/\D/g, ''), 10) || 0;
+        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.replace(/\D/g, '')) || 0;
         return numA - numB;
     });
     
     sortedRounds.forEach(round => {
         const results = roundGroups[round];
-        const trackLayout = results[0] ? (results[0].trackLayout || '') : '';
-        const car = results[0] ? (results[0].car || '') : '';
+        const trackLayout = results[0].trackLayout?.trim() || '';
+        const car = results[0].car?.trim() || '';
         
         const trackImage = tracksMap[trackLayout] || fallbackTrackImage;
         const carImage = carsMap[car] || fallbackCarImage;
@@ -606,10 +479,8 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
         container.appendChild(roundDiv);
     });
     
-    const loading = document.getElementById('round-loading');
-    const content = document.getElementById('round-content');
-    if (loading) loading.style.display = 'none';
-    if (content) content.style.display = 'block';
+    document.getElementById('round-loading').style.display = 'none';
+    document.getElementById('round-content').style.display = 'block';
 
     setTimeout(() => {
         document.querySelectorAll('.driver-link-round').forEach(link => {
@@ -625,9 +496,614 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 function toggleRound(round) {
     const details = document.getElementById(`details-${round}`);
     const icon = document.getElementById(`toggle-${round}`);
-    if (!details) return;
     details.classList.toggle('expanded');
-    if (icon) icon.classList.toggle('expanded');
+    icon.classList.toggle('expanded');
+}
+
+function formatTime(seconds) {
+    if (!seconds || seconds === "") return "";
+    const totalSeconds = parseFloat(seconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = Math.floor(totalSeconds % 60);
+    const milliseconds = Math.round((totalSeconds % 1) * 1000);
+    
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(secs).padStart(2, '0');
+    const ms = String(milliseconds).padStart(3, '0');
+    
+    return `${mm}:${ss},${ms}`;
+}
+
+// Helper function to convert time format MM:SS,mmm to seconds
+function timeToSeconds(timeStr) {
+    const parts = timeStr.split(':');
+    const minutes = parseInt(parts[0]);
+    const secondsParts = parts[1].split(',');
+    const seconds = parseInt(secondsParts[0]);
+    const milliseconds = parseInt(secondsParts[1]);
+    return minutes * 60 + seconds + (milliseconds / 1000);
+}
+
+// Authentication functions
+function login() {
+    const driverName = document.getElementById('driverNameInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    
+    if (!driverName || !password) {
+        alert('⚠️ Please enter both driver name and password.');
+        return;
+    }
+    
+    if (!ALLOWED_USERS[driverName]) {
+        alert('⛔ Access Denied\n\nDriver name "' + driverName + '" is not authorized.');
+        return;
+    }
+    
+    const storedPassword = ALLOWED_USERS[driverName].password;
+    
+    if (password !== storedPassword) {
+        alert('⛔ Incorrect password for ' + driverName + '. Please try again.');
+        return;
+    }
+    
+    currentUser = {
+        name: driverName,
+        email: ALLOWED_USERS[driverName].email
+    };
+    
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('userInfo').style.display = 'block';
+    document.getElementById('userName').textContent = currentUser.name;
+    
+    const profile = DRIVER_PROFILES[currentUser.email];
+    const photoContainer = document.getElementById('userPhotoContainer');
+    const photoElement = document.getElementById('userProfilePhoto');
+    const numberBadge = document.getElementById('userNumberBadge');
+    const iconFallback = document.getElementById('userIconFallback');
+    
+    if (profile && profile.photoUrl) {
+        let photoUrl = profile.photoUrl;
+        if (photoUrl.includes('drive.google.com/uc?id=')) {
+            const fileId = photoUrl.split('id=')[1];
+            photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
+        }
+        photoElement.src = photoUrl;
+        numberBadge.textContent = profile.number || '?';
+        photoContainer.style.display = 'block';
+        iconFallback.style.display = 'none';
+    } else {
+        photoContainer.style.display = 'none';
+        iconFallback.style.display = 'block';
+    }
+    
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+    updateSubmitTabVisibility();
+}
+
+function signOut() {
+    currentUser = null;
+    sessionStorage.removeItem('currentUser');
+    
+    document.getElementById('loginForm').style.display = 'flex';
+    document.getElementById('userInfo').style.display = 'none';
+    document.getElementById('driverNameInput').value = '';
+    document.getElementById('passwordInput').value = '';
+    
+    updateSubmitTabVisibility();
+}
+
+function updateSubmitTabVisibility() {
+    if (currentUser) {
+        document.getElementById('authWarning').style.display = 'none';
+        document.getElementById('lapTimeFormContainer').style.display = 'block';
+    } else {
+        document.getElementById('authWarning').style.display = 'block';
+        document.getElementById('lapTimeFormContainer').style.display = 'none';
+    }
+}
+
+async function checkExistingSession() {
+    const storedUser = sessionStorage.getItem('currentUser');
+    
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'block';
+        document.getElementById('userName').textContent = currentUser.name;
+        
+        await new Promise(resolve => {
+            const checkProfiles = setInterval(() => {
+                if (Object.keys(DRIVER_PROFILES).length > 0) {
+                    clearInterval(checkProfiles);
+                    resolve();
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(checkProfiles);
+                resolve();
+            }, 3000);
+        });
+        
+        const profile = DRIVER_PROFILES[currentUser.email];
+        const photoContainer = document.getElementById('userPhotoContainer');
+        const photoElement = document.getElementById('userProfilePhoto');
+        const numberBadge = document.getElementById('userNumberBadge');
+        const iconFallback = document.getElementById('userIconFallback');
+        
+        if (profile && profile.photoUrl) {
+            let photoUrl = profile.photoUrl;
+            if (photoUrl.includes('drive.google.com/uc?id=')) {
+                const fileId = photoUrl.split('id=')[1];
+                photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
+            }
+            photoElement.src = photoUrl;
+            numberBadge.textContent = profile.number || '?';
+            photoContainer.style.display = 'block';
+            iconFallback.style.display = 'none';
+        } else {
+            photoContainer.style.display = 'none';
+            iconFallback.style.display = 'block';
+        }
+        
+        updateSubmitTabVisibility();
+    }
+}
+
+// Sector time input handling
+function setupSectorTimeInputs() {
+    const sectorInputs = ['sector1', 'sector2', 'sector3'];
+    
+    sectorInputs.forEach(inputId => {
+        const secInput = document.getElementById(`${inputId}-sec`);
+        const msInput = document.getElementById(`${inputId}-ms`);
+        
+        if (secInput && msInput) {
+            [secInput, msInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+            
+            secInput.addEventListener('input', function() {
+                if (this.value.length >= 2) {
+                    msInput.focus();
+                }
+            });
+            
+            msInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0 && this.selectionStart === 0) {
+                    secInput.focus();
+                    setTimeout(() => {
+                        secInput.selectionStart = secInput.selectionEnd = secInput.value.length;
+                    }, 0);
+                }
+            });
+        }
+    });
+}
+
+function getSectorTimeValue(sectorId) {
+    const secInput = document.getElementById(`${sectorId}-sec`);
+    const msInput = document.getElementById(`${sectorId}-ms`);
+    
+    if (!secInput || !msInput) {
+        return '';
+    }
+    
+    const seconds = secInput.value || '';
+    const milliseconds = msInput.value || '';
+    
+    if (seconds === '' || milliseconds === '') {
+        return '';
+    }
+    
+    const paddedSeconds = seconds.padStart(2, '0');
+    const paddedMilliseconds = milliseconds.padStart(3, '0');
+    
+    const totalSeconds = parseInt(paddedSeconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+    
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
+}
+
+// Lap Time Submission - Cloud Functions handle calculations!
+document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        const messageDiv = document.getElementById('lapTimeMessage');
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Please sign in to submit lap times.';
+        return;
+    }
+    
+    const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
+    const roundNumber = parseInt(document.getElementById('roundNumber2').value);
+    const sector1 = getSectorTimeValue('sector1');
+    const sector2 = getSectorTimeValue('sector2');
+    const sector3 = getSectorTimeValue('sector3');
+    
+    const messageDiv = document.getElementById('lapTimeMessage');
+    
+    if (!sector1 || !sector2 || !sector3) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Please fill in all sector times.';
+        return;
+    }
+    
+    const timePattern = /^\d{2}:\d{2},\d{3}$/;
+    if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Invalid time format.';
+        return;
+    }
+    
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = '#d1ecf1';
+    messageDiv.style.color = '#0c5460';
+    messageDiv.textContent = '⏳ Submitting lap time...';
+    
+    try {
+        const sector1Seconds = timeToSeconds(sector1);
+        const sector2Seconds = timeToSeconds(sector2);
+        const sector3Seconds = timeToSeconds(sector3);
+        const totalTime = sector1Seconds + sector2Seconds + sector3Seconds;
+        
+        // Get round setup
+        const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+        const setupSnapshot = await window.firebaseGet(setupRef);
+        const setupData = setupSnapshot.val() || [];
+        
+        const roundSetup = setupData.find(s => 
+            s.Round_Number == roundNumber && s.Season == seasonNumber
+        );
+        
+        if (!roundSetup) {
+            throw new Error(`Round ${roundNumber} Season ${seasonNumber} not configured!`);
+        }
+        
+        // Create lap entry
+        const lapTimeData = {
+            Timestamp: new Date().toISOString(),
+            Driver: currentUser.name,
+            Season: seasonNumber,
+            Round: roundNumber,
+            Sector_1: sector1Seconds,
+            Sector_2: sector2Seconds,
+            Sector_3: sector3Seconds,
+            Total_Lap_Time: totalTime,
+            'Track-Layout': roundSetup['Track-Layout'],
+            Car_Name: roundSetup.Car_Name
+        };
+        
+        // Save to Firebase - Cloud Function calculates automatically!
+        const lapTimesRef = window.firebaseRef(window.firebaseDB, 'Form_responses_1');
+        await window.firebasePush(lapTimesRef, lapTimeData);
+        
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = `✅ Lap time submitted! Server is calculating...`;
+        
+        // Wait for Cloud Function to process
+        setTimeout(() => {
+            messageDiv.textContent = `✅ Lap time processed successfully!`;
+            document.getElementById('lapTimeForm').reset();
+            
+            // Refresh displays
+            loadLeaderboard();
+            loadRoundData();
+        }, 3000);
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ ' + error.message;
+    }
+});
+
+// Load tracks and cars
+async function loadTracksAndCars() {
+    const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
+    const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
+    
+    try {
+        const [tracksSnapshot, carsSnapshot] = await Promise.all([
+            window.firebaseGet(tracksRef),
+            window.firebaseGet(carsRef)
+        ]);
+        
+        const tracksData = tracksSnapshot.val() || [];
+        const carsData = carsSnapshot.val() || [];
+        
+        const trackSelect = document.getElementById('trackLayout');
+        trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
+        
+        tracksData.forEach(row => {
+            const trackCombo = row['Track_Combos'];
+            if (trackCombo && trackCombo.trim()) {
+                const option = document.createElement('option');
+                option.value = trackCombo.trim();
+                option.textContent = trackCombo.trim();
+                trackSelect.appendChild(option);
+            }
+        });
+        
+        const carSelect = document.getElementById('carName');
+        carSelect.innerHTML = '<option value="">-- Select Car --</option>';
+        
+        carsData.forEach(row => {
+            const carName = row['Car_Name'];
+            if (carName && carName.trim()) {
+                const option = document.createElement('option');
+                option.value = carName.trim();
+                option.textContent = carName.trim();
+                carSelect.appendChild(option);
+            }
+        });
+    } catch (error) {
+        console.error('Error loading tracks and cars:', error);
+    }
+}
+
+// Round Setup submission
+document.getElementById('roundSetupForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const roundNumber = parseInt(document.getElementById('roundNumber').value);
+    const trackLayout = document.getElementById('trackLayout').value;
+    const carName = document.getElementById('carName').value;
+    const season = parseInt(document.getElementById('season').value);
+    
+    const messageDiv = document.getElementById('setupMessage');
+    
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = '#d1ecf1';
+    messageDiv.style.color = '#0c5460';
+    messageDiv.textContent = '⏳ Saving round configuration...';
+    
+    try {
+        const setupData = {
+            Timestamp: new Date().toISOString(),
+            Round_Number: roundNumber,
+            'Track-Layout': trackLayout,
+            Car_Name: carName,
+            Season: season
+        };
+        
+        const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+        await window.firebasePush(setupRef, setupData);
+        
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = '✅ Round configuration saved!';
+        
+        document.getElementById('roundSetupForm').reset();
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+            loadRoundSetup();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error saving round setup:', error);
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Error: ' + error.message;
+    }
+});
+
+// Load Round Setup
+async function loadRoundSetup() {
+    const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+    const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+    const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
+    const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
+    
+    try {
+        const [setupSnapshot, roundDataSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
+            window.firebaseGet(setupRef),
+            window.firebaseGet(roundDataRef),
+            window.firebaseGet(tracksRef),
+            window.firebaseGet(carsRef)
+        ]);
+        
+        const setupData = (setupSnapshot.val() || [])
+            .filter(row => row['Round_Number'])
+            .map(row => ({
+                timestamp: new Date(row.Timestamp),
+                round: row['Round_Number'],
+                trackLayout: row['Track-Layout'],
+                car: row['Car_Name'],
+                season: row.Season
+            }));
+        
+        const uniqueRounds = {};
+        setupData.forEach(setup => {
+            if (!uniqueRounds[setup.round] || setup.timestamp > uniqueRounds[setup.round].timestamp) {
+                uniqueRounds[setup.round] = setup;
+            }
+        });
+        
+        const finalSetupData = Object.values(uniqueRounds);
+        
+        const roundData = (roundDataSnapshot.val() || [])
+            .filter(row => row.Round && row['Total_Lap_Time'])
+            .map(row => ({
+                round: row.Round,
+                driver: row.Driver,
+                sector1: parseFloat(row['Sector_1']) || 0,
+                sector2: parseFloat(row['Sector_2']) || 0,
+                sector3: parseFloat(row['Sector_3']) || 0,
+                totalTime: parseFloat(row['Total_Lap_Time']) || 0,
+                trackLayout: row['Track-Layout'],
+                car: row['Car_Name']
+            }));
+        
+        const tracksData = tracksSnapshot.val() || [];
+        const tracksMap = {};
+        tracksData.forEach(row => {
+            const trackCombo = row['Track_Combos'];
+            const trackImage = row['Track_Image_URL'];
+            if (trackCombo) {
+                tracksMap[trackCombo.trim()] = trackImage || 'https://via.placeholder.com/150x100?text=No+Image';
+            }
+        });
+        
+        const carsData = carsSnapshot.val() || [];
+        const carsMap = {};
+        carsData.forEach(row => {
+            const carName = row['Car_Name'];
+            const carImage = row['Car_Image_URL'];
+            if (carName) {
+                carsMap[carName.trim()] = carImage || 'https://via.placeholder.com/150x100?text=No+Image';
+            }
+        });
+        
+        displayRoundCards(finalSetupData, roundData, tracksMap, carsMap);
+        
+        document.getElementById('setup-cards-loading').style.display = 'none';
+        document.getElementById('setup-cards-content').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading round setup:', error);
+        document.getElementById('setup-cards-loading').innerHTML = `
+            <div style="background: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24;">
+                <strong>⚠️ Error loading round setup</strong>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
+    const container = document.getElementById('round-cards-grid');
+    container.innerHTML = '';
+
+    const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
+    const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
+    
+    if (setupData.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No rounds configured yet. Use the form below to add your first round!</p>';
+    } else {
+        setupData.forEach(setup => {
+            const roundTimes = roundData.filter(rd => rd.round === setup.round);
+            const comboTimes = roundData.filter(rd => 
+                rd.trackLayout === setup.trackLayout && rd.car === setup.car
+            );
+            
+            const bestRoundTime = roundTimes.length > 0 
+                ? roundTimes.reduce((best, current) => current.totalTime < best.totalTime ? current : best)
+                : null;
+            
+            const bestComboTime = comboTimes.length > 0
+                ? comboTimes.reduce((best, current) => current.totalTime < best.totalTime ? current : best)
+                : null;
+            
+            const bestSector1 = comboTimes.length > 0
+                ? comboTimes.reduce((best, current) => current.sector1 < best.sector1 ? current : best)
+                : null;
+            
+            const bestSector2 = comboTimes.length > 0
+                ? comboTimes.reduce((best, current) => current.sector2 < best.sector2 ? current : best)
+                : null;
+            
+            const bestSector3 = comboTimes.length > 0
+                ? comboTimes.reduce((best, current) => current.sector3 < best.sector3 ? current : best)
+                : null;
+            
+            const card = document.createElement('div');
+            card.className = 'round-card';
+            
+            const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
+            const carImage = carsMap[setup.car] || fallbackCarImage;
+            
+            card.innerHTML = `
+                <div class="round-card-header">
+                    <h3>Round ${setup.round}</h3>
+                    <p class="season-number" style="margin: 5px 0 0 0; opacity: 0.9;">${setup.season}</p>
+                </div>
+                
+                <div class="round-card-images">
+                    <div class="round-card-image-container">
+                        <img src="${trackImage}" alt="${setup.trackLayout}" onerror="this.src='${fallbackTrackImage}'">
+                        <p>${setup.trackLayout}</p>
+                    </div>
+                    <div class="round-card-image-container">
+                        <img src="${carImage}" alt="${setup.car}" onerror="this.src='${fallbackCarImage}'">
+                        <p>${setup.car}</p>
+                    </div>
+                </div>
+                
+                <div class="round-card-body">
+                    ${bestRoundTime ? `
+                    <div class="best-time-section">
+                        <h4>🏆 This Round's Best</h4>
+                        <div class="best-time-item gold">
+                            <div>
+                                <div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div>
+                                <div class="best-time-context">Round ${setup.round}</div>
+                            </div>
+                            <div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div>
+                        </div>
+                    </div>
+                    ` : '<div class="best-time-section"><p style="color: #999;">No lap times recorded yet</p></div>'}
+                    
+                    ${bestComboTime ? `
+                    <div class="best-time-section">
+                        <h4>⚡ All-Time Best (This Combo)</h4>
+                        <div class="best-time-item">
+                            <div>
+                                <div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div>
+                                <div class="best-time-context">Round ${bestComboTime.round}</div>
+                            </div>
+                            <div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div>
+                        </div>
+                        <div class="best-time-item">
+                            <div>
+                                <div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div>
+                                <div class="best-time-context">Round ${bestSector1.round}</div>
+                            </div>
+                            <div class="best-time-value">${formatTime(bestSector1.sector1)}</div>
+                        </div>
+                        <div class="best-time-item">
+                            <div>
+                                <div class="best-time-label">S2: ${getFormattedDriverName(bestSector2.driver)}</div>
+                                <div class="best-time-context">Round ${bestSector2.round}</div>
+                            </div>
+                            <div class="best-time-value">${formatTime(bestSector2.sector2)}</div>
+                        </div>
+                        <div class="best-time-item">
+                            <div>
+                                <div class="best-time-label">S3: ${getFormattedDriverName(bestSector3.driver)}</div>
+                                <div class="best-time-context">Round ${bestSector3.round}</div>
+                            </div>
+                            <div class="best-time-value">${formatTime(bestSector3.sector3)}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+    }
+    
+    document.getElementById('setup-cards-loading').style.display = 'none';
+    document.getElementById('setup-cards-content').style.display = 'block';
 }
 
 // Load Driver Stats
@@ -641,24 +1117,18 @@ async function loadDriverStats() {
             window.firebaseGet(leaderboardRef)
         ]);
         
-        const roundData = asArray(roundSnapshot.val());
-        const leaderboardData = asArray(leaderboardSnapshot.val());
+        const roundData = roundSnapshot.val() || [];
+        const leaderboardData = leaderboardSnapshot.val() || [];
         
-        // Get unique drivers (from leaderboard first, fallback to roundData)
-        let drivers = [];
-        try {
-            drivers = [...new Set(leaderboardData.map(r => r.Driver).filter(Boolean))];
-        } catch (e) {
-            drivers = [...new Set(roundData.map(r => r.Driver).filter(Boolean))];
-        }
+        // Get unique drivers
+        const drivers = [...new Set(leaderboardData.map(r => r.Driver))].filter(d => d);
         
         const driversContent = document.getElementById('drivers-content');
-        if (!driversContent) return;
         driversContent.innerHTML = '';
         
         drivers.forEach(driverName => {
-            const driverRoundData = roundData.filter(r => r && r.Driver === driverName);
-            const driverLeaderboard = leaderboardData.find(l => l && l.Driver === driverName) || {};
+            const driverRoundData = roundData.filter(r => r.Driver === driverName);
+            const driverLeaderboard = leaderboardData.find(l => l.Driver === driverName) || {};
             
             const totalPoints = parseInt(driverLeaderboard['Total_Points']) || 0;
             const totalPurpleSectors = parseInt(driverLeaderboard['Total_Purple_Sectors']) || 0;
@@ -666,35 +1136,28 @@ async function loadDriverStats() {
             
             const totalRounds = driverRoundData.length;
             const avgPosition = totalRounds > 0 
-                ? (driverRoundData.reduce((sum, r) => {
-                    const pos = parseInt(r.Position, 10);
-                    return sum + (isFinite(pos) ? pos : 0);
-                }, 0) / totalRounds).toFixed(1)
+                ? (driverRoundData.reduce((sum, r) => sum + (parseInt(r.Position) || 0), 0) / totalRounds).toFixed(1)
                 : 'N/A';
             
-            // Calculate Personal Best Lap (choose smallest numeric Total_Lap_Time)
+            // Calculate Personal Best Lap
             let personalBest = null;
             if (driverRoundData.length > 0) {
                 personalBest = driverRoundData.reduce((best, current) => {
-                    const currentTime = lapTimeToSeconds(current['Total_Lap_Time']);
-                    const bestTime = best ? lapTimeToSeconds(best['Total_Lap_Time']) : NaN;
-                    if (isFinite(currentTime) && (!isFinite(bestTime) || currentTime < bestTime)) {
-                        return current;
-                    }
-                    return best;
+                    const currentTime = parseFloat(current['Total_Lap_Time']) || Infinity;
+                    const bestTime = best ? parseFloat(best['Total_Lap_Time']) || Infinity : Infinity;
+                    return currentTime < bestTime ? current : best;
                 }, null);
             }
             
             // Calculate Track + Car Records (unique combinations with best times)
             const trackCarRecords = {};
             driverRoundData.forEach(record => {
-                const key = `${record['Track-Layout'] || ''} - ${record['Car_Name'] || ''}`;
-                const timeSec = lapTimeToSeconds(record['Total_Lap_Time']);
-                const currentBest = trackCarRecords[key];
-                if (!currentBest || (isFinite(timeSec) && timeSec < currentBest.time)) {
+                const key = `${record['Track-Layout']} - ${record['Car_Name']}`;
+                const time = parseFloat(record['Total_Lap_Time']) || Infinity;
+                if (!trackCarRecords[key] || time < trackCarRecords[key].time) {
                     trackCarRecords[key] = {
                         combo: key,
-                        time: isFinite(timeSec) ? timeSec : Infinity,
+                        time: time,
                         timeFormatted: formatTime(record['Total_Lap_Time'])
                     };
                 }
@@ -709,9 +1172,8 @@ async function loadDriverStats() {
                     trackCounts[track] = (trackCounts[track] || 0) + 1;
                 }
             });
-            const favoriteTrack = Object.keys(trackCounts).length > 0 
-                ? Object.keys(trackCounts).reduce((a, b) => (trackCounts[a] > trackCounts[b] ? a : b))
-                : 'N/A';
+            const favoriteTrack = Object.keys(trackCounts).reduce((a, b) => 
+                trackCounts[a] > trackCounts[b] ? a : b, Object.keys(trackCounts)[0] || 'N/A');
             
             // Calculate Favorite Car (most appearances)
             const carCounts = {};
@@ -721,37 +1183,33 @@ async function loadDriverStats() {
                     carCounts[car] = (carCounts[car] || 0) + 1;
                 }
             });
-            const favoriteCar = Object.keys(carCounts).length > 0
-                ? Object.keys(carCounts).reduce((a, b) => (carCounts[a] > carCounts[b] ? a : b))
-                : 'N/A';
+            const favoriteCar = Object.keys(carCounts).reduce((a, b) => 
+                carCounts[a] > carCounts[b] ? a : b, Object.keys(carCounts)[0] || 'N/A');
             
             // Calculate Head-to-Head Records
             const h2hRecords = {};
-            const allDrivers = [...new Set(asArray(roundData).map(r => r.Driver))].filter(d => d && d !== driverName);
+            const allDrivers = [...new Set(roundData.map(r => r.Driver))].filter(d => d && d !== driverName);
             
             allDrivers.forEach(opponent => {
                 const sharedRounds = {};
                 
-                // Group by round (only include rounds that have both drivers)
-                asArray(roundData).forEach(r => {
-                    if (!r || r.Round == null) return;
-                    const roundKey = r.Round;
-                    if (!sharedRounds[roundKey]) sharedRounds[roundKey] = {};
+                // Group by round
+                roundData.forEach(r => {
+                    if (!sharedRounds[r.Round]) {
+                        sharedRounds[r.Round] = {};
+                    }
                     if (r.Driver === driverName || r.Driver === opponent) {
-                        const pos = parseInt(r.Position, 10);
-                        sharedRounds[roundKey][r.Driver] = isFinite(pos) ? pos : null;
+                        sharedRounds[r.Round][r.Driver] = parseInt(r.Position) || 999;
                     }
                 });
                 
                 // Count wins/losses
                 let wins = 0;
                 let losses = 0;
-                Object.values(sharedRounds).forEach(roundObj => {
-                    const posA = roundObj[driverName];
-                    const posB = roundObj[opponent];
-                    if (posA != null && posB != null) { // explicit null/undefined check
-                        if (posA < posB) wins++;
-                        else if (posA > posB) losses++;
+                Object.values(sharedRounds).forEach(round => {
+                    if (round[driverName] && round[opponent]) {
+                        if (round[driverName] < round[opponent]) wins++;
+                        else if (round[driverName] > round[opponent]) losses++;
                     }
                 });
                 
@@ -764,8 +1222,8 @@ async function loadDriverStats() {
             let profile = null;
             for (const loginName in ALLOWED_USERS) {
                 if (loginName === driverName) {
-                    const email = ALLOWED_USERS[loginName]?.email;
-                    if (email && DRIVER_PROFILES[email]) {
+                    const email = ALLOWED_USERS[loginName].email;
+                    if (DRIVER_PROFILES[email]) {
                         profile = DRIVER_PROFILES[email];
                         break;
                     }
@@ -780,10 +1238,7 @@ async function loadDriverStats() {
                 ? `${profile.name.charAt(0)}. ${profile.surname}` 
                 : driverName;
             
-            // Championship position: robust handling
-            let championshipPosition = 'N/A';
-            const idx = leaderboardData.findIndex(l => l && l.Driver === driverName);
-            championshipPosition = idx >= 0 ? idx + 1 : 'N/A';
+            const championshipPosition = leaderboardData.findIndex(l => l.Driver === driverName) + 1 || 'N/A';
             
             const card = document.createElement('div');
             card.className = 'driver-card';
@@ -791,7 +1246,11 @@ async function loadDriverStats() {
             
             let photoHtml = '';
             if (profile && profile.photoUrl) {
-                let photoUrl = extractDriveThumbnail(profile.photoUrl) || profile.photoUrl;
+                let photoUrl = profile.photoUrl;
+                if (photoUrl.includes('drive.google.com/uc?id=')) {
+                    const fileId = photoUrl.split('id=')[1];
+                    photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
+                }
                 photoHtml = `
                     <div class="driver-photo-container-mobile">
                         <img src="${photoUrl}" alt="${formattedName}" class="driver-photo-mobile">
@@ -883,8 +1342,8 @@ async function loadDriverStats() {
                             </div>
                             ${personalBest ? `
                                 <div style="font-size: 0.9em; color: #666;">
-                                    ${personalBest['Track-Layout'] || ''}<br>
-                                    ${personalBest['Car_Name'] || ''}
+                                    ${personalBest['Track-Layout']}<br>
+                                    ${personalBest['Car_Name']}
                                 </div>
                             ` : ''}
                         </div>
@@ -920,15 +1379,12 @@ async function loadDriverStats() {
             driversContent.appendChild(card);
         });
         
-        const loadingEl = document.getElementById('drivers-loading');
-        const contentEl = document.getElementById('drivers-content');
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (contentEl) contentEl.style.display = 'block';
+        document.getElementById('drivers-loading').style.display = 'none';
+        document.getElementById('drivers-content').style.display = 'block';
         
     } catch (error) {
         console.error('Error loading driver stats:', error);
-        const el = document.getElementById('drivers-loading');
-        if (el) el.innerHTML = '<p style="color: red;">Error loading driver statistics</p>';
+        document.getElementById('drivers-loading').innerHTML = '<p style="color: red;">Error loading driver statistics</p>';
     }
 }
 
@@ -938,146 +1394,141 @@ async function loadProfile() {
     const profileWarning = document.getElementById('profileAuthWarning');
     
     if (!currentUser) {
-        if (profileWarning) profileWarning.style.display = 'block';
-        if (profileContent) profileContent.style.display = 'none';
+        profileWarning.style.display = 'block';
+        profileContent.style.display = 'none';
         return;
     }
     
-    if (profileWarning) profileWarning.style.display = 'none';
-    if (profileContent) profileContent.style.display = 'block';
+    profileWarning.style.display = 'none';
+    profileContent.style.display = 'block';
     
     // Load existing profile data
     const profile = DRIVER_PROFILES[currentUser.email] || {};
     
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-    setVal('profileName', profile.name || '');
-    setVal('profileSurname', profile.surname || '');
-    setVal('profileNumber', profile.number || '');
-    setVal('profilePhotoUrl', profile.photoUrl || '');
-    setVal('profileBio', profile.bio || '');
+    document.getElementById('profileName').value = profile.name || '';
+    document.getElementById('profileSurname').value = profile.surname || '';
+    document.getElementById('profileNumber').value = profile.number || '';
+    document.getElementById('profilePhotoUrl').value = profile.photoUrl || '';
+    document.getElementById('profileBio').value = profile.bio || '';
     
     // Show photo preview if exists
     if (profile.photoUrl) {
-        let photoUrl = extractDriveThumbnail(profile.photoUrl) || profile.photoUrl;
-        const img = document.getElementById('photoPreviewImg');
-        if (img) img.src = photoUrl;
-        const preview = document.getElementById('photoPreview');
-        if (preview) preview.style.display = 'block';
+        let photoUrl = profile.photoUrl;
+        if (photoUrl.includes('drive.google.com/uc?id=')) {
+            const fileId = photoUrl.split('id=')[1];
+            photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
+        }
+        document.getElementById('photoPreviewImg').src = photoUrl;
+        document.getElementById('photoPreview').style.display = 'block';
     }
 }
 
 // Profile form submission
-const profileFormEl = document.getElementById('profileForm');
-if (profileFormEl) {
-    profileFormEl.addEventListener('submit', async function(e) {
-        e.preventDefault();
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        alert('Please sign in to update your profile');
+        return;
+    }
+    
+    const messageDiv = document.getElementById('profileMessage');
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = '#d1ecf1';
+    messageDiv.style.color = '#0c5460';
+    messageDiv.textContent = '⏳ Saving profile...';
+    
+    try {
+        const profileData = {
+            Email: currentUser.email,
+            Name: document.getElementById('profileName').value.trim(),
+            Surname: document.getElementById('profileSurname').value.trim(),
+            Number: document.getElementById('profileNumber').value,
+            Photo_URL: document.getElementById('profilePhotoUrl').value.trim(),
+            Bio: document.getElementById('profileBio').value.trim()
+        };
         
-        if (!currentUser) {
-            alert('Please sign in to update your profile');
-            return;
+        // Find existing profile or create new
+        const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
+        const profilesSnapshot = await window.firebaseGet(profilesRef);
+        const profilesData = profilesSnapshot.val() || [];
+        
+        const existingIndex = profilesData.findIndex(p => p.Email === currentUser.email);
+        
+        if (existingIndex >= 0) {
+            // Update existing profile
+            const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${existingIndex}`);
+            await window.firebaseSet(profileRef, profileData);
+        } else {
+            // Create new profile
+            await window.firebasePush(profilesRef, profileData);
         }
         
-        const messageDiv = document.getElementById('profileMessage');
-        if (!messageDiv) return;
-        messageDiv.style.display = 'block';
-        messageDiv.style.background = '#d1ecf1';
-        messageDiv.style.color = '#0c5460';
-        messageDiv.textContent = '⏳ Saving profile...';
+        // Update local cache
+        DRIVER_PROFILES[currentUser.email] = {
+            name: profileData.Name,
+            surname: profileData.Surname,
+            number: profileData.Number.toString(),
+            photoUrl: profileData.Photo_URL,
+            bio: profileData.Bio
+        };
         
-        try {
-            const profileData = {
-                Email: currentUser.email,
-                Name: document.getElementById('profileName').value.trim(),
-                Surname: document.getElementById('profileSurname').value.trim(),
-                Number: document.getElementById('profileNumber').value,
-                Photo_URL: document.getElementById('profilePhotoUrl').value.trim(),
-                Bio: document.getElementById('profileBio').value.trim()
-            };
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = '✅ Profile saved successfully!';
+        
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
             
-            // Find existing profile or create new
-            const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
-            const profilesSnapshot = await window.firebaseGet(profilesRef);
-            const profilesDataRaw = profilesSnapshot.val() || [];
-            const profilesData = asArray(profilesDataRaw);
+            // Update user info display
+            const profile = DRIVER_PROFILES[currentUser.email];
+            const photoContainer = document.getElementById('userPhotoContainer');
+            const photoElement = document.getElementById('userProfilePhoto');
+            const numberBadge = document.getElementById('userNumberBadge');
+            const iconFallback = document.getElementById('userIconFallback');
             
-            const existingIndex = profilesData.findIndex(p => p && p.Email === currentUser.email);
-            
-            if (existingIndex >= 0) {
-                // Update existing profile (use index path because original code used array indices)
-                const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${existingIndex}`);
-                await window.firebaseSet(profileRef, profileData);
-            } else {
-                // Create new profile
-                await window.firebasePush(profilesRef, profileData);
-            }
-            
-            // Update local cache
-            DRIVER_PROFILES[currentUser.email] = {
-                name: profileData.Name,
-                surname: profileData.Surname,
-                number: profileData.Number != null ? profileData.Number.toString() : '',
-                photoUrl: profileData.Photo_URL,
-                bio: profileData.Bio
-            };
-            
-            messageDiv.style.background = '#d4edda';
-            messageDiv.style.color = '#155724';
-            messageDiv.textContent = '✅ Profile saved successfully!';
-            
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-                
-                // Update user info display
-                const profile = DRIVER_PROFILES[currentUser.email];
-                const photoContainer = document.getElementById('userPhotoContainer');
-                const photoElement = document.getElementById('userProfilePhoto');
-                const numberBadge = document.getElementById('userNumberBadge');
-                const iconFallback = document.getElementById('userIconFallback');
-                
-                if (profile && profile.photoUrl) {
-                    let photoUrl = extractDriveThumbnail(profile.photoUrl) || profile.photoUrl;
-                    if (photoElement) photoElement.src = photoUrl;
-                    if (numberBadge) numberBadge.textContent = profile.number || '?';
-                    if (photoContainer) photoContainer.style.display = 'block';
-                    if (iconFallback) iconFallback.style.display = 'none';
+            if (profile && profile.photoUrl) {
+                let photoUrl = profile.photoUrl;
+                if (photoUrl.includes('drive.google.com/uc?id=')) {
+                    const fileId = photoUrl.split('id=')[1];
+                    photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
                 }
-            }, 2000);
-            
-        } catch (error) {
-            console.error('Error saving profile:', error);
-            messageDiv.style.background = '#f8d7da';
-            messageDiv.style.color = '#721c24';
-            messageDiv.textContent = '❌ Error: ' + (error.message || 'Unknown');
-        }
-    });
-}
+                photoElement.src = photoUrl;
+                numberBadge.textContent = profile.number || '?';
+                photoContainer.style.display = 'block';
+                iconFallback.style.display = 'none';
+            }
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = '❌ Error: ' + error.message;
+    }
+});
 
 // Photo file input handler
-const photoFileEl = document.getElementById('photoFile');
-if (photoFileEl) {
-    photoFileEl.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+document.getElementById('photoFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('photoPreviewImg').src = e.target.result;
+        document.getElementById('photoPreview').style.display = 'block';
         
-        if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('photoPreviewImg');
-            if (img) img.src = e.target.result;
-            const preview = document.getElementById('photoPreview');
-            if (preview) preview.style.display = 'block';
-            
-            alert('⚠️ Photo upload to storage not yet implemented. Please upload to Google Drive and paste the sharing link in the Photo URL field.');
-        };
-        reader.readAsDataURL(file);
-    });
-}
+        alert('⚠️ Photo upload to storage not yet implemented. Please upload to Google Drive and paste the sharing link in the Photo URL field.');
+    };
+    reader.readAsDataURL(file);
+});
 
-// Event listeners on DOMContentLoaded
+// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('passwordInput');
     const driverNameInput = document.getElementById('driverNameInput');
