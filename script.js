@@ -980,116 +980,102 @@ document.getElementById('roundSetupForm').addEventListener('submit', async funct
 
 // Load Round Setup
 async function loadRoundSetup() {
-  // References to Firebase DB nodes
   const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
   const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
   const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
   const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
-
   try {
-    // Fetch all snapshots concurrently
     const [setupSnapshot, roundDataSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
       window.firebaseGet(setupRef),
       window.firebaseGet(roundDataRef),
       window.firebaseGet(tracksRef),
       window.firebaseGet(carsRef)
     ]);
-
-    // Convert Firebase snapshot objects to arrays for safe iteration
+    
+    // Convert Firebase object to array before processing
     const setupRaw = setupSnapshot.val() || {};
-    const setupData = Object.values(setupRaw);
+    const setupData = Object.values(setupRaw)
+      .filter(row => row.RoundNumber)
+      .map(row => ({
+        timestamp: new Date(row.Timestamp),
+        round: row.RoundNumber,
+        trackLayout: row["Track-Layout"],
+        car: row.CarName,
+        season: row.Season
+      }));
 
-    if (!setupData.length) {
-      const setupCardsElem = document.getElementById('setup-cards');
-      if (setupCardsElem) {
-        setupCardsElem.innerHTML = '<p>No rounds configured yet. Use the form below to add your first round!</p>';
-      }
-      return;
-    }
-
-    const roundRaw = roundDataSnapshot.val() || {};
-    const roundData = Object.values(roundRaw);
+    const roundDataRaw = roundDataSnapshot.val() || {};
+    const roundData = Object.values(roundDataRaw);
 
     const tracksRaw = tracksSnapshot.val() || {};
-    const tracksData = Object.values(tracksRaw);
+    const tracksMap = Object.values(tracksRaw).reduce((acc, track) => {
+      if (track.Layout) {
+        acc[track.Layout] = track.ImageURL || '';
+      }
+      return acc;
+    }, {});
 
     const carsRaw = carsSnapshot.val() || {};
-    const carsData = Object.values(carsRaw);
+    const carsMap = Object.values(carsRaw).reduce((acc, car) => {
+      if (car.Name) {
+        acc[car.Name] = car.ImageURL || '';
+      }
+      return acc;
+    }, {});
 
-    // Build maps for quick lookup of images or metadata (adjust keys as your schema)
-    const tracksMap = {};
-    tracksData.forEach(track => {
-      if (track.TrackCombo) tracksMap[track.TrackCombo.trim()] = track.TrackImageURL || '';
-    });
-
-    const carsMap = {};
-    carsData.forEach(car => {
-      if (car.CarName) carsMap[car.CarName.trim()] = car.CarImageURL || '';
-    });
-
-    // Prepare container safely with existence check
-    const cardsContainer = document.getElementById('setup-cards');
-    if (!cardsContainer) {
-      console.warn('Element with ID "setup-cards" not found in the DOM.');
+    if (!setupData.length) {
+      document.getElementById('setup-cards').innerHTML = '<p>No rounds configured yet. Use the form below to add your first round!</p>';
       return;
     }
+
+    const fallbackTrackImage = 'path/to/default-track-image.png';  // Adjust accordingly
+    const fallbackCarImage = 'path/to/default-car-image.png';      // Adjust accordingly
+
+    const cardsContainer = document.getElementById('setup-cards');
     cardsContainer.innerHTML = '';
 
-    // Populate cards with setup data and related best times or records
     setupData.forEach(setup => {
-      const roundTimes = roundData.filter(rd => rd.Round === setup.RoundNumber);
-      const comboTimes = roundData.filter(rd =>
-        rd.TrackLayout === setup['Track-Layout'] && rd.Car === setup.CarName
-      );
+      const roundTimes = roundData.filter(rd => rd.round === setup.round);
+      const comboTimes = roundData.filter(rd => rd.trackLayout === setup.trackLayout && rd.car === setup.car);
 
-      const bestRoundTime = roundTimes.length > 0 ? roundTimes.reduce((best, current) =>
-        current.TotalLapTime < best.TotalLapTime ? current : best) : null;
-
-      const bestComboTime = comboTimes.length > 0 ? comboTimes.reduce((best, current) =>
-        current.TotalLapTime < best.TotalLapTime ? current : best) : null;
-
-      const trackImage = tracksMap[setup['Track-Layout']] || 'default_track_img_url';
-      const carImage = carsMap[setup.CarName] || 'default_car_img_url';
+      const bestRoundTime = roundTimes.length > 0 ? roundTimes.reduce((best, current) => (current.totalTime < best.totalTime ? current : best)) : null;
+      const bestComboTime = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.totalTime < best.totalTime ? current : best)) : null;
+      const bestSector1 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector1 < best.sector1 ? current : best)) : null;
+      const bestSector2 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector2 < best.sector2 ? current : best)) : null;
+      const bestSector3 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector3 < best.sector3 ? current : best)) : null;
 
       const card = document.createElement('div');
       card.className = 'round-card';
 
+      const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
+      const carImage = carsMap[setup.car] || fallbackCarImage;
+
       card.innerHTML = `
-        <h3>Season: ${setup.Season}</h3>
-        <p>Round: ${setup.RoundNumber}</p>
-        <p>Track Layout: ${setup['Track-Layout']}</p>
-        <p>Car: ${setup.CarName}</p>
-        <img src="${trackImage}" alt="Track Image" />
-        <img src="${carImage}" alt="Car Image" />
-        <p>Best Round Time: ${bestRoundTime ? bestRoundTime.TotalLapTime : 'No lap times recorded'}</p>
-        <p>Best Combo Time: ${bestComboTime ? bestComboTime.TotalLapTime : 'No records'}</p>
+        <h3>Season: ${setup.season}</h3>
+        <p>Track Layout: ${setup.trackLayout}</p>
+        <p>Car: ${setup.car}</p>
+        <img src="${trackImage}" alt="${setup.trackLayout} track image" />
+        <img src="${carImage}" alt="${setup.car} car image" />
+        <p>Best Round Time: ${bestRoundTime ? bestRoundTime.totalTime : 'No lap times recorded yet'}</p>
+        <p>Best Combo Time: ${bestComboTime ? bestComboTime.totalTime : 'No records yet'}</p>
+        <p>Best Sector 1: ${bestSector1 ? bestSector1.sector1 : 'N/A'}</p>
+        <p>Best Sector 2: ${bestSector2 ? bestSector2.sector2 : 'N/A'}</p>
+        <p>Best Sector 3: ${bestSector3 ? bestSector3.sector3 : 'N/A'}</p>
       `;
 
       cardsContainer.appendChild(card);
     });
 
-    // Hide loading indicator if exists
-    const loadingElem = document.getElementById('setup-cards-loading');
-    if (loadingElem) loadingElem.style.display = 'none';
-
-    // Show content container if exists
-    const contentElem = document.getElementById('setup-cards-content');
-    if (contentElem) contentElem.style.display = 'block';
-
   } catch (error) {
     console.error("Error loading round setup", error);
-    const loadingElem = document.getElementById('setup-cards-loading');
-    if (loadingElem) {
-      loadingElem.innerHTML = `
-        <div style="background:#f8d7da; padding:20px; border-radius:10px; color:#721c24">
-          <strong>Error loading round setup</strong>
-          <p>${error.message}</p>
-        </div>
-      `;
-    }
+    document.getElementById('setup-cards-loading').innerHTML = `
+      <div style="background:#f8d7da; padding:20px; border-radius:10px; color:#721c24">
+        <strong>Error loading round setup</strong>
+        <p>${error.message}</p>
+      </div>
+    `;
   }
 }
-
 
 function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
     const container = document.getElementById('round-cards-grid');
