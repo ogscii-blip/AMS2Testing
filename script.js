@@ -870,30 +870,44 @@ async function loadTracksAndCars() {
         const tracksData = tracksSnapshot.val() || [];
         const carsData = carsSnapshot.val() || [];
         
-        const trackSelect = document.getElementById('trackLayout');
-        trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
-        
+        // Collect and sort tracks alphabetically
+        const tracks = [];
         tracksData.forEach(row => {
             const trackCombo = row['Track_Combos'];
             if (trackCombo && trackCombo.trim()) {
-                const option = document.createElement('option');
-                option.value = trackCombo.trim();
-                option.textContent = trackCombo.trim();
-                trackSelect.appendChild(option);
+                tracks.push(trackCombo.trim());
             }
         });
+        tracks.sort((a, b) => a.localeCompare(b));
+        
+        const trackSelect = document.getElementById('trackLayout');
+        trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
+        
+        tracks.forEach(track => {
+            const option = document.createElement('option');
+            option.value = track;
+            option.textContent = track;
+            trackSelect.appendChild(option);
+        });
+        
+        // Collect and sort cars alphabetically
+        const cars = [];
+        carsData.forEach(row => {
+            const carName = row['Car_Name'];
+            if (carName && carName.trim()) {
+                cars.push(carName.trim());
+            }
+        });
+        cars.sort((a, b) => a.localeCompare(b));
         
         const carSelect = document.getElementById('carName');
         carSelect.innerHTML = '<option value="">-- Select Car --</option>';
         
-        carsData.forEach(row => {
-            const carName = row['Car_Name'];
-            if (carName && carName.trim()) {
-                const option = document.createElement('option');
-                option.value = carName.trim();
-                option.textContent = carName.trim();
-                carSelect.appendChild(option);
-            }
+        cars.forEach(car => {
+            const option = document.createElement('option');
+            option.value = car;
+            option.textContent = car;
+            carSelect.appendChild(option);
         });
     } catch (error) {
         console.error('Error loading tracks and cars:', error);
