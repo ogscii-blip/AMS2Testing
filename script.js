@@ -976,8 +976,19 @@ async function loadRoundSetup() {
             window.firebaseGet(carsRef)
         ]);
         
-        const setupData = (setupSnapshot.val() || [])
-            .filter(row => row['Round_Number'])
+        // Convert to array if it's an object
+        let setupDataRaw = setupSnapshot.val();
+        let setupDataArray = [];
+        if (setupDataRaw) {
+            if (Array.isArray(setupDataRaw)) {
+                setupDataArray = setupDataRaw;
+            } else {
+                setupDataArray = Object.values(setupDataRaw);
+            }
+        }
+        
+        const setupData = setupDataArray
+            .filter(row => row && row['Round_Number'])
             .map(row => ({
                 timestamp: new Date(row.Timestamp),
                 round: row['Round_Number'],
@@ -995,8 +1006,19 @@ async function loadRoundSetup() {
         
         const finalSetupData = Object.values(uniqueRounds);
         
-        const roundData = (roundDataSnapshot.val() || [])
-            .filter(row => row.Round && row['Total_Lap_Time'])
+        // Convert roundData to array if it's an object
+        let roundDataRaw = roundDataSnapshot.val();
+        let roundDataArray = [];
+        if (roundDataRaw) {
+            if (Array.isArray(roundDataRaw)) {
+                roundDataArray = roundDataRaw;
+            } else {
+                roundDataArray = Object.values(roundDataRaw);
+            }
+        }
+        
+        const roundData = roundDataArray
+            .filter(row => row && row.Round && row['Total_Lap_Time'])
             .map(row => ({
                 round: row.Round,
                 driver: row.Driver,
@@ -1008,23 +1030,47 @@ async function loadRoundSetup() {
                 car: row['Car_Name']
             }));
         
-        const tracksData = tracksSnapshot.val() || [];
+        // Convert tracksData to array if it's an object
+        let tracksDataRaw = tracksSnapshot.val();
+        let tracksDataArray = [];
+        if (tracksDataRaw) {
+            if (Array.isArray(tracksDataRaw)) {
+                tracksDataArray = tracksDataRaw;
+            } else {
+                tracksDataArray = Object.values(tracksDataRaw);
+            }
+        }
+        
         const tracksMap = {};
-        tracksData.forEach(row => {
-            const trackCombo = row['Track_Combos'];
-            const trackImage = row['Track_Image_URL'];
-            if (trackCombo) {
-                tracksMap[trackCombo.trim()] = trackImage || 'https://via.placeholder.com/150x100?text=No+Image';
+        tracksDataArray.forEach(row => {
+            if (row) {
+                const trackCombo = row['Track_Combos'];
+                const trackImage = row['Track_Image_URL'];
+                if (trackCombo) {
+                    tracksMap[trackCombo.trim()] = trackImage || 'https://via.placeholder.com/150x100?text=No+Image';
+                }
             }
         });
         
-        const carsData = carsSnapshot.val() || [];
+        // Convert carsData to array if it's an object
+        let carsDataRaw = carsSnapshot.val();
+        let carsDataArray = [];
+        if (carsDataRaw) {
+            if (Array.isArray(carsDataRaw)) {
+                carsDataArray = carsDataRaw;
+            } else {
+                carsDataArray = Object.values(carsDataRaw);
+            }
+        }
+        
         const carsMap = {};
-        carsData.forEach(row => {
-            const carName = row['Car_Name'];
-            const carImage = row['Car_Image_URL'];
-            if (carName) {
-                carsMap[carName.trim()] = carImage || 'https://via.placeholder.com/150x100?text=No+Image';
+        carsDataArray.forEach(row => {
+            if (row) {
+                const carName = row['Car_Name'];
+                const carImage = row['Car_Image_URL'];
+                if (carName) {
+                    carsMap[carName.trim()] = carImage || 'https://via.placeholder.com/150x100?text=No+Image';
+                }
             }
         });
         
@@ -1043,7 +1089,6 @@ async function loadRoundSetup() {
         `;
     }
 }
-
 function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
     const container = document.getElementById('round-cards-grid');
     container.innerHTML = '';
