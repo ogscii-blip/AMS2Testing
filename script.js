@@ -117,7 +117,10 @@ let currentUser = null;
 async function loadConfig() {
     const configRef = window.firebaseRef(window.firebaseDB, 'Config');
     window.firebaseOnValue(configRef, (snapshot) => {
-        const configData = snapshot.val();
+        //const configData = snapshot.val();
+        const rawConfigData = snapshot.val() || {};
+        const configData = Object.values(rawConfigData);
+
         if (!configData) return;
 
         const configMap = {};
@@ -146,7 +149,10 @@ async function loadConfig() {
 
     const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
     window.firebaseOnValue(profilesRef, (snapshot) => {
-        const profilesData = snapshot.val();
+        //const profilesData = snapshot.val();
+        const profileRaw = snapshot.val() || {};
+        const profileData = Object.values(profilesRaw);
+
         if (!profilesData) return;
 
         DRIVER_PROFILES = {};
@@ -175,7 +181,11 @@ async function loadLeaderboard() {
     const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
     
     window.firebaseGet(leaderboardRef).then((snapshot) => {
-        const leaderboardData = snapshot.val();
+        //const leaderboardData = snapshot.val();
+        const configRaw = snapshot.val() || {};
+        const leaderboardData = Object.values(configRaw);
+
+        
         if (!leaderboardData) {
             console.log('No leaderboard data found');
             return;
@@ -218,7 +228,10 @@ async function loadLeaderboard() {
 async function populateSeasonFilter() {
     const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
     window.firebaseGet(setupRef).then((snapshot) => {
-        const setupData = snapshot.val();
+        //const setupData = snapshot.val();
+        const configRaw = snapshot.val() || {};
+        const csetupData = Object.values(configRaw);
+        
         if (!setupData) return;
         
         const seasons = [...new Set(setupData.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
@@ -241,7 +254,10 @@ async function populateSeasonFilter() {
 async function loadRoundsCount() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     window.firebaseGet(roundDataRef).then((snapshot) => {
-        const roundData = snapshot.val();
+        //const roundData = snapshot.val();#
+        const roundRaw = snapshot.val() || {};
+        const roundData = Object.values(roundRaw);
+        
         if (roundData) {
             const rounds = [...new Set(roundData.map(r => r.Round))];
             document.getElementById('totalRounds').textContent = rounds.length;
