@@ -724,6 +724,99 @@ header p {
     font-weight: bold;
 }
 
+/* Rules Tab Styling */
+.rules-section,
+.points-section,
+.purple-sectors-section,
+.championship-section,
+.seasons-section {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: #1565c0;
+}
+
+.points-section {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.purple-sectors-section {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.championship-section {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.seasons-section {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.rules-section h3,
+.points-section h3,
+.purple-sectors-section h3,
+.championship-section h3,
+.seasons-section h3 {
+    margin-bottom: 15px;
+}
+
+.rules-section ul,
+.seasons-section ul {
+    margin-left: 20px;
+    line-height: 1.8;
+}
+
+.points-section p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.points-table {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.points-table tr td {
+    padding: 10px;
+}
+
+.points-table tr td:first-child {
+    font-weight: bold;
+}
+
+.points-example {
+    margin-top: 15px;
+    font-size: 0.95em;
+    font-style: italic;
+}
+
+.purple-sectors-section p {
+    line-height: 1.8;
+}
+
+.note-text {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 5px;
+}
+
+.championship-section p {
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+.championship-section ol {
+    margin-left: 20px;
+    margin-top: 10px;
+    line-height: 1.8;
+}
+
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
     .driver-card {
