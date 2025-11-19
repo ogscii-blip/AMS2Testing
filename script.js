@@ -1052,7 +1052,8 @@ async function loadRoundSetup() {
                 sector3: parseFloat(row['Sector_3']) || 0,
                 totalTime: parseFloat(row['Total_Lap_Time']) || 0,
                 trackLayout: row['Track-Layout'],
-                car: row['Car_Name']
+                car: row['Car_Name'],
+                season: row.Season
             }));
         
         // Convert tracksData to array if it's an object
@@ -1114,6 +1115,7 @@ async function loadRoundSetup() {
         `;
     }
 }
+
 function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
     const container = document.getElementById('round-cards-grid');
     container.innerHTML = '';
@@ -1124,8 +1126,18 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
     if (setupData.length === 0) {
         container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No rounds configured yet. Use the form below to add your first round!</p>';
     } else {
+        // Sort setupData by season and round
+        setupData.sort((a, b) => {
+            if (a.season !== b.season) return a.season - b.season;
+            return a.round - b.round;
+        });
+        
         setupData.forEach(setup => {
-            const roundTimes = roundData.filter(rd => rd.round === setup.round);
+            // Filter round times by BOTH round number AND season
+            const roundTimes = roundData.filter(rd => 
+                rd.round === setup.round && rd.season === setup.season
+            );
+            
             const comboTimes = roundData.filter(rd => 
                 rd.trackLayout === setup.trackLayout && rd.car === setup.car
             );
@@ -1180,7 +1192,7 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
                         <div class="best-time-item gold">
                             <div>
                                 <div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div>
-                                <div class="best-time-context">Round ${setup.round}</div>
+                                <div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div>
                             </div>
                             <div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div>
                         </div>
@@ -1193,28 +1205,28 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
                         <div class="best-time-item">
                             <div>
                                 <div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div>
-                                <div class="best-time-context">Round ${bestComboTime.round}</div>
+                                <div class="best-time-context">Round ${bestComboTime.round}${bestComboTime.season ? ` - Season ${bestComboTime.season}` : ''}</div>
                             </div>
                             <div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div>
                         </div>
                         <div class="best-time-item">
                             <div>
                                 <div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div>
-                                <div class="best-time-context">Round ${bestSector1.round}</div>
+                                <div class="best-time-context">Round ${bestSector1.round}${bestSector1.season ? ` - Season ${bestSector1.season}` : ''}</div>
                             </div>
                             <div class="best-time-value">${formatTime(bestSector1.sector1)}</div>
                         </div>
                         <div class="best-time-item">
                             <div>
                                 <div class="best-time-label">S2: ${getFormattedDriverName(bestSector2.driver)}</div>
-                                <div class="best-time-context">Round ${bestSector2.round}</div>
+                                <div class="best-time-context">Round ${bestSector2.round}${bestSector2.season ? ` - Season ${bestSector2.season}` : ''}</div>
                             </div>
                             <div class="best-time-value">${formatTime(bestSector2.sector2)}</div>
                         </div>
                         <div class="best-time-item">
                             <div>
                                 <div class="best-time-label">S3: ${getFormattedDriverName(bestSector3.driver)}</div>
-                                <div class="best-time-context">Round ${bestSector3.round}</div>
+                                <div class="best-time-context">Round ${bestSector3.round}${bestSector3.season ? ` - Season ${bestSector3.season}` : ''}</div>
                             </div>
                             <div class="best-time-value">${formatTime(bestSector3.sector3)}</div>
                         </div>
@@ -1230,7 +1242,6 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
     document.getElementById('setup-cards-loading').style.display = 'none';
     document.getElementById('setup-cards-content').style.display = 'block';
 }
-
 // Load Driver Stats
 async function loadDriverStats() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
