@@ -75,7 +75,7 @@ function goToDriverProfile(driverName) {
     setTimeout(() => {
         const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
         if (card) {
-            card.scrollIntoView({ behavior: "smooth", block: "center" });
+            card.scrollIntoView({ behavior: "smooth", block: "start" });
             card.style.transition = "background 0.4s ease";
             const originalBg = card.style.background;
             card.style.background = "#fffa9c";
