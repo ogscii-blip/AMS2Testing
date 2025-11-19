@@ -802,10 +802,20 @@ document.getElementById('lapTimeForm').addEventListener('submit', async function
         // Get round setup
         const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
         const setupSnapshot = await window.firebaseGet(setupRef);
-        const setupData = setupSnapshot.val() || [];
         
-        const roundSetup = setupData.find(s => 
-            s.Round_Number == roundNumber && s.Season == seasonNumber
+        // Convert to array if it's an object
+        let setupDataRaw = setupSnapshot.val();
+        let setupDataArray = [];
+        if (setupDataRaw) {
+            if (Array.isArray(setupDataRaw)) {
+                setupDataArray = setupDataRaw;
+            } else {
+                setupDataArray = Object.values(setupDataRaw);
+            }
+        }
+        
+        const roundSetup = setupDataArray.find(s => 
+            s && s.Round_Number == roundNumber && s.Season == seasonNumber
         );
         
         if (!roundSetup) {
