@@ -1206,13 +1206,8 @@ async function loadDriverStats() {
             window.firebaseGet(leaderboardRef)
         ]);
         
-        //const roundData = roundSnapshot.val() || [];
-        const rawData = roundSnapshot.val() || {};
-        const roundData = Object.values(rawData);
-        
-        //const leaderboardData = leaderboardSnapshot.val() || [];
-        const leaderboardRaw = leaderboardSnapshot.val() || {};
-        const leaderboardData = Object.values(leaderboardRaw);
+        const roundData = roundSnapshot.val() || [];
+        const leaderboardData = leaderboardSnapshot.val() || [];
         
         // Get unique drivers
         const drivers = [...new Set(leaderboardData.map(r => r.Driver))].filter(d => d);
