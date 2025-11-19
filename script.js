@@ -296,17 +296,44 @@ async function loadRoundData() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
     const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
+    const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
     
     try {
-        const [roundSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
+        const [roundSnapshot, tracksSnapshot, carsSnapshot, setupSnapshot] = await Promise.all([
             window.firebaseGet(roundDataRef),
             window.firebaseGet(tracksRef),
-            window.firebaseGet(carsRef)
+            window.firebaseGet(carsRef),
+            window.firebaseGet(setupRef)
         ]);
         
         const roundData = roundSnapshot.val() || [];
         const tracksData = tracksSnapshot.val() || [];
         const carsData = carsSnapshot.val() || [];
+        
+        // Convert setupData to array for season dropdown
+        let setupDataRaw = setupSnapshot.val();
+        let setupDataArray = [];
+        if (setupDataRaw) {
+            if (Array.isArray(setupDataRaw)) {
+                setupDataArray = setupDataRaw;
+            } else {
+                setupDataArray = Object.values(setupDataRaw);
+            }
+        }
+        
+        // Populate season dropdown
+        const seasons = [...new Set(setupDataArray.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
+        const roundSeasonSelect = document.getElementById('roundSeasonSelect');
+        const currentSeasonValue = roundSeasonSelect.value;
+        
+        roundSeasonSelect.innerHTML = '<option value="">All Seasons</option>';
+        seasons.forEach(season => {
+            const option = document.createElement('option');
+            option.value = season;
+            option.textContent = `Season ${season}`;
+            roundSeasonSelect.appendChild(option);
+        });
+        roundSeasonSelect.value = currentSeasonValue;
         
         const tracksMap = {};
         tracksData.forEach(row => {
@@ -326,7 +353,14 @@ async function loadRoundData() {
             }
         });
         
-        const allData = roundData
+        // Filter by selected season
+        const selectedSeason = roundSeasonSelect.value;
+        let filteredRoundData = roundData;
+        if (selectedSeason) {
+            filteredRoundData = roundData.filter(row => row.Season == selectedSeason);
+        }
+        
+        const allData = filteredRoundData
             .filter(row => row.Driver && row.Position)
             .map((row, index) => {
                 // Parse purple sector values - handle string "TRUE" or boolean true
@@ -351,6 +385,7 @@ async function loadRoundData() {
                     timestamp: index,
                     trackLayout: row['Track-Layout'] || '',
                     car: row['Car_Name'] || '',
+                    season: row.Season,
                     purpleSector1: purpleSector1,
                     purpleSector2: purpleSector2,
                     purpleSector3: purpleSector3
@@ -359,15 +394,20 @@ async function loadRoundData() {
         
         const roundGroups = {};
         allData.forEach(row => {
-            if (!roundGroups[row.round]) {
-                roundGroups[row.round] = [];
+            const key = `S${row.season}-R${row.round}`;
+            if (!roundGroups[key]) {
+                roundGroups[key] = {
+                    season: row.season,
+                    round: row.round,
+                    results: []
+                };
             }
-            roundGroups[row.round].push(row);
+            roundGroups[key].results.push(row);
         });
         
         // Calculate purple sectors for each round
-        Object.keys(roundGroups).forEach(round => {
-            const results = roundGroups[round];
+        Object.keys(roundGroups).forEach(key => {
+            const results = roundGroups[key].results;
             
             // Find fastest sector times in this round
             const fastestSector1 = Math.min(...results.map(r => parseFloat(r.sector1) || Infinity));
@@ -382,7 +422,7 @@ async function loadRoundData() {
             });
             
             // Sort results
-            roundGroups[round].sort((a, b) => {
+            roundGroups[key].results.sort((a, b) => {
                 if (b.points !== a.points) return b.points - a.points;
                 if (b.purpleSectors !== a.purpleSectors) return b.purpleSectors - a.purpleSectors;
                 return a.timestamp - b.timestamp;
@@ -404,13 +444,18 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
     
     const sortedRounds = Object.keys(roundGroups).sort((a, b) => {
-        const numA = parseInt(a.replace(/\D/g, '')) || 0;
-        const numB = parseInt(b.replace(/\D/g, '')) || 0;
-        return numA - numB;
+        const [seasonA, roundA] = a.replace('S', '').split('-R').map(Number);
+        const [seasonB, roundB] = b.replace('S', '').split('-R').map(Number);
+        if (seasonA !== seasonB) return seasonA - seasonB;
+        return roundA - roundB;
     });
     
-    sortedRounds.forEach(round => {
-        const results = roundGroups[round];
+    sortedRounds.forEach(key => {
+        const roundGroup = roundGroups[key];
+        const results = roundGroup.results;
+        const season = roundGroup.season;
+        const round = roundGroup.round;
+        
         const trackLayout = results[0].trackLayout?.trim() || '';
         const car = results[0].car?.trim() || '';
         
@@ -426,10 +471,10 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
         
         const header = document.createElement('div');
         header.className = 'round-header';
-        header.onclick = () => toggleRound(round);
+        header.onclick = () => toggleRound(key);
         header.innerHTML = `
             <div style="flex: 1;">
-                <h3>Round ${round}</h3>
+                <h3>Round ${round} - Season ${season}</h3>
                 <div class="round-summary">${summary}</div>
             </div>
             <div class="round-banner-icons">
@@ -442,12 +487,12 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
                     <p>${car}</p>
                 </div>
             </div>
-            <span class="toggle-icon" id="toggle-${round}">▼</span>
+            <span class="toggle-icon" id="toggle-${key}">▼</span>
         `;
         
         const details = document.createElement('div');
         details.className = 'round-details';
-        details.id = `details-${round}`;
+        details.id = `details-${key}`;
         
         const table = document.createElement('table');
         table.className = 'leaderboard-table';
@@ -527,21 +572,20 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
         });
     }, 100);
     
-    // Auto-expand the latest (highest numbered) round
+    // Auto-expand the latest round
     if (sortedRounds.length > 0) {
-        const latestRound = sortedRounds[sortedRounds.length - 1]; // Last in sorted array is highest
+        const latestRound = sortedRounds[sortedRounds.length - 1];
         setTimeout(() => {
             const details = document.getElementById(`details-${latestRound}`);
             const icon = document.getElementById(`toggle-${latestRound}`);
             if (details && icon) {
                 details.classList.add('expanded');
                 icon.classList.add('expanded');
-                console.log(`Auto-expanded Round ${latestRound}`);
+                console.log(`Auto-expanded ${latestRound}`);
             }
         }, 200);
     }
 }
-
 function toggleRound(round) {
     const details = document.getElementById(`details-${round}`);
     const icon = document.getElementById(`toggle-${round}`);
