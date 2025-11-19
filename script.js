@@ -117,10 +117,7 @@ let currentUser = null;
 async function loadConfig() {
     const configRef = window.firebaseRef(window.firebaseDB, 'Config');
     window.firebaseOnValue(configRef, (snapshot) => {
-        //const configData = snapshot.val();
-        const rawConfigData = snapshot.val() || {};
-        const configData = Object.values(rawConfigData);
-
+        const configData = snapshot.val();
         if (!configData) return;
 
         const configMap = {};
@@ -149,10 +146,7 @@ async function loadConfig() {
 
     const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
     window.firebaseOnValue(profilesRef, (snapshot) => {
-        //const profilesData = snapshot.val();
-        const profileRaw = snapshot.val() || {};
-        const profileData = Object.values(profilesRaw);
-
+        const profilesData = snapshot.val();
         if (!profilesData) return;
 
         DRIVER_PROFILES = {};
@@ -181,11 +175,7 @@ async function loadLeaderboard() {
     const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
     
     window.firebaseGet(leaderboardRef).then((snapshot) => {
-        //const leaderboardData = snapshot.val();
-        const configRaw = snapshot.val() || {};
-        const leaderboardData = Object.values(configRaw);
-
-        
+        const leaderboardData = snapshot.val();
         if (!leaderboardData) {
             console.log('No leaderboard data found');
             return;
@@ -228,10 +218,7 @@ async function loadLeaderboard() {
 async function populateSeasonFilter() {
     const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
     window.firebaseGet(setupRef).then((snapshot) => {
-        //const setupData = snapshot.val();
-        const configRaw = snapshot.val() || {};
-        const csetupData = Object.values(configRaw);
-        
+        const setupData = snapshot.val();
         if (!setupData) return;
         
         const seasons = [...new Set(setupData.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
@@ -254,10 +241,7 @@ async function populateSeasonFilter() {
 async function loadRoundsCount() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     window.firebaseGet(roundDataRef).then((snapshot) => {
-        //const roundData = snapshot.val();#
-        const roundRaw = snapshot.val() || {};
-        const roundData = Object.values(roundRaw);
-        
+        const roundData = snapshot.val();
         if (roundData) {
             const rounds = [...new Set(roundData.map(r => r.Round))];
             document.getElementById('totalRounds').textContent = rounds.length;
@@ -312,17 +296,9 @@ async function loadRoundData() {
             window.firebaseGet(carsRef)
         ]);
         
-        //const roundData = roundSnapshot.val() || [];
-        const rawData = roundSnapshot.val() || {};
-        const roundData = Object.values(rawData);
-
-        //const tracksData = tracksSnapshot.val() || [];
-        const tracksRaw = tracksSnapshot.val() || {};
-        const tracksData = Object.values(tracksRaw);
-        
-        //const carsData = carsSnapshot.val() || [];
-        const carsRaw = carsSnapshot.val() || {};
-        const carsData = Object.values(carsRaw);
+        const roundData = roundSnapshot.val() || [];
+        const tracksData = tracksSnapshot.val() || [];
+        const carsData = carsSnapshot.val() || [];
         
         const tracksMap = {};
         tracksData.forEach(row => {
@@ -826,9 +802,7 @@ document.getElementById('lapTimeForm').addEventListener('submit', async function
         // Get round setup
         const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
         const setupSnapshot = await window.firebaseGet(setupRef);
-        //const setupData = setupSnapshot.val() || [];
-        const setupRaw = setupSnapshot.val() || {};
-        const setupData = Object.values(setupRaw);
+        const setupData = setupSnapshot.val() || [];
         
         const roundSetup = setupData.find(s => 
             s.Round_Number == roundNumber && s.Season == seasonNumber
@@ -893,13 +867,8 @@ async function loadTracksAndCars() {
             window.firebaseGet(carsRef)
         ]);
         
-        //const tracksData = tracksSnapshot.val() || [];
-        const tracksRaw = tracksSnapshot.val() || {};
-        const tracksData = Object.values(tracksRaw);
-        
-        //const carsData = carsSnapshot.val() || [];
-        const carsRaw = carsSnapshot.val() || {};
-        const carsData = Object.values(carsRaw);
+        const tracksData = tracksSnapshot.val() || [];
+        const carsData = carsSnapshot.val() || [];
         
         const trackSelect = document.getElementById('trackLayout');
         trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
@@ -980,101 +949,85 @@ document.getElementById('roundSetupForm').addEventListener('submit', async funct
 
 // Load Round Setup
 async function loadRoundSetup() {
-  const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
-  const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
-  const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
-  const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
-  try {
-    const [setupSnapshot, roundDataSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
-      window.firebaseGet(setupRef),
-      window.firebaseGet(roundDataRef),
-      window.firebaseGet(tracksRef),
-      window.firebaseGet(carsRef)
-    ]);
+    const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+    const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+    const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
+    const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
     
-    // Convert Firebase object to array before processing
-    const setupRaw = setupSnapshot.val() || {};
-    const setupData = Object.values(setupRaw)
-      .filter(row => row.RoundNumber)
-      .map(row => ({
-        timestamp: new Date(row.Timestamp),
-        round: row.RoundNumber,
-        trackLayout: row["Track-Layout"],
-        car: row.CarName,
-        season: row.Season
-      }));
-
-    const roundDataRaw = roundDataSnapshot.val() || {};
-    const roundData = Object.values(roundDataRaw);
-
-    const tracksRaw = tracksSnapshot.val() || {};
-    const tracksMap = Object.values(tracksRaw).reduce((acc, track) => {
-      if (track.Layout) {
-        acc[track.Layout] = track.ImageURL || '';
-      }
-      return acc;
-    }, {});
-
-    const carsRaw = carsSnapshot.val() || {};
-    const carsMap = Object.values(carsRaw).reduce((acc, car) => {
-      if (car.Name) {
-        acc[car.Name] = car.ImageURL || '';
-      }
-      return acc;
-    }, {});
-
-    if (!setupData.length) {
-      document.getElementById('setup-cards').innerHTML = '<p>No rounds configured yet. Use the form below to add your first round!</p>';
-      return;
+    try {
+        const [setupSnapshot, roundDataSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
+            window.firebaseGet(setupRef),
+            window.firebaseGet(roundDataRef),
+            window.firebaseGet(tracksRef),
+            window.firebaseGet(carsRef)
+        ]);
+        
+        const setupData = (setupSnapshot.val() || [])
+            .filter(row => row['Round_Number'])
+            .map(row => ({
+                timestamp: new Date(row.Timestamp),
+                round: row['Round_Number'],
+                trackLayout: row['Track-Layout'],
+                car: row['Car_Name'],
+                season: row.Season
+            }));
+        
+        const uniqueRounds = {};
+        setupData.forEach(setup => {
+            if (!uniqueRounds[setup.round] || setup.timestamp > uniqueRounds[setup.round].timestamp) {
+                uniqueRounds[setup.round] = setup;
+            }
+        });
+        
+        const finalSetupData = Object.values(uniqueRounds);
+        
+        const roundData = (roundDataSnapshot.val() || [])
+            .filter(row => row.Round && row['Total_Lap_Time'])
+            .map(row => ({
+                round: row.Round,
+                driver: row.Driver,
+                sector1: parseFloat(row['Sector_1']) || 0,
+                sector2: parseFloat(row['Sector_2']) || 0,
+                sector3: parseFloat(row['Sector_3']) || 0,
+                totalTime: parseFloat(row['Total_Lap_Time']) || 0,
+                trackLayout: row['Track-Layout'],
+                car: row['Car_Name']
+            }));
+        
+        const tracksData = tracksSnapshot.val() || [];
+        const tracksMap = {};
+        tracksData.forEach(row => {
+            const trackCombo = row['Track_Combos'];
+            const trackImage = row['Track_Image_URL'];
+            if (trackCombo) {
+                tracksMap[trackCombo.trim()] = trackImage || 'https://via.placeholder.com/150x100?text=No+Image';
+            }
+        });
+        
+        const carsData = carsSnapshot.val() || [];
+        const carsMap = {};
+        carsData.forEach(row => {
+            const carName = row['Car_Name'];
+            const carImage = row['Car_Image_URL'];
+            if (carName) {
+                carsMap[carName.trim()] = carImage || 'https://via.placeholder.com/150x100?text=No+Image';
+            }
+        });
+        
+        displayRoundCards(finalSetupData, roundData, tracksMap, carsMap);
+        
+        document.getElementById('setup-cards-loading').style.display = 'none';
+        document.getElementById('setup-cards-content').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading round setup:', error);
+        document.getElementById('setup-cards-loading').innerHTML = `
+            <div style="background: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24;">
+                <strong>⚠️ Error loading round setup</strong>
+                <p>${error.message}</p>
+            </div>
+        `;
     }
-
-    const fallbackTrackImage = 'path/to/default-track-image.png';  // Adjust accordingly
-    const fallbackCarImage = 'path/to/default-car-image.png';      // Adjust accordingly
-
-    const cardsContainer = document.getElementById('setup-cards');
-    cardsContainer.innerHTML = '';
-
-    setupData.forEach(setup => {
-      const roundTimes = roundData.filter(rd => rd.round === setup.round);
-      const comboTimes = roundData.filter(rd => rd.trackLayout === setup.trackLayout && rd.car === setup.car);
-
-      const bestRoundTime = roundTimes.length > 0 ? roundTimes.reduce((best, current) => (current.totalTime < best.totalTime ? current : best)) : null;
-      const bestComboTime = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.totalTime < best.totalTime ? current : best)) : null;
-      const bestSector1 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector1 < best.sector1 ? current : best)) : null;
-      const bestSector2 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector2 < best.sector2 ? current : best)) : null;
-      const bestSector3 = comboTimes.length > 0 ? comboTimes.reduce((best, current) => (current.sector3 < best.sector3 ? current : best)) : null;
-
-      const card = document.createElement('div');
-      card.className = 'round-card';
-
-      const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
-      const carImage = carsMap[setup.car] || fallbackCarImage;
-
-      card.innerHTML = `
-        <h3>Season: ${setup.season}</h3>
-        <p>Track Layout: ${setup.trackLayout}</p>
-        <p>Car: ${setup.car}</p>
-        <img src="${trackImage}" alt="${setup.trackLayout} track image" />
-        <img src="${carImage}" alt="${setup.car} car image" />
-        <p>Best Round Time: ${bestRoundTime ? bestRoundTime.totalTime : 'No lap times recorded yet'}</p>
-        <p>Best Combo Time: ${bestComboTime ? bestComboTime.totalTime : 'No records yet'}</p>
-        <p>Best Sector 1: ${bestSector1 ? bestSector1.sector1 : 'N/A'}</p>
-        <p>Best Sector 2: ${bestSector2 ? bestSector2.sector2 : 'N/A'}</p>
-        <p>Best Sector 3: ${bestSector3 ? bestSector3.sector3 : 'N/A'}</p>
-      `;
-
-      cardsContainer.appendChild(card);
-    });
-
-  } catch (error) {
-    console.error("Error loading round setup", error);
-    document.getElementById('setup-cards-loading').innerHTML = `
-      <div style="background:#f8d7da; padding:20px; border-radius:10px; color:#721c24">
-        <strong>Error loading round setup</strong>
-        <p>${error.message}</p>
-      </div>
-    `;
-  }
 }
 
 function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
@@ -1195,7 +1148,6 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
 }
 
 // Load Driver Stats
-// Load Driver Stats
 async function loadDriverStats() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
@@ -1206,13 +1158,8 @@ async function loadDriverStats() {
             window.firebaseGet(leaderboardRef)
         ]);
         
-        //const roundData = roundSnapshot.val() || [];
-        const rawData = roundSnapshot.val() || {};
-        const roundData = Object.values(rawData);
-        
-        //const leaderboardData = leaderboardSnapshot.val() || [];
-        const leaderboardRaw = leaderboardSnapshot.val() || {};
-        const leaderboardData = Object.values(leaderboardRaw);
+        const roundData = roundSnapshot.val() || [];
+        const leaderboardData = leaderboardSnapshot.val() || [];
         
         // Get unique drivers
         const drivers = [...new Set(leaderboardData.map(r => r.Driver))].filter(d => d);
@@ -1338,31 +1285,14 @@ async function loadDriverStats() {
             card.className = 'driver-card';
             card.setAttribute('data-driver', driverName);
             
-            // Desktop photo HTML
-            let desktopPhotoHtml = '';
+            let photoHtml = '';
             if (profile && profile.photoUrl) {
                 let photoUrl = profile.photoUrl;
                 if (photoUrl.includes('drive.google.com/uc?id=')) {
                     const fileId = photoUrl.split('id=')[1];
                     photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
                 }
-                desktopPhotoHtml = `
-                    <div class="driver-photo-container">
-                        <img src="${photoUrl}" alt="${formattedName}" class="driver-photo">
-                        <div class="driver-number-badge">${profile.number || '?'}</div>
-                    </div>
-                `;
-            }
-            
-            // Mobile photo HTML
-            let mobilePhotoHtml = '';
-            if (profile && profile.photoUrl) {
-                let photoUrl = profile.photoUrl;
-                if (photoUrl.includes('drive.google.com/uc?id=')) {
-                    const fileId = photoUrl.split('id=')[1];
-                    photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
-                }
-                mobilePhotoHtml = `
+                photoHtml = `
                     <div class="driver-photo-container-mobile">
                         <img src="${photoUrl}" alt="${formattedName}" class="driver-photo-mobile">
                         <div class="driver-number-badge-mobile">${profile.number || '?'}</div>
@@ -1401,18 +1331,8 @@ async function loadDriverStats() {
             }
             
             card.innerHTML = `
-                <!-- DESKTOP HEADER -->
-                <div class="driver-header">
-                    ${desktopPhotoHtml}
-                    <div class="driver-info">
-                        <h2>${formattedName}</h2>
-                        <div class="driver-position">Championship Position: ${championshipPosition}</div>
-                    </div>
-                </div>
-                
-                <!-- MOBILE HEADER -->
                 <div class="driver-header-mobile">
-                    ${mobilePhotoHtml}
+                    ${photoHtml}
                     <div class="driver-name-mobile">${formattedShortName}</div>
                     <div class="driver-stats-compact">
                         <div class="stat-compact-item">
@@ -1572,9 +1492,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
         // Find existing profile or create new
         const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
         const profilesSnapshot = await window.firebaseGet(profilesRef);
-        //const profilesData = profilesSnapshot.val() || [];
-        const profileRaw = profilesSnapshot.val() || {};
-        const profilesData = Object.values(profileRaw);
+        const profilesData = profilesSnapshot.val() || [];
         
         const existingIndex = profilesData.findIndex(p => p.Email === currentUser.email);
         
