@@ -1045,6 +1045,12 @@ async function loadRoundSetup() {
         
         // Use combination of round + season as unique key
         const uniqueRounds = {};
+
+        // Sort setupData by season and round
+        setupData.sort((a, b) => {
+            if (a.season !== b.season) return a.season - b.season;
+            return a.round - b.round;
+        });
         filteredSetupData.forEach(setup => {
             const key = `${setup.season}-${setup.round}`;
             if (!uniqueRounds[key] || setup.timestamp > uniqueRounds[key].timestamp) {
