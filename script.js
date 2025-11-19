@@ -218,10 +218,18 @@ async function loadLeaderboard() {
 async function populateSeasonFilter() {
     const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
     window.firebaseGet(setupRef).then((snapshot) => {
-        const setupData = snapshot.val();
-        if (!setupData) return;
+        const setupDataRaw = snapshot.val();
+        if (!setupDataRaw) return;
         
-        const seasons = [...new Set(setupData.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
+        // Convert to array if it's an object
+        let setupDataArray = [];
+        if (Array.isArray(setupDataRaw)) {
+            setupDataArray = setupDataRaw;
+        } else {
+            setupDataArray = Object.values(setupDataRaw);
+        }
+        
+        const seasons = [...new Set(setupDataArray.map(s => s.Season))].filter(s => s).sort((a, b) => a - b);
         
         const seasonSelect = document.getElementById('seasonSelect');
         const currentValue = seasonSelect.value;
