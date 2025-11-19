@@ -1717,3 +1717,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Hide Submit and Setup tabs on page load if not logged in
+document.addEventListener('DOMContentLoaded', function() {
+    if (!currentUser) {
+        const submitTab = document.querySelector('.tab-button[onclick*="submit"]');
+        const setupTab = document.querySelector('.tab-button[onclick*="setup"]');
+        if (submitTab) submitTab.style.display = 'none';
+        if (setupTab) setupTab.style.display = 'none';
+    }
+});
