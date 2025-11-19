@@ -642,12 +642,19 @@ function signOut() {
 }
 
 function updateSubmitTabVisibility() {
+    const submitTab = document.querySelector('.tab-button[onclick*="submit"]');
+    const setupTab = document.querySelector('.tab-button[onclick*="setup"]');
+    
     if (currentUser) {
         document.getElementById('authWarning').style.display = 'none';
         document.getElementById('lapTimeFormContainer').style.display = 'block';
+        if (submitTab) submitTab.style.display = 'block';
+        if (setupTab) setupTab.style.display = 'block';
     } else {
         document.getElementById('authWarning').style.display = 'block';
         document.getElementById('lapTimeFormContainer').style.display = 'none';
+        if (submitTab) submitTab.style.display = 'none';
+        if (setupTab) setupTab.style.display = 'none';
     }
 }
 
