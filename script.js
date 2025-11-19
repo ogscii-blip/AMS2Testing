@@ -1022,10 +1022,33 @@ async function loadRoundSetup() {
                 season: row.Season
             }));
         
+        // Populate season dropdown
+        const seasons = [...new Set(setupData.map(s => s.season))].filter(s => s).sort((a, b) => a - b);
+        const setupSeasonSelect = document.getElementById('setupSeasonSelect');
+        const currentSeasonValue = setupSeasonSelect.value;
+        
+        setupSeasonSelect.innerHTML = '<option value="">All Seasons</option>';
+        seasons.forEach(season => {
+            const option = document.createElement('option');
+            option.value = season;
+            option.textContent = `Season ${season}`;
+            setupSeasonSelect.appendChild(option);
+        });
+        setupSeasonSelect.value = currentSeasonValue;
+        
+        // Filter by selected season
+        const selectedSeason = setupSeasonSelect.value;
+        let filteredSetupData = setupData;
+        if (selectedSeason) {
+            filteredSetupData = setupData.filter(s => s.season == selectedSeason);
+        }
+        
+        // Use combination of round + season as unique key
         const uniqueRounds = {};
-        setupData.forEach(setup => {
-            if (!uniqueRounds[setup.round] || setup.timestamp > uniqueRounds[setup.round].timestamp) {
-                uniqueRounds[setup.round] = setup;
+        filteredSetupData.forEach(setup => {
+            const key = `${setup.season}-${setup.round}`;
+            if (!uniqueRounds[key] || setup.timestamp > uniqueRounds[key].timestamp) {
+                uniqueRounds[key] = setup;
             }
         });
         
