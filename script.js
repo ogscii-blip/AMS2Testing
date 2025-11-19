@@ -1148,6 +1148,7 @@ function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
 }
 
 // Load Driver Stats
+// Load Driver Stats
 async function loadDriverStats() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
@@ -1285,14 +1286,31 @@ async function loadDriverStats() {
             card.className = 'driver-card';
             card.setAttribute('data-driver', driverName);
             
-            let photoHtml = '';
+            // Desktop photo HTML
+            let desktopPhotoHtml = '';
             if (profile && profile.photoUrl) {
                 let photoUrl = profile.photoUrl;
                 if (photoUrl.includes('drive.google.com/uc?id=')) {
                     const fileId = photoUrl.split('id=')[1];
                     photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
                 }
-                photoHtml = `
+                desktopPhotoHtml = `
+                    <div class="driver-photo-container">
+                        <img src="${photoUrl}" alt="${formattedName}" class="driver-photo">
+                        <div class="driver-number-badge">${profile.number || '?'}</div>
+                    </div>
+                `;
+            }
+            
+            // Mobile photo HTML
+            let mobilePhotoHtml = '';
+            if (profile && profile.photoUrl) {
+                let photoUrl = profile.photoUrl;
+                if (photoUrl.includes('drive.google.com/uc?id=')) {
+                    const fileId = photoUrl.split('id=')[1];
+                    photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s200`;
+                }
+                mobilePhotoHtml = `
                     <div class="driver-photo-container-mobile">
                         <img src="${photoUrl}" alt="${formattedName}" class="driver-photo-mobile">
                         <div class="driver-number-badge-mobile">${profile.number || '?'}</div>
@@ -1331,8 +1349,18 @@ async function loadDriverStats() {
             }
             
             card.innerHTML = `
+                <!-- DESKTOP HEADER -->
+                <div class="driver-header">
+                    ${desktopPhotoHtml}
+                    <div class="driver-info">
+                        <h2>${formattedName}</h2>
+                        <div class="driver-position">Championship Position: ${championshipPosition}</div>
+                    </div>
+                </div>
+                
+                <!-- MOBILE HEADER -->
                 <div class="driver-header-mobile">
-                    ${photoHtml}
+                    ${mobilePhotoHtml}
                     <div class="driver-name-mobile">${formattedShortName}</div>
                     <div class="driver-stats-compact">
                         <div class="stat-compact-item">
