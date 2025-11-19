@@ -953,6 +953,17 @@ async function loadRoundSetup() {
     const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
     const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
     const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
+
+                const setupDataRaw = setupSnapshot.val() || {};
+                const setupDataArray = Object.values(setupDataRaw);
+                const setupData = setupDataArray.filter(row => row.RoundNumber).map(row => ({
+                  timestamp: new Date(row.Timestamp),
+                  round: row.RoundNumber,
+                  trackLayout: row["Track-Layout"],
+                  car: row.CarName,
+                  season: row.Season
+                }));
+
     
     try {
         const [setupSnapshot, roundDataSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
