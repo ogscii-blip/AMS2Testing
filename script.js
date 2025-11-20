@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.1
+   Optimized script.js for AMS2 Racing League - v4.2
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -8,6 +8,7 @@
    - FIXED: Form reset, rounds completed logic, placeholder images
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
+   - FIXED: Show initials and number badge when logged out
    ========================================================= */
 
 /* -----------------------------
@@ -952,11 +953,28 @@ async function loadDriverStats() {
 
       // Build card
       const card = document.createElement('div'); card.className = 'driver-card'; card.setAttribute('data-driver', driverName);
-      const desktopPhotoHtml = profile && profile.photoUrl ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` : '';
-      const mobilePhotoHtml = profile && profile.photoUrl ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` : '';
+      
+      // FIXED: Show different content based on login status
+      let desktopPhotoHtml = '';
+      let mobilePhotoHtml = '';
+      
+      if (currentUser) {
+        // Logged in: show photo if available
+        desktopPhotoHtml = profile && profile.photoUrl 
+          ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
+          : '';
+        mobilePhotoHtml = profile && profile.photoUrl 
+          ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` 
+          : '';
+      } else {
+        // Not logged in: show number badge instead of photo
+        const driverNumber = profile && profile.number ? profile.number : '?';
+        desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
+        mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
+      }
 
       const trackCarRecordsHtml = trackCarRecordsArray.length ? trackCarRecordsArray.map(r=> `<div class="record-item"><span>${r.combo}</span><strong>${r.timeFormatted}</strong></div>`).join('') : '<p style="color:#999;text-align:center">No records yet</p>';
-      const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
+      const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op, false)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
 
       card.innerHTML = `
         <div class="driver-header">${desktopPhotoHtml}<div class="driver-info"><h2>${formattedName}</h2><div class="driver-position">Championship Position: ${championshipPosition}</div></div></div>
@@ -1157,12 +1175,24 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
 /* -----------------------------
    Login / Session handling
    ----------------------------- */
-function getFormattedDriverName(driverLoginName) {
+function getFormattedDriverName(driverLoginName, includeNumber = true) {
   // driverLoginName is the username used in ALLOWED_USERS
   const profile = DRIVER_PROFILES[encodeKey(driverLoginName)];
-  if (profile && profile.surname && profile.name) {
-    return `${profile.name.charAt(0)}. ${profile.surname} - ${profile.number || ''}`;
+  
+  // If logged in and profile exists with full info, show formatted name with number
+  if (currentUser && profile && profile.surname && profile.name) {
+    const number = profile.number || '?';
+    return includeNumber 
+      ? `${profile.name.charAt(0)}. ${profile.surname} - ${number}`
+      : `${profile.name.charAt(0)}. ${profile.surname}`;
   }
+  
+  // If NOT logged in but profile exists, show initials only
+  if (!currentUser && profile && profile.surname && profile.name) {
+    return `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+  }
+  
+  // Fallback to username
   return driverLoginName;
 }
 
