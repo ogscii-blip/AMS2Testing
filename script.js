@@ -18,8 +18,12 @@ function showTab(tabName) {
     if (tabName === 'overall') {
         loadLeaderboard();
     } else if (tabName === 'round') {
-        loadRoundData();
-    } else if (tabName === 'drivers') {
+    // Preselect same season as overall tab
+    const selectedSeason = document.getElementById('seasonSelect').value;
+    document.getElementById('roundSeasonSelect').value = selectedSeason;
+    loadRoundData();
+}
+ else if (tabName === 'drivers') {
         loadDriverStats();
     } else if (tabName === 'profile') {
         loadProfile();
@@ -28,46 +32,72 @@ function showTab(tabName) {
     }
 }
 
-// Navigate to Round Results tab and expand the driver's latest round
-async function goToDriverCurrentRound(driverName) {
+// Navigate to Round Results tab and expand the driver's latest round (season-filtered)
+async function goToDriverCurrentRound(driverName) {  
+    // Switch tab
     showTab('round');
+
+    // Get selected season from Overall Standings tab
+    const selectedSeason = document.getElementById("seasonSelect").value;
+
+    // Pre-select same season in Round Results tab
+    const seasonDropdown = document.getElementById("roundSeasonSelect");
+    if (seasonDropdown) {
+        seasonDropdown.value = selectedSeason;
+    }
+
+    // Give the DOM some time to switch tabs
     await new Promise(resolve => setTimeout(resolve, 300));
 
+    // Load round data filtered by season
     if (typeof loadRoundData === "function") {
         await loadRoundData();
     }
 
+    // Give DOM time to render round groups
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const allRounds = [...document.querySelectorAll('[id^="details-"]')]
-        .map(e => parseInt(e.id.replace("details-", ""), 10))
-        .filter(n => !isNaN(n));
+    // Find only rounds inside this season
+    const roundElements = [...document.querySelectorAll(`[id^="details-S${selectedSeason}-R"]`)];
 
-    if (allRounds.length === 0) {
-        console.warn("No rounds found in DOM.");
+    if (roundElements.length === 0) {
+        console.warn(`No rounds found for season ${selectedSeason}.`);
         return;
     }
 
-    const latestRound = Math.max(...allRounds);
-    const details = document.getElementById(`details-${latestRound}`);
-    const icon = document.getElementById(`toggle-${latestRound}`);
+    // Extract round numbers correctly
+    const roundKeys = roundElements.map(el => el.id.replace("details-", "")); 
+    // Example: "S3-R6"
+
+    // Sort season rounds by numeric round value
+    const latestKey = roundKeys.sort((a, b) => {
+        const ra = parseInt(a.split("-R")[1], 10);
+        const rb = parseInt(b.split("-R")[1], 10);
+        return ra - rb;
+    }).pop(); // get highest round #
+
+    const details = document.getElementById(`details-${latestKey}`);
+    const icon = document.getElementById(`toggle-${latestKey}`);
 
     if (!details) {
         console.warn("Could not find latest round DOM element.");
         return;
     }
 
+    // Expand the latest round
     details.classList.add("expanded");
     if (icon) icon.classList.add("expanded");
 
     details.scrollIntoView({ behavior: "smooth", block: "start" });
 
+    // Highlight
     details.style.transition = "background 0.4s ease";
     details.style.background = "#fffa9c";
     setTimeout(() => {
         details.style.background = "";
     }, 700);
 }
+
 
 // Navigate to Driver Profile
 function goToDriverProfile(driverName) {
@@ -182,11 +212,36 @@ async function loadLeaderboard() {
         }
 
         let data = leaderboardData.filter(row => row.Driver);
-        
-        // Apply season filter if selected
-        if (selectedSeason) {
+
+        // Filter season
+        if (selectedSeason !== "") {
             data = data.filter(row => row.Season == selectedSeason);
         }
+        
+        // Group by driver and SUM per-season points
+        const driverMap = {};
+        data.forEach(row => {
+            const name = row.Driver;
+            if (!driverMap[name]) {
+                driverMap[name] = {
+                    driver: name,
+                    points: 0,
+                    purpleSectors: 0,
+                    wins: 0
+                };
+            }
+            driverMap[name].points += parseInt(row['Total_Points']) || 0;
+            driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
+            driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
+        });
+        
+        // Convert to array and sort
+        data = Object.values(driverMap).sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.wins !== a.wins) return b.wins - a.wins;
+            return b.purpleSectors - a.purpleSectors;
+        });
+
         
         data = data
             .map((row, index) => ({
@@ -205,9 +260,27 @@ async function loadLeaderboard() {
 
         displayLeaderboard(data);
         
+        //ocument.getElementById('totalDrivers').textContent = data.length;
+        //const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
+        //document.getElementById('totalPoints').textContent = totalPoints;
+
         document.getElementById('totalDrivers').textContent = data.length;
+
+        // Total points (per-season total)
         const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
         document.getElementById('totalPoints').textContent = totalPoints;
+        
+        // Rounds completed (per-season)
+        if (selectedSeason !== "") {
+            const rounds = leaderboardData
+                .filter(r => r.Season == selectedSeason)
+                .map(r => r.Round);
+            document.getElementById('totalRounds').textContent = new Set(rounds).size;
+        } else {
+            const rounds = leaderboardData.map(r => r.Round);
+            document.getElementById('totalRounds').textContent = new Set(rounds).size;
+        }
+
         
         loadRoundsCount();
         populateSeasonFilter();
