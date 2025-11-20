@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.8
+   Optimized script.js for AMS2 Racing League - v4.9
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -11,9 +11,10 @@
    - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
    - FIXED: Chart respects login status (no photos when logged out)
    - FIXED: Chart mobile-responsive with proper aspect ratio
-   - FIXED: Chart animation grows from origin (0,0)
+   - FIXED: Chart animation grows from origin (0,0) with dynamic Y-axis zoom
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
+   - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
    ========================================================= */
 
 /* -----------------------------
@@ -484,12 +485,19 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
         
         // Trigger the animation when graph comes into view
         if (chartInstance) {
-          // FIXED: Animate from origin (0,0) - lines grow from start
+          // Store the original max value for each dataset
+          const originalDatasets = chartInstance.data.datasets.map(dataset => ({
+            data: [...dataset.data]
+          }));
+          
+          // FIXED: Animate from origin (0,0) with dynamic Y-axis zoom
           chartInstance.options.animation = {
             duration: 2000,
             easing: 'easeInOutQuart',
             onProgress: function(animation) {
               const progress = animation.currentStep / animation.numSteps;
+              
+              let maxVisibleValue = 0;
               
               // Update each dataset to show progressive points
               chartInstance.data.datasets.forEach((dataset, idx) => {
@@ -497,8 +505,17 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
                 if (!meta || !meta.data) return;
                 
                 // Calculate how many points should be visible based on progress
-                const totalPoints = dataset.data.length;
+                const totalPoints = originalDatasets[idx].data.length;
                 const visiblePoints = Math.ceil(totalPoints * progress);
+                
+                // Update dataset data to show only visible points
+                dataset.data = originalDatasets[idx].data.slice(0, visiblePoints);
+                
+                // Track maximum visible value for Y-axis scaling
+                const maxInDataset = Math.max(...dataset.data.filter(v => v !== undefined));
+                if (maxInDataset > maxVisibleValue) {
+                  maxVisibleValue = maxInDataset;
+                }
                 
                 // Hide points beyond the progress
                 meta.data.forEach((point, i) => {
@@ -509,8 +526,24 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
                   }
                 });
               });
+              
+              // FIXED: Dynamically adjust Y-axis max to create zoom-out effect
+              // Add 10% padding above the max value for better visuals
+              const dynamicMax = Math.ceil(maxVisibleValue * 1.1);
+              if (chartInstance.options.scales.y.max !== dynamicMax) {
+                chartInstance.options.scales.y.max = dynamicMax;
+              }
             },
             onComplete: () => {
+              // Restore full datasets
+              chartInstance.data.datasets.forEach((dataset, idx) => {
+                dataset.data = [...originalDatasets[idx].data];
+              });
+              
+              // Reset Y-axis to auto-scale
+              delete chartInstance.options.scales.y.max;
+              chartInstance.update('none'); // Update without animation
+              
               // After line animation completes, animate the driver avatars
               animateDriverAvatars(chartInstance, rounds);
             }
