@@ -18,11 +18,15 @@ function showTab(tabName) {
     if (tabName === 'overall') {
         loadLeaderboard();
     } else if (tabName === 'round') {
-    // Preselect same season as overall tab
-    const selectedSeason = document.getElementById('seasonSelect').value;
-    document.getElementById('roundSeasonSelect').value = selectedSeason;
+    // inherit selected season from overall tab
+    const seasonOverall = document.getElementById("seasonSelect").value;
+    const roundDropdown = document.getElementById("roundSeasonSelect");
+    if (roundDropdown) {
+        roundDropdown.value = seasonOverall;
+    }
     loadRoundData();
 }
+
  else if (tabName === 'drivers') {
         loadDriverStats();
     } else if (tabName === 'profile') {
@@ -213,35 +217,37 @@ async function loadLeaderboard() {
 
         let data = leaderboardData.filter(row => row.Driver);
 
-        // Filter season
-        if (selectedSeason !== "") {
-            data = data.filter(row => row.Season == selectedSeason);
-        }
-        
-        // Group by driver and SUM per-season points
-        const driverMap = {};
-        data.forEach(row => {
-            const name = row.Driver;
-            if (!driverMap[name]) {
-                driverMap[name] = {
-                    driver: name,
-                    points: 0,
-                    purpleSectors: 0,
-                    wins: 0
-                };
-            }
-            driverMap[name].points += parseInt(row['Total_Points']) || 0;
-            driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
-            driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
-        });
-        
-        // Convert to array and sort
-        data = Object.values(driverMap).sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.wins !== a.wins) return b.wins - a.wins;
-            return b.purpleSectors - a.purpleSectors;
-        });
+// Apply season-filter
+if (selectedSeason !== "") {
+    data = data.filter(row => row.Season == selectedSeason);
+}
 
+// Build driver totals per selected season
+const driverMap = {};
+data.forEach(row => {
+    const name = row.Driver;
+    if (!driverMap[name]) {
+        driverMap[name] = {
+            driver: name,
+            points: 0,
+            purpleSectors: 0,
+            wins: 0
+        };
+    }
+    driverMap[name].points += parseInt(row['Total_Points']) || 0;
+    driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
+    driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
+});
+
+// Convert to array
+data = Object.values(driverMap);
+
+// Sort drivers
+data.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return b.purpleSectors - a.purpleSectors;
+});
         
         data = data
             .map((row, index) => ({
@@ -264,23 +270,25 @@ async function loadLeaderboard() {
         //const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
         //document.getElementById('totalPoints').textContent = totalPoints;
 
+        // CARD: Active Drivers
         document.getElementById('totalDrivers').textContent = data.length;
-
-        // Total points (per-season total)
-        const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
+        
+        // CARD: Total Points (season-filtered)
+        const totalPoints = data.reduce((sum, d) => sum + d.points, 0);
         document.getElementById('totalPoints').textContent = totalPoints;
         
-        // Rounds completed (per-season)
+        // CARD: Rounds Completed (season-filtered)
+        let filteredRounds;
         if (selectedSeason !== "") {
-            const rounds = leaderboardData
+            filteredRounds = leaderboardData
                 .filter(r => r.Season == selectedSeason)
                 .map(r => r.Round);
-            document.getElementById('totalRounds').textContent = new Set(rounds).size;
         } else {
-            const rounds = leaderboardData.map(r => r.Round);
-            document.getElementById('totalRounds').textContent = new Set(rounds).size;
+            filteredRounds = leaderboardData.map(r => r.Round);
         }
-
+        
+        document.getElementById('totalRounds').textContent =
+            new Set(filteredRounds).size;
         
         loadRoundsCount();
         populateSeasonFilter();
