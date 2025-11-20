@@ -15,7 +15,7 @@ const CACHE = {
   tracksMap: null,
   carsMap: null,
   setupArray: null,
-  roundDataArray: null,
+  roundDataArray: null,a
   leaderboardArray: null
 };
 
@@ -1232,11 +1232,6 @@ async function checkExistingSession() {
   applyUserUI();
 }
 
-// Call this on initial page load to hide tabs before login
-document.addEventListener('DOMContentLoaded', function() {
-  updateSubmitTabVisibility(); // Set initial state before any login
-  handleResponsiveUI();
-
 /* -----------------------------
    Small utilities & init
    ----------------------------- */
@@ -1290,7 +1285,11 @@ function handleResponsiveUI() {
 }
 
 window.addEventListener('resize', handleResponsiveUI);
+
+// Consolidated DOMContentLoaded listener
 document.addEventListener('DOMContentLoaded', function() {
+  // Set initial tab visibility before any login
+  updateSubmitTabVisibility();
   handleResponsiveUI();
   
   const passwordInput = document.getElementById('passwordInput');
