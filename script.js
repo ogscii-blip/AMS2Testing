@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.4
+   Optimized script.js for AMS2 Racing League - v4.6
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -8,8 +8,9 @@
    - FIXED: Form reset, rounds completed logic, placeholder images
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
-   - FIXED: Show initials and number badge when logged out (including driver profiles)
+   - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
    - NEW: Animated points progression graph with racing driver avatars
+   - NEW: Intersection Observer - chart animates only when scrolled into view
    ========================================================= */
 
 /* -----------------------------
@@ -310,9 +311,19 @@ function goToDriverProfile(driverName) {
 /* -----------------------------
    Points Progression Graph with Animated Driver Photos
    ----------------------------- */
+let chartInstance = null; // Store chart instance globally
+let chartAnimationTriggered = false; // Track if animation has run
+
 function createPointsProgressionGraph(roundData, selectedSeason) {
   const graphContainer = document.getElementById('points-progression-graph');
   if (!graphContainer) return;
+
+  // Destroy previous chart if it exists
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
+  chartAnimationTriggered = false;
 
   // Group data by driver and round to calculate cumulative points
   const driverRounds = {};
@@ -372,8 +383,8 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   graphContainer.innerHTML = '<canvas id="pointsChart"></canvas>';
   const ctx = document.getElementById('pointsChart').getContext('2d');
 
-  // Create the animated chart
-  const chart = new Chart(ctx, {
+  // Create the chart WITHOUT initial animation
+  chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: sortedRounds.map(r => `R${r}`),
@@ -383,14 +394,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: 2.5,
-      animation: {
-        duration: 2000,
-        easing: 'easeInOutQuart',
-        onComplete: () => {
-          // After line animation completes, animate the driver avatars
-          animateDriverAvatars(chart, sortedRounds);
-        }
-      },
+      animation: false, // Disable initial animation
       plugins: {
         legend: {
           display: true,
@@ -446,6 +450,47 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   });
 
   graphContainer.style.display = 'block';
+
+  // FIXED: Use Intersection Observer to trigger animation only when visible
+  setupChartVisibilityObserver(graphContainer, sortedRounds);
+}
+
+function setupChartVisibilityObserver(graphContainer, rounds) {
+  // Remove any existing observer
+  if (graphContainer._observer) {
+    graphContainer._observer.disconnect();
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !chartAnimationTriggered) {
+        chartAnimationTriggered = true;
+        
+        // Trigger the animation when graph comes into view
+        if (chartInstance) {
+          // Animate the chart lines
+          chartInstance.options.animation = {
+            duration: 2000,
+            easing: 'easeInOutQuart',
+            onComplete: () => {
+              // After line animation completes, animate the driver avatars
+              animateDriverAvatars(chartInstance, rounds);
+            }
+          };
+          chartInstance.update();
+        }
+        
+        // Disconnect observer after first trigger
+        observer.disconnect();
+      }
+    });
+  }, {
+    threshold: 0.3, // Trigger when 30% of the graph is visible
+    rootMargin: '0px'
+  });
+
+  observer.observe(graphContainer);
+  graphContainer._observer = observer;
 }
 
 function animateDriverAvatars(chart, rounds) {
