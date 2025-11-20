@@ -872,6 +872,10 @@ header p {
 
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
+    #points-progression-graph {
+        padding: 20px !important;
+    }
+
     .round-header {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -964,6 +968,15 @@ header p {
 
     #subtitle {
         font-size: 1em !important;
+    }
+
+    #points-progression-graph {
+        padding: 15px !important;
+        margin-bottom: 20px !important;
+    }
+
+    #pointsChart {
+        max-height: 400px;
     }
 
     header h1 {
