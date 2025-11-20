@@ -238,16 +238,61 @@ header p {
 .round-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
-    padding: 15px;
+    padding: 15px 20px;
     cursor: pointer;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 20px;
     align-items: center;
     transition: background 0.3s ease;
 }
 
 .round-header:hover {
     background: linear-gradient(135deg, #5568d3 0%, #65398b 100%);
+}
+
+.round-info-column h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2em;
+}
+
+.round-info-column p.season-number {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.round-info-column p.season-number::before {
+    content: "Season ";
+}
+
+.round-banner-column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.round-banner-icon {
+    text-align: center;
+    max-width: 150px;
+}
+
+.round-banner-icon img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px;
+    display: block;
+    margin: 0 auto;
+}
+
+.round-banner-icon p {
+    margin: 5px 0 0 0;
+    font-size: 0.85em;
+    opacity: 0.9;
+    word-wrap: break-word;
 }
 
 .round-header h3 {
@@ -428,31 +473,6 @@ header p {
     font-size: 0.85em;
     color: #666;
     font-style: italic;
-}
-
-.round-banner-icons {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.round-banner-icon {
-    text-align: center;
-}
-
-.round-banner-icon img {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px;
-}
-
-.round-banner-icon p {
-    margin: 5px 0 0 0;
-    font-size: 0.8em;
-    opacity: 0.9;
 }
 
 .driver-card {
@@ -819,6 +839,44 @@ header p {
 
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
+    .round-header {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .round-info-column h3 {
+        font-size: 1.1em;
+    }
+
+    .round-banner-column {
+        justify-content: flex-start;
+    }
+
+    .round-banner-icon {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 100%;
+    }
+
+    .round-banner-icon img {
+        width: 50px;
+        height: 50px;
+        margin: 0;
+    }
+
+    .round-banner-icon p {
+        text-align: left;
+        margin: 0;
+    }
+
+    .toggle-icon {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+    
     .driver-card {
         padding: 20px;
     }
