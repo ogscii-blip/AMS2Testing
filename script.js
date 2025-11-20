@@ -609,50 +609,96 @@ function animateDriverAvatars(chart, rounds) {
     }
   });
 
+  // Store the original chart update function to prevent interference
+  const originalUpdate = chart.update.bind(chart);
+
   function animate() {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / animationDuration, 1);
     
-    // FIXED: Calculate current position including R0
-    // Total points includes R0, so rounds.length + 1 total positions
-    const totalPositions = rounds.length + 1; // R0 + actual rounds
-    const currentPositionFloat = progress * rounds.length; // 0 to rounds.length
-    const currentRoundIndex = Math.floor(currentPositionFloat); // Which round we're at
-    const roundProgress = currentPositionFloat - currentRoundIndex; // Progress within that round
+    // Calculate current position including R0
+    const totalPositions = rounds.length + 1;
+    const currentPositionFloat = progress * rounds.length;
+    const currentRoundIndex = Math.floor(currentPositionFloat);
+    const roundProgress = currentPositionFloat - currentRoundIndex;
 
+    // Redraw the chart to clear previous frame
+    chart.update('none');
+
+    // Now draw our custom lines and avatars on top
     chart.data.datasets.forEach((dataset, idx) => {
       const avatar = avatars[idx];
       const meta = chart.getDatasetMeta(idx);
       if (!meta || !meta.data || meta.data.length === 0) return;
 
-      // Get current and next point (accounting for R0)
+      ctx.save();
+      
+      // Draw the line up to current progress
+      ctx.strokeStyle = dataset.borderColor;
+      ctx.lineWidth = 2; // Thinner line, not as thick as avatar
+      ctx.beginPath();
+      
+      // Draw from R0 to current position
+      for (let i = 0; i <= currentRoundIndex; i++) {
+        const point = meta.data[i];
+        if (!point) continue;
+        
+        const x = point.x;
+        const y = chart.scales.y.getPixelForValue(dataset.data[i]);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      
+      // Draw interpolated segment if in progress
+      if (currentRoundIndex < meta.data.length - 1 && roundProgress > 0) {
+        const currentPoint = meta.data[currentRoundIndex];
+        const nextPoint = meta.data[currentRoundIndex + 1];
+        
+        if (currentPoint && nextPoint) {
+          const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+          const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+          
+          const interpX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+          const interpY = currentY + (nextY - currentY) * roundProgress;
+          
+          ctx.lineTo(interpX, interpY);
+        }
+      }
+      
+      ctx.stroke();
+      ctx.restore();
+
+      // Now draw avatar at the tip of the line
       const currentPoint = meta.data[currentRoundIndex];
       const nextPoint = meta.data[currentRoundIndex + 1];
       
       if (!currentPoint) return;
 
-      // Calculate interpolated position
-      let x, y;
+      let tipX, tipY;
       if (nextPoint && roundProgress > 0) {
-        x = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+        tipX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
         const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
         const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
-        y = currentY + (nextY - currentY) * roundProgress;
+        tipY = currentY + (nextY - currentY) * roundProgress;
       } else {
-        x = currentPoint.x;
-        y = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+        tipX = currentPoint.x;
+        tipY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
       }
 
-      // Draw avatar at the tip of the line
+      // Draw avatar at tip
       ctx.save();
       
       if (avatar.hasPhoto && avatar.loaded) {
         // Draw circular clipped photo
         ctx.beginPath();
-        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(avatar.img, x - avatarSize / 2, y - avatarSize / 2, avatarSize, avatarSize);
+        ctx.drawImage(avatar.img, tipX - avatarSize / 2, tipY - avatarSize / 2, avatarSize, avatarSize);
         ctx.restore();
         
         // Draw border around photo
@@ -660,13 +706,13 @@ function animateDriverAvatars(chart, rounds) {
         ctx.strokeStyle = avatar.color;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       } else {
         // Draw number badge
         ctx.beginPath();
-        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
         ctx.fillStyle = avatar.color;
         ctx.fill();
         ctx.strokeStyle = '#fff';
@@ -677,7 +723,7 @@ function animateDriverAvatars(chart, rounds) {
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(avatar.driverNumber, x, y);
+        ctx.fillText(avatar.driverNumber, tipX, tipY);
       }
       
       ctx.restore();
@@ -688,10 +734,8 @@ function animateDriverAvatars(chart, rounds) {
     }
   }
 
-  // Start animation after a brief delay
-  setTimeout(() => {
-    requestAnimationFrame(animate);
-  }, 100);
+  // Start animation immediately
+  requestAnimationFrame(animate);
 }
 
 /* -----------------------------
