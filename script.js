@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.9
+   Optimized script.js for AMS2 Racing League - v5.0
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -11,7 +11,8 @@
    - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
    - FIXED: Chart respects login status (no photos when logged out)
    - FIXED: Chart mobile-responsive with proper aspect ratio
-   - FIXED: Chart animation grows from origin (0,0) with dynamic Y-axis zoom
+   - FIXED: Chart animation starts from 0 (not R1), grows smoothly
+   - FIXED: Infinite loop crash prevented with proper animation flag
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
    - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
@@ -490,6 +491,9 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
             data: [...dataset.data]
           }));
           
+          // Start with Y-axis at a small value
+          chartInstance.options.scales.y.max = 10;
+          
           // FIXED: Animate from origin (0,0) with dynamic Y-axis zoom
           chartInstance.options.animation = {
             duration: 2000,
@@ -501,38 +505,42 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
               
               // Update each dataset to show progressive points
               chartInstance.data.datasets.forEach((dataset, idx) => {
-                const meta = chartInstance.getDatasetMeta(idx);
-                if (!meta || !meta.data) return;
+                const originalData = originalDatasets[idx].data;
+                const totalPoints = originalData.length;
                 
-                // Calculate how many points should be visible based on progress
-                const totalPoints = originalDatasets[idx].data.length;
-                const visiblePoints = Math.ceil(totalPoints * progress);
+                // FIXED: Calculate visible points starting from 0 (not R1)
+                // Progress 0 = show nothing, Progress 1 = show all
+                const visiblePointsFloat = totalPoints * progress;
+                const visiblePoints = Math.floor(visiblePointsFloat);
                 
-                // Update dataset data to show only visible points
-                dataset.data = originalDatasets[idx].data.slice(0, visiblePoints);
+                // Create progressive data array starting with 0
+                if (progress === 0) {
+                  dataset.data = [0];
+                } else if (visiblePoints === 0) {
+                  // Show interpolated first point
+                  dataset.data = [originalData[0] * visiblePointsFloat];
+                } else {
+                  // Show completed points plus interpolated next point
+                  dataset.data = originalData.slice(0, visiblePoints);
+                  if (visiblePoints < totalPoints) {
+                    const fraction = visiblePointsFloat - visiblePoints;
+                    const interpolatedValue = originalData[visiblePoints - 1] + 
+                      (originalData[visiblePoints] - originalData[visiblePoints - 1]) * fraction;
+                    dataset.data.push(interpolatedValue);
+                  }
+                }
                 
                 // Track maximum visible value for Y-axis scaling
-                const maxInDataset = Math.max(...dataset.data.filter(v => v !== undefined));
+                const maxInDataset = Math.max(...dataset.data.filter(v => v !== undefined && isFinite(v)));
                 if (maxInDataset > maxVisibleValue) {
                   maxVisibleValue = maxInDataset;
                 }
-                
-                // Hide points beyond the progress
-                meta.data.forEach((point, i) => {
-                  if (i >= visiblePoints) {
-                    point.options.radius = 0;
-                  } else {
-                    point.options.radius = 6;
-                  }
-                });
               });
               
               // FIXED: Dynamically adjust Y-axis max to create zoom-out effect
-              // Add 10% padding above the max value for better visuals
-              const dynamicMax = Math.ceil(maxVisibleValue * 1.1);
-              if (chartInstance.options.scales.y.max !== dynamicMax) {
-                chartInstance.options.scales.y.max = dynamicMax;
-              }
+              // Add 20% padding above the max value for better visuals
+              const dynamicMax = Math.max(10, Math.ceil(maxVisibleValue * 1.2));
+              chartInstance.options.scales.y.max = dynamicMax;
             },
             onComplete: () => {
               // Restore full datasets
@@ -542,12 +550,19 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
               
               // Reset Y-axis to auto-scale
               delete chartInstance.options.scales.y.max;
-              chartInstance.update('none'); // Update without animation
+              
+              // FIXED: Update without triggering new animation
+              chartInstance.options.animation = false;
+              chartInstance.update('none');
               
               // After line animation completes, animate the driver avatars
-              animateDriverAvatars(chartInstance, rounds);
+              setTimeout(() => {
+                animateDriverAvatars(chartInstance, rounds);
+              }, 100);
             }
           };
+          
+          // Trigger the update with animation
           chartInstance.update();
         }
         
