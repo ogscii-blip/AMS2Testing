@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.3
+   Optimized script.js for AMS2 Racing League - v4.4
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -8,7 +8,7 @@
    - FIXED: Form reset, rounds completed logic, placeholder images
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
-   - FIXED: Show initials and number badge when logged out
+   - FIXED: Show initials and number badge when logged out (including driver profiles)
    - NEW: Animated points progression graph with racing driver avatars
    ========================================================= */
 
@@ -1196,8 +1196,20 @@ async function loadDriverStats() {
       const profileKey = encodeKey(driverName);
       const profile = DRIVER_PROFILES[profileKey] || {};
 
-      const formattedName = profile && profile.surname ? `${profile.name} ${profile.surname}` : driverName;
-      const formattedShortName = profile && profile.surname ? `${profile.name.charAt(0)}. ${profile.surname}` : driverName;
+      // FIXED: Format names based on login status
+      let formattedName, formattedShortName;
+      if (currentUser && profile && profile.surname) {
+        formattedName = `${profile.name} ${profile.surname}`;
+        formattedShortName = `${profile.name.charAt(0)}. ${profile.surname}`;
+      } else if (!currentUser && profile && profile.surname) {
+        // Not logged in: show initials only
+        formattedName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+        formattedShortName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+      } else {
+        formattedName = driverName;
+        formattedShortName = driverName;
+      }
+      
       const championshipPosition = champPos[driverName] || 'N/A';
 
       // Build card
