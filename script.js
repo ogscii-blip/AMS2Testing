@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.2
+   Optimized script.js for AMS2 Racing League - v4.3
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -9,6 +9,7 @@
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
    - FIXED: Show initials and number badge when logged out
+   - NEW: Animated points progression graph with racing driver avatars
    ========================================================= */
 
 /* -----------------------------
@@ -307,6 +308,251 @@ function goToDriverProfile(driverName) {
 }
 
 /* -----------------------------
+   Points Progression Graph with Animated Driver Photos
+   ----------------------------- */
+function createPointsProgressionGraph(roundData, selectedSeason) {
+  const graphContainer = document.getElementById('points-progression-graph');
+  if (!graphContainer) return;
+
+  // Group data by driver and round to calculate cumulative points
+  const driverRounds = {};
+  const allRounds = new Set();
+
+  roundData.forEach(row => {
+    const driver = row.Driver;
+    const round = parseInt(row.Round) || 0;
+    const points = parseInt(row['Total_Points']) || 0;
+    
+    if (!driverRounds[driver]) driverRounds[driver] = {};
+    if (!driverRounds[driver][round]) driverRounds[driver][round] = 0;
+    driverRounds[driver][round] += points;
+    allRounds.add(round);
+  });
+
+  const sortedRounds = Array.from(allRounds).sort((a,b) => a - b);
+  if (sortedRounds.length === 0) {
+    graphContainer.style.display = 'none';
+    return;
+  }
+
+  // Calculate cumulative points for each driver at each round
+  const datasets = [];
+  const colors = ['#667eea', '#e74c3c', '#f39c12', '#2ecc71', '#9b59b6', '#1abc9c'];
+  let colorIndex = 0;
+
+  Object.keys(driverRounds).forEach(driver => {
+    const cumulativePoints = [];
+    let total = 0;
+
+    sortedRounds.forEach(round => {
+      total += (driverRounds[driver][round] || 0);
+      cumulativePoints.push(total);
+    });
+
+    const profile = DRIVER_PROFILES[encodeKey(driver)] || {};
+    const driverColor = colors[colorIndex % colors.length];
+    colorIndex++;
+
+    datasets.push({
+      label: getFormattedDriverName(driver, false),
+      data: cumulativePoints,
+      borderColor: driverColor,
+      backgroundColor: driverColor + '33',
+      borderWidth: 3,
+      tension: 0.3,
+      pointRadius: 6,
+      pointHoverRadius: 8,
+      driverName: driver,
+      photoUrl: profile.photoUrl ? normalizePhotoUrl(profile.photoUrl) : null,
+      driverNumber: profile.number || '?'
+    });
+  });
+
+  // Clear previous chart
+  graphContainer.innerHTML = '<canvas id="pointsChart"></canvas>';
+  const ctx = document.getElementById('pointsChart').getContext('2d');
+
+  // Create the animated chart
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sortedRounds.map(r => `R${r}`),
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2.5,
+      animation: {
+        duration: 2000,
+        easing: 'easeInOutQuart',
+        onComplete: () => {
+          // After line animation completes, animate the driver avatars
+          animateDriverAvatars(chart, sortedRounds);
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+            font: { size: 12, weight: 'bold' }
+          }
+        },
+        title: {
+          display: true,
+          text: selectedSeason ? `Season ${selectedSeason} Points Progression` : 'Overall Points Progression',
+          font: { size: 18, weight: 'bold' },
+          padding: 20
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.parsed.y} points`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Total Points',
+            font: { size: 14, weight: 'bold' }
+          },
+          ticks: {
+            stepSize: 5
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Round',
+            font: { size: 14, weight: 'bold' }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+
+  graphContainer.style.display = 'block';
+}
+
+function animateDriverAvatars(chart, rounds) {
+  const canvas = chart.canvas;
+  const ctx = canvas.getContext('2d');
+  const avatarSize = 30;
+  const animationDuration = 2500;
+  const startTime = Date.now();
+
+  // Create avatar images
+  const avatars = chart.data.datasets.map(dataset => {
+    const img = new Image();
+    if (dataset.photoUrl) {
+      img.src = dataset.photoUrl;
+    }
+    return {
+      img: img,
+      loaded: false,
+      driverNumber: dataset.driverNumber,
+      color: dataset.borderColor,
+      hasPhoto: !!dataset.photoUrl
+    };
+  });
+
+  avatars.forEach((avatar, idx) => {
+    if (avatar.hasPhoto) {
+      avatar.img.onload = () => { avatar.loaded = true; };
+      avatar.img.onerror = () => { avatar.hasPhoto = false; };
+    }
+  });
+
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / animationDuration, 1);
+    
+    // Calculate current round index based on progress
+    const currentRoundIndex = Math.floor(progress * (rounds.length - 1));
+    const roundProgress = (progress * (rounds.length - 1)) - currentRoundIndex;
+
+    chart.data.datasets.forEach((dataset, idx) => {
+      const avatar = avatars[idx];
+      const currentPoints = dataset.data[currentRoundIndex] || 0;
+      const nextPoints = dataset.data[currentRoundIndex + 1] || currentPoints;
+      const interpolatedPoints = currentPoints + (nextPoints - currentPoints) * roundProgress;
+
+      // Get chart coordinates for this point
+      const meta = chart.getDatasetMeta(idx);
+      if (!meta || !meta.data[currentRoundIndex]) return;
+
+      const point = meta.data[currentRoundIndex];
+      const nextPoint = meta.data[currentRoundIndex + 1] || point;
+      
+      const x = point.x + (nextPoint.x - point.x) * roundProgress;
+      const y = chart.scales.y.getPixelForValue(interpolatedPoints);
+
+      // Draw avatar
+      ctx.save();
+      
+      if (avatar.hasPhoto && avatar.loaded) {
+        // Draw circular clipped photo
+        ctx.beginPath();
+        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar.img, x - avatarSize / 2, y - avatarSize / 2, avatarSize, avatarSize);
+        ctx.restore();
+        
+        // Draw border around photo
+        ctx.save();
+        ctx.strokeStyle = avatar.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        // Draw number badge
+        ctx.beginPath();
+        ctx.arc(x, y, avatarSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = avatar.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(avatar.driverNumber, x, y);
+      }
+      
+      ctx.restore();
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+
+  // Start animation after a brief delay
+  setTimeout(() => {
+    requestAnimationFrame(animate);
+  }, 100);
+}
+
+/* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
 async function loadLeaderboard() {
@@ -385,6 +631,9 @@ async function loadLeaderboard() {
     
     const completedRounds = Object.values(roundSubmissions).filter(drivers => drivers.size >= 3).length;
     document.getElementById('totalRounds').textContent = completedRounds;
+
+    // FIXED: Create animated points progression graph
+    createPointsProgressionGraph(filteredRoundData, selectedSeason);
 
     // Populate season dropdowns from cached setup (but call populate if needed)
     populateSeasonFilter();
