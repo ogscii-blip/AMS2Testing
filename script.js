@@ -284,14 +284,38 @@ async function loadLeaderboard() {
     // Filter by season (or all seasons)
     const filtered = selectedSeason ? leaderboardData.filter(r => String(r.Season) == String(selectedSeason)) : leaderboardData.slice();
 
-    // Build driver totals (sum of rows for selected season)
+    // FIXED: Build driver totals correctly per season
     const driverMap = {};
-    filtered.forEach(row => {
-      const name = row.Driver;
-      if (!driverMap[name]) driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
-      driverMap[name].points += parseInt(row['Total_Points']) || 0;
-      driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
-      driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
+    
+    if (selectedSeason) {
+      // For specific season: sum only that season's data
+      filtered.forEach(row => {
+        const name = row.Driver;
+        if (!driverMap[name]) driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
+        driverMap[name].points += parseInt(row['Total_Points']) || 0;
+        driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
+        driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
+      });
+    } else {
+      // For all seasons: group by driver and sum across all their season entries
+      leaderboardData.forEach(row => {
+        const name = row.Driver;
+        if (!driverMap[name]) driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
+        driverMap[name].points += parseInt(row['Total_Points']) || 0;
+        driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
+        driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
+      });
+    }
+
+    // FIXED: Include drivers who have submitted laps but may not be in leaderboard yet
+    const filteredLaps = selectedSeason 
+      ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
+      : rawLapsData;
+    
+    filteredLaps.forEach(lap => {
+      if (!driverMap[lap.Driver]) {
+        driverMap[lap.Driver] = { driver: lap.Driver, points: 0, purpleSectors: 0, wins: 0 };
+      }
     });
 
     const driversArr = Object.values(driverMap);
@@ -318,10 +342,6 @@ async function loadLeaderboard() {
     document.getElementById('totalPoints').textContent = totalPoints;
 
     // FIXED: Rounds completed - count rounds with 3+ submissions (completed rounds)
-    const filteredLaps = selectedSeason 
-      ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
-      : rawLapsData;
-    
     const roundSubmissions = {};
     filteredLaps.forEach(lap => {
       const key = `S${lap.Season}-R${lap.Round}`;
@@ -549,13 +569,22 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     const header = document.createElement('div');
     header.className = 'round-header';
     header.innerHTML = `
-      <div style="flex:1">
-        <h3>Round ${round} - Season ${season}</h3>
+      <div class="round-info-column">
+        <h3>Round ${round}</h3>
+        <p class="season-number">${season}</p>
         <div class="round-summary">${summary}</div>
       </div>
-      <div class="round-banner-icons">
-        <div class="round-banner-icon"><img src="${trackImage}" alt="${trackLayout}" onerror="this.src='${fallbackTrackImage}'"><p>${trackLayout}</p></div>
-        <div class="round-banner-icon"><img src="${carImage}" alt="${car}" onerror="this.src='${fallbackCarImage}'"><p>${car}</p></div>
+      <div class="round-banner-column">
+        <div class="round-banner-icon">
+          <img src="${trackImage}" alt="${trackLayout}" onerror="this.src='${fallbackTrackImage}'">
+          <p>${trackLayout}</p>
+        </div>
+      </div>
+      <div class="round-banner-column">
+        <div class="round-banner-icon">
+          <img src="${carImage}" alt="${car}" onerror="this.src='${fallbackCarImage}'">
+          <p>${car}</p>
+        </div>
       </div>
       <span class="toggle-icon" id="toggle-${key}">▼</span>
     `;
@@ -618,11 +647,12 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     });
   });
 
-  // Auto-expand first round if only one
-  if (sortedKeys.length === 1) {
+  // FIXED: Auto-expand the LATEST round (last in sorted list)
+  if (sortedKeys.length > 0) {
     setTimeout(() => {
-      const d = document.getElementById(`details-${sortedKeys[0]}`);
-      const i = document.getElementById(`toggle-${sortedKeys[0]}`);
+      const latestKey = sortedKeys[sortedKeys.length - 1]; // Get the last (latest) round
+      const d = document.getElementById(`details-${latestKey}`);
+      const i = document.getElementById(`toggle-${latestKey}`);
       if (d) d.classList.add('expanded');
       if (i) i.classList.add('expanded');
     }, 150);
@@ -1045,7 +1075,7 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     const s3 = parseFloat(s3sec) + parseFloat(s3ms)/1000;
     const totalTime = s1 + s2 + s3;
 
-    const roundNumber = parseInt(document.getElementById('roundNumber').value);
+    const roundNumber = parseInt(document.getElementById('roundNumber2').value);
     const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
     if (!roundNumber || !seasonNumber) throw new Error('Please select both round and season');
 
