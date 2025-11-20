@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.0
+   Optimized script.js for AMS2 Racing League - v4.1
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -7,6 +7,7 @@
    - Cleaner helpers & faster DOM updates
    - FIXED: Form reset, rounds completed logic, placeholder images
    - FIXED: Per-season calculations, tab visibility, descending sort
+   - FIXED: Pre-select latest season WITH lap submissions only
    ========================================================= */
 
 /* -----------------------------
@@ -211,30 +212,45 @@ async function preSelectCurrentSeasonInRoundResults() {
   // If roundDropdown already has a value, keep it (user may have set it)
   if (roundDropdown.value) return;
   
-  // Otherwise, set to current (latest) season
-  if (!CACHE.setupArray) {
-    const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
-    CACHE.setupArray = toArray(setupSnap.val());
+  // Find the latest season that has actual lap submissions
+  const rawLapsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'));
+  const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver && r.Season && r.Round);
+  
+  if (rawLapsData.length === 0) {
+    // No laps submitted yet, don't pre-select any season
+    return;
   }
-  const seasons = [...new Set(CACHE.setupArray.map(s => s.Season))].filter(s=>s).sort((a,b)=>b-a);
-  const currentSeason = seasons[0] || '';
+  
+  // Get unique seasons from submitted laps and sort descending
+  const seasonsWithLaps = [...new Set(rawLapsData.map(lap => lap.Season))].filter(s=>s).sort((a,b)=>b-a);
+  const currentSeason = seasonsWithLaps[0] || '';
+  
   if (currentSeason) roundDropdown.value = currentSeason;
 }
 
-/* goToDriverCurrentRound: uses season selected in Overall, or latest season if "All Seasons" */
+/* goToDriverCurrentRound: uses season selected in Overall, or latest season with laps if "All Seasons" */
 async function goToDriverCurrentRound(driverName) {
   showTab('round');
 
   let selectedSeason = document.getElementById('seasonSelect')?.value || '';
   
-  // FIXED: If "All Seasons" selected, find the latest season
+  // FIXED: If "All Seasons" selected, find the latest season with actual lap submissions
   if (!selectedSeason) {
-    if (!CACHE.setupArray) {
-      const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
-      CACHE.setupArray = toArray(setupSnap.val());
+    const rawLapsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'));
+    const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver && r.Season && r.Round);
+    
+    if (rawLapsData.length > 0) {
+      const seasonsWithLaps = [...new Set(rawLapsData.map(lap => lap.Season))].filter(s=>s).sort((a,b)=>b-a);
+      selectedSeason = seasonsWithLaps[0] || ''; // Use latest season with laps
+    } else {
+      // Fallback to configured seasons if no laps yet
+      if (!CACHE.setupArray) {
+        const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
+        CACHE.setupArray = toArray(setupSnap.val());
+      }
+      const seasons = [...new Set(CACHE.setupArray.map(s => s.Season))].filter(s=>s).sort((a,b)=>b-a);
+      selectedSeason = seasons[0] || '';
     }
-    const seasons = [...new Set(CACHE.setupArray.map(s => s.Season))].filter(s=>s).sort((a,b)=>b-a);
-    selectedSeason = seasons[0] || ''; // Use latest season
   }
   
   const roundDropdown = document.getElementById('roundSeasonSelect');
