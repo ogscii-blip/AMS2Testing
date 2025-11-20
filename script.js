@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.7
+   Optimized script.js for AMS2 Racing League - v4.8
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -11,6 +11,7 @@
    - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
    - FIXED: Chart respects login status (no photos when logged out)
    - FIXED: Chart mobile-responsive with proper aspect ratio
+   - FIXED: Chart animation grows from origin (0,0)
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
    ========================================================= */
@@ -483,10 +484,32 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
         
         // Trigger the animation when graph comes into view
         if (chartInstance) {
-          // Animate the chart lines
+          // FIXED: Animate from origin (0,0) - lines grow from start
           chartInstance.options.animation = {
             duration: 2000,
             easing: 'easeInOutQuart',
+            onProgress: function(animation) {
+              const progress = animation.currentStep / animation.numSteps;
+              
+              // Update each dataset to show progressive points
+              chartInstance.data.datasets.forEach((dataset, idx) => {
+                const meta = chartInstance.getDatasetMeta(idx);
+                if (!meta || !meta.data) return;
+                
+                // Calculate how many points should be visible based on progress
+                const totalPoints = dataset.data.length;
+                const visiblePoints = Math.ceil(totalPoints * progress);
+                
+                // Hide points beyond the progress
+                meta.data.forEach((point, i) => {
+                  if (i >= visiblePoints) {
+                    point.options.radius = 0;
+                  } else {
+                    point.options.radius = 6;
+                  }
+                });
+              });
+            },
             onComplete: () => {
               // After line animation completes, animate the driver avatars
               animateDriverAvatars(chartInstance, rounds);
