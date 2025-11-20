@@ -926,6 +926,18 @@ header p {
         border-bottom: 3px solid #667eea;
         margin-bottom: 20px;
     }
+
+    .driver-number-placeholder {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5em;
+    }
+
+    .driver-number-placeholder-mobile {
+        width: 80px;
+        height: 80px;
+        font-size: 2em;
+    }
     
     .stats-grid-driver {
         grid-template-columns: repeat(2, 1fr);
@@ -1217,5 +1229,17 @@ header p {
         flex-direction: column;
         gap: 8px;
         text-align: center;
+    }
+
+    .driver-number-placeholder {
+        width: 80px;
+        height: 80px;
+        font-size: 2em;
+    }
+
+    .driver-number-placeholder-mobile {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8em;
     }
 }
