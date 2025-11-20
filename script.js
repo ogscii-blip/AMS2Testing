@@ -1,11 +1,12 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League
+   Optimized script.js for AMS2 Racing League - v4.0
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
    - Caching for static data
    - Cleaner helpers & faster DOM updates
    - FIXED: Form reset, rounds completed logic, placeholder images
+   - FIXED: Per-season calculations, tab visibility, descending sort
    ========================================================= */
 
 /* -----------------------------
@@ -15,7 +16,7 @@ const CACHE = {
   tracksMap: null,
   carsMap: null,
   setupArray: null,
-  roundDataArray: null,a
+  roundDataArray: null,
   leaderboardArray: null
 };
 
