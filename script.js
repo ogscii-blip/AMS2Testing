@@ -358,7 +358,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   let colorIndex = 0;
 
   Object.keys(driverRounds).forEach(driver => {
-    const cumulativePoints = [0]; // FIXED: Start with 0 points at R0
+    const cumulativePoints = [0];
     let total = 0;
 
     sortedRounds.forEach(round => {
@@ -370,7 +370,6 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
     const driverColor = colors[colorIndex % colors.length];
     colorIndex++;
 
-    // FIXED: Only use photos if user is logged in
     const usePhoto = currentUser && profile.photoUrl;
 
     datasets.push({
@@ -378,10 +377,10 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
       data: cumulativePoints,
       borderColor: driverColor,
       backgroundColor: driverColor + '33',
-      borderWidth: 3,
+      borderWidth: 0, // CHANGED: Hide Chart.js lines completely
       tension: 0.3,
-      pointRadius: 0, // FIXED: Hide pre-drawn points
-      pointHoverRadius: 8,
+      pointRadius: 0,
+      pointHoverRadius: 0, // CHANGED: Also hide hover points
       driverName: driver,
       photoUrl: usePhoto ? normalizePhotoUrl(profile.photoUrl) : null,
       driverNumber: profile.number || '?'
@@ -392,18 +391,18 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   graphContainer.innerHTML = '<canvas id="pointsChart"></canvas>';
   const ctx = document.getElementById('pointsChart').getContext('2d');
 
-  // Create the chart WITHOUT initial animation
+  // Create the chart without any lines or animation
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['R0', ...sortedRounds.map(r => `R${r}`)], // FIXED: Add R0 label
+      labels: ['R0', ...sortedRounds.map(r => `R${r}`)],
       datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5, // Mobile-friendly aspect ratio
-      animation: false, // Disable initial animation
+      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5,
+      animation: false,
       plugins: {
         legend: {
           display: true,
@@ -427,13 +426,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
           padding: window.innerWidth <= 480 ? 10 : 20
         },
         tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(context) {
-              return `${context.dataset.label}: ${context.parsed.y} points`;
-            }
-          }
+          enabled: false // CHANGED: Disable tooltips during animation
         }
       },
       scales: {
@@ -470,12 +463,10 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
 
   graphContainer.style.display = 'block';
 
-  // FIXED: Use Intersection Observer to trigger animation only when visible
+  // Use Intersection Observer to trigger animation only when visible
   setupChartVisibilityObserver(graphContainer, sortedRounds);
 }
-
 function setupChartVisibilityObserver(graphContainer, rounds) {
-  // Remove any existing observer
   if (graphContainer._observer) {
     graphContainer._observer.disconnect();
   }
@@ -485,94 +476,16 @@ function setupChartVisibilityObserver(graphContainer, rounds) {
       if (entry.isIntersecting && !chartAnimationTriggered) {
         chartAnimationTriggered = true;
         
-        // Trigger the animation when graph comes into view
         if (chartInstance) {
-          // Store the original max value for each dataset
-          const originalDatasets = chartInstance.data.datasets.map(dataset => ({
-            data: [...dataset.data]
-          }));
-          
-          // Start with Y-axis at a small value
-          chartInstance.options.scales.y.max = 10;
-          
-          // FIXED: Animate from origin (0,0) with dynamic Y-axis zoom
-          chartInstance.options.animation = {
-            duration: 2000,
-            easing: 'easeInOutQuart',
-            onProgress: function(animation) {
-              const progress = animation.currentStep / animation.numSteps;
-              
-              let maxVisibleValue = 0;
-              
-              // Update each dataset to show progressive points
-              chartInstance.data.datasets.forEach((dataset, idx) => {
-                const originalData = originalDatasets[idx].data;
-                const totalPoints = originalData.length;
-                
-                // FIXED: Calculate visible points starting from 0 (not R1)
-                // Progress 0 = show nothing, Progress 1 = show all
-                const visiblePointsFloat = totalPoints * progress;
-                const visiblePoints = Math.floor(visiblePointsFloat);
-                
-                // Create progressive data array starting with 0
-                if (progress === 0) {
-                  dataset.data = [0];
-                } else if (visiblePoints === 0) {
-                  // Show interpolated first point
-                  dataset.data = [originalData[0] * visiblePointsFloat];
-                } else {
-                  // Show completed points plus interpolated next point
-                  dataset.data = originalData.slice(0, visiblePoints);
-                  if (visiblePoints < totalPoints) {
-                    const fraction = visiblePointsFloat - visiblePoints;
-                    const interpolatedValue = originalData[visiblePoints - 1] + 
-                      (originalData[visiblePoints] - originalData[visiblePoints - 1]) * fraction;
-                    dataset.data.push(interpolatedValue);
-                  }
-                }
-                
-                // Track maximum visible value for Y-axis scaling
-                const maxInDataset = Math.max(...dataset.data.filter(v => v !== undefined && isFinite(v)));
-                if (maxInDataset > maxVisibleValue) {
-                  maxVisibleValue = maxInDataset;
-                }
-              });
-              
-              // FIXED: Dynamically adjust Y-axis max to create zoom-out effect
-              // Add 20% padding above the max value for better visuals
-              const dynamicMax = Math.max(10, Math.ceil(maxVisibleValue * 1.2));
-              chartInstance.options.scales.y.max = dynamicMax;
-            },
-            onComplete: () => {
-              // Restore full datasets
-              chartInstance.data.datasets.forEach((dataset, idx) => {
-                dataset.data = [...originalDatasets[idx].data];
-              });
-              
-              // Reset Y-axis to auto-scale
-              delete chartInstance.options.scales.y.max;
-              
-              // FIXED: Update without triggering new animation
-              chartInstance.options.animation = false;
-              chartInstance.update('none');
-              
-              // After line animation completes, animate the driver avatars
-              setTimeout(() => {
-                animateDriverAvatars(chartInstance, rounds);
-              }, 100);
-            }
-          };
-          
-          // Trigger the update with animation
-          chartInstance.update();
+          // Start the animation
+          animateDriverAvatars(chartInstance, rounds);
         }
         
-        // Disconnect observer after first trigger
         observer.disconnect();
       }
     });
   }, {
-    threshold: 0.3, // Trigger when 30% of the graph is visible
+    threshold: 0.3,
     rootMargin: '0px'
   });
 
@@ -609,23 +522,18 @@ function animateDriverAvatars(chart, rounds) {
     }
   });
 
-  // Store the original chart update function to prevent interference
-  const originalUpdate = chart.update.bind(chart);
-
   function animate() {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / animationDuration, 1);
     
-    // Calculate current position including R0
-    const totalPositions = rounds.length + 1;
     const currentPositionFloat = progress * rounds.length;
     const currentRoundIndex = Math.floor(currentPositionFloat);
     const roundProgress = currentPositionFloat - currentRoundIndex;
 
-    // Redraw the chart to clear previous frame
+    // Redraw chart base (without lines)
     chart.update('none');
 
-    // Now draw our custom lines and avatars on top
+    // Draw our custom lines and avatars
     chart.data.datasets.forEach((dataset, idx) => {
       const avatar = avatars[idx];
       const meta = chart.getDatasetMeta(idx);
@@ -635,10 +543,9 @@ function animateDriverAvatars(chart, rounds) {
       
       // Draw the line up to current progress
       ctx.strokeStyle = dataset.borderColor;
-      ctx.lineWidth = 2; // Thinner line, not as thick as avatar
+      ctx.lineWidth = 2;
       ctx.beginPath();
       
-      // Draw from R0 to current position
       for (let i = 0; i <= currentRoundIndex; i++) {
         const point = meta.data[i];
         if (!point) continue;
@@ -653,7 +560,7 @@ function animateDriverAvatars(chart, rounds) {
         }
       }
       
-      // Draw interpolated segment if in progress
+      // Draw interpolated segment
       if (currentRoundIndex < meta.data.length - 1 && roundProgress > 0) {
         const currentPoint = meta.data[currentRoundIndex];
         const nextPoint = meta.data[currentRoundIndex + 1];
@@ -672,7 +579,7 @@ function animateDriverAvatars(chart, rounds) {
       ctx.stroke();
       ctx.restore();
 
-      // Now draw avatar at the tip of the line
+      // Draw avatar at tip
       const currentPoint = meta.data[currentRoundIndex];
       const nextPoint = meta.data[currentRoundIndex + 1];
       
@@ -689,11 +596,9 @@ function animateDriverAvatars(chart, rounds) {
         tipY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
       }
 
-      // Draw avatar at tip
       ctx.save();
       
       if (avatar.hasPhoto && avatar.loaded) {
-        // Draw circular clipped photo
         ctx.beginPath();
         ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
         ctx.closePath();
@@ -701,7 +606,6 @@ function animateDriverAvatars(chart, rounds) {
         ctx.drawImage(avatar.img, tipX - avatarSize / 2, tipY - avatarSize / 2, avatarSize, avatarSize);
         ctx.restore();
         
-        // Draw border around photo
         ctx.save();
         ctx.strokeStyle = avatar.color;
         ctx.lineWidth = 3;
@@ -710,7 +614,6 @@ function animateDriverAvatars(chart, rounds) {
         ctx.stroke();
         ctx.restore();
       } else {
-        // Draw number badge
         ctx.beginPath();
         ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
         ctx.fillStyle = avatar.color;
@@ -731,10 +634,16 @@ function animateDriverAvatars(chart, rounds) {
 
     if (progress < 1) {
       requestAnimationFrame(animate);
+    } else {
+      // Animation complete - re-enable tooltips and restore full lines
+      chart.options.plugins.tooltip.enabled = true;
+      chart.data.datasets.forEach(dataset => {
+        dataset.borderWidth = 3;
+      });
+      chart.update('none');
     }
   }
 
-  // Start animation immediately
   requestAnimationFrame(animate);
 }
 
