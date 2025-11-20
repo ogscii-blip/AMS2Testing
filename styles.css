@@ -522,6 +522,39 @@ header p {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
+.driver-number-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4em;
+    font-weight: bold;
+    border: 5px solid #667eea;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.driver-number-placeholder-mobile {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    font-weight: bold;
+    border: 3px solid #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
 .driver-info h2 {
     margin: 0 0 10px 0;
     color: #2c3e50;
