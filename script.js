@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v5.0
+   Optimized script.js for AMS2 Racing League - v5.1
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -11,7 +11,8 @@
    - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
    - FIXED: Chart respects login status (no photos when logged out)
    - FIXED: Chart mobile-responsive with proper aspect ratio
-   - FIXED: Chart animation starts from 0 (not R1), grows smoothly
+   - FIXED: Chart starts at R0 with 0 points for all drivers
+   - FIXED: Avatar animation draws avatars at line tip (no pre-drawn lines)
    - FIXED: Infinite loop crash prevented with proper animation flag
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
@@ -357,7 +358,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   let colorIndex = 0;
 
   Object.keys(driverRounds).forEach(driver => {
-    const cumulativePoints = [];
+    const cumulativePoints = [0]; // FIXED: Start with 0 points at R0
     let total = 0;
 
     sortedRounds.forEach(round => {
@@ -379,7 +380,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
       backgroundColor: driverColor + '33',
       borderWidth: 3,
       tension: 0.3,
-      pointRadius: 6,
+      pointRadius: 0, // FIXED: Hide pre-drawn points
       pointHoverRadius: 8,
       driverName: driver,
       photoUrl: usePhoto ? normalizePhotoUrl(profile.photoUrl) : null,
@@ -395,7 +396,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: sortedRounds.map(r => `R${r}`),
+      labels: ['R0', ...sortedRounds.map(r => `R${r}`)], // FIXED: Add R0 label
       datasets: datasets
     },
     options: {
@@ -612,27 +613,37 @@ function animateDriverAvatars(chart, rounds) {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / animationDuration, 1);
     
-    // Calculate current round index based on progress
-    const currentRoundIndex = Math.floor(progress * (rounds.length - 1));
-    const roundProgress = (progress * (rounds.length - 1)) - currentRoundIndex;
+    // FIXED: Calculate current position including R0
+    // Total points includes R0, so rounds.length + 1 total positions
+    const totalPositions = rounds.length + 1; // R0 + actual rounds
+    const currentPositionFloat = progress * rounds.length; // 0 to rounds.length
+    const currentRoundIndex = Math.floor(currentPositionFloat); // Which round we're at
+    const roundProgress = currentPositionFloat - currentRoundIndex; // Progress within that round
 
     chart.data.datasets.forEach((dataset, idx) => {
       const avatar = avatars[idx];
-      const currentPoints = dataset.data[currentRoundIndex] || 0;
-      const nextPoints = dataset.data[currentRoundIndex + 1] || currentPoints;
-      const interpolatedPoints = currentPoints + (nextPoints - currentPoints) * roundProgress;
-
-      // Get chart coordinates for this point
       const meta = chart.getDatasetMeta(idx);
-      if (!meta || !meta.data[currentRoundIndex]) return;
+      if (!meta || !meta.data || meta.data.length === 0) return;
 
-      const point = meta.data[currentRoundIndex];
-      const nextPoint = meta.data[currentRoundIndex + 1] || point;
+      // Get current and next point (accounting for R0)
+      const currentPoint = meta.data[currentRoundIndex];
+      const nextPoint = meta.data[currentRoundIndex + 1];
       
-      const x = point.x + (nextPoint.x - point.x) * roundProgress;
-      const y = chart.scales.y.getPixelForValue(interpolatedPoints);
+      if (!currentPoint) return;
 
-      // Draw avatar
+      // Calculate interpolated position
+      let x, y;
+      if (nextPoint && roundProgress > 0) {
+        x = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+        const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+        const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+        y = currentY + (nextY - currentY) * roundProgress;
+      } else {
+        x = currentPoint.x;
+        y = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+      }
+
+      // Draw avatar at the tip of the line
       ctx.save();
       
       if (avatar.hasPhoto && avatar.loaded) {
