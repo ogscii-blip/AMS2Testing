@@ -5,6 +5,7 @@
    - Season-aware leaderboard + round navigation
    - Caching for static data
    - Cleaner helpers & faster DOM updates
+   - FIXED: Form reset, rounds completed logic, placeholder images
    ========================================================= */
 
 /* -----------------------------
@@ -267,11 +268,15 @@ async function loadLeaderboard() {
     const seasonSelect = document.getElementById('seasonSelect');
     const selectedSeason = seasonSelect?.value || '';
 
-    // Load leaderboard only if not in cache or refresh requested
-    const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
-    const snapshot = await window.firebaseGet(leaderboardRef);
-    const raw = snapshot.val();
+    // Load leaderboard and raw lap data
+    const [leaderboardSnapshot, rawLapsSnapshot] = await Promise.all([
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Leaderboard')),
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'))
+    ]);
+    
+    const raw = leaderboardSnapshot.val();
     const leaderboardData = toArray(raw).filter(r => r && r.Driver);
+    const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver);
 
     // Cache last read (for driver stats, etc.)
     CACHE.leaderboardArray = leaderboardData;
@@ -312,14 +317,20 @@ async function loadLeaderboard() {
     const totalPoints = displayData.reduce((s,d)=>s + (d.points||0), 0);
     document.getElementById('totalPoints').textContent = totalPoints;
 
-    // Rounds completed (season-filtered)
-    let roundsList = [];
-    if (selectedSeason) {
-      roundsList = leaderboardData.filter(r => String(r.Season) == String(selectedSeason)).map(r=>r.Round);
-    } else {
-      roundsList = leaderboardData.map(r=>r.Round);
-    }
-    document.getElementById('totalRounds').textContent = new Set(roundsList).size;
+    // FIXED: Rounds completed - count rounds with 3+ submissions (completed rounds)
+    const filteredLaps = selectedSeason 
+      ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
+      : rawLapsData;
+    
+    const roundSubmissions = {};
+    filteredLaps.forEach(lap => {
+      const key = `S${lap.Season}-R${lap.Round}`;
+      if (!roundSubmissions[key]) roundSubmissions[key] = new Set();
+      roundSubmissions[key].add(lap.Driver);
+    });
+    
+    const completedRounds = Object.values(roundSubmissions).filter(drivers => drivers.size >= 3).length;
+    document.getElementById('totalRounds').textContent = completedRounds;
 
     // Populate season dropdowns from cached setup (but call populate if needed)
     populateSeasonFilter();
@@ -509,6 +520,7 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   container.innerHTML = '';
   const frag = document.createDocumentFragment();
 
+  // FIXED: Placeholder images properly defined
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
@@ -542,8 +554,8 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
         <div class="round-summary">${summary}</div>
       </div>
       <div class="round-banner-icons">
-        <div class="round-banner-icon"><img src="${trackImage}" alt="${trackLayout}"><p>${trackLayout}</p></div>
-        <div class="round-banner-icon"><img src="${carImage}" alt="${car}"><p>${car}</p></div>
+        <div class="round-banner-icon"><img src="${trackImage}" alt="${trackLayout}" onerror="this.src='${fallbackTrackImage}'"><p>${trackLayout}</p></div>
+        <div class="round-banner-icon"><img src="${carImage}" alt="${car}" onerror="this.src='${fallbackCarImage}'"><p>${car}</p></div>
       </div>
       <span class="toggle-icon" id="toggle-${key}">▼</span>
     `;
@@ -599,23 +611,18 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
   container.appendChild(frag);
 
-  // driver-link-round handlers (stop propagation)
-  setTimeout(()=> {
-    document.querySelectorAll('.driver-link-round').forEach(link=>{
-      link.addEventListener('click', function(e){
-        e.stopPropagation();
-        const name = this.getAttribute('data-driver');
-        goToDriverProfile(name);
-      });
+  // Add driver link click handlers
+  container.querySelectorAll('.driver-link-round').forEach(link => {
+    link.addEventListener('click', function() {
+      goToDriverProfile(this.getAttribute('data-driver'));
     });
-  }, 50);
+  });
 
-  // Auto-expand latest round (if any)
-  if (sortedKeys.length) {
-    const latest = sortedKeys[sortedKeys.length - 1];
-    setTimeout(()=> {
-      const d = document.getElementById(`details-${latest}`);
-      const i = document.getElementById(`toggle-${latest}`);
+  // Auto-expand first round if only one
+  if (sortedKeys.length === 1) {
+    setTimeout(() => {
+      const d = document.getElementById(`details-${sortedKeys[0]}`);
+      const i = document.getElementById(`toggle-${sortedKeys[0]}`);
       if (d) d.classList.add('expanded');
       if (i) i.classList.add('expanded');
     }, 150);
@@ -733,6 +740,10 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     return;
   }
 
+  // FIXED: Placeholder images properly defined for cards
+  const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
+  const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
+
   // Pre-index roundData by (season,round) and combo
   const bySeasonRound = {};
   const byCombo = {}; // track|car -> array
@@ -762,14 +773,14 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     const bestSector2 = comboTimes.length ? comboTimes.reduce((p,c)=> c.sector2 < p.sector2 ? c : p) : null;
     const bestSector3 = comboTimes.length ? comboTimes.reduce((p,c)=> c.sector3 < p.sector3 ? c : p) : null;
 
-    const trackImage = tracksMap[setup.trackLayout] || '';
-    const carImage = carsMap[setup.car] || '';
+    const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
+    const carImage = carsMap[setup.car] || fallbackCarImage;
 
     card.innerHTML = `
       <div class="round-card-header"><h3>Round ${setup.round}</h3><p class="season-number">${setup.season}</p></div>
       <div class="round-card-images">
-        <div class="round-card-image-container"><img src="${trackImage}"><p>${setup.trackLayout}</p></div>
-        <div class="round-card-image-container"><img src="${carImage}"><p>${setup.car}</p></div>
+        <div class="round-card-image-container"><img src="${trackImage}" alt="${setup.trackLayout}" onerror="this.src='${fallbackTrackImage}'"><p>${setup.trackLayout}</p></div>
+        <div class="round-card-image-container"><img src="${carImage}" alt="${setup.car}" onerror="this.src='${fallbackCarImage}'"><p>${setup.car}</p></div>
       </div>
       <div class="round-card-body">
         ${bestRoundTime ? `<div class="best-time-section"><h4>🏆 This Round's Best</h4><div class="best-time-item gold"><div><div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div><div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div></div><div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div></div></div>` : `<div class="best-time-section"><p style="color:#999;">No lap times recorded yet</p></div>`}
@@ -949,7 +960,7 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
     await window.firebaseSet(profileRef, {
       Name: profileData.Name,
       Surname: profileData.Surname,
-      Number: String(profileData.Number),
+      Number: profileData.Number,
       Photo_URL: profileData.Photo_URL,
       Bio: profileData.Bio
     });
@@ -963,59 +974,85 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       bio: profileData.Bio
     };
 
-    messageDiv.style.background = '#d4edda'; messageDiv.style.color = '#155724'; messageDiv.textContent = '✅ Profile saved successfully!';
-    setTimeout(()=> { messageDiv.style.display = 'none'; loadConfig(); loadLeaderboard(); }, 1200);
+    messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Profile saved!';
+    setTimeout(() => {
+      messageDiv.style.display = 'none';
+      const profile = DRIVER_PROFILES[usernameKey];
+      const photoContainer = document.getElementById('userPhotoContainer');
+      const photoElement = document.getElementById('userProfilePhoto');
+      const numberBadge = document.getElementById('userNumberBadge');
+      const iconFallback = document.getElementById('userIconFallback');
+      if (profile && profile.photoUrl) {
+        photoElement.src = normalizePhotoUrl(profile.photoUrl);
+        numberBadge.textContent = profile.number || '?';
+        photoContainer.style.display = 'block';
+        iconFallback.style.display = 'none';
+      }
+    }, 2000);
 
   } catch (err) {
-    console.error('save profile error', err);
-    messageDiv.style.background = '#f8d7da'; messageDiv.style.color = '#721c24'; messageDiv.textContent = '❌ ' + err.message;
+    console.error('profile save error', err);
+    messageDiv.style.background='#f8d7da'; messageDiv.style.color='#721c24'; messageDiv.textContent='❌ ' + err.message;
   }
 });
 
-/* -----------------------------
-   Lap time submission
-   ----------------------------- */
-function setElementState(id, visible) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.style.display = visible ? '' : 'none';
-}
+// Photo file input handler
+document.getElementById('photoFile')?.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('photoPreviewImg').src = e.target.result;
+    document.getElementById('photoPreview').style.display = 'block';
+    alert('⚠️ Photo upload to storage not yet implemented. Please upload to Google Drive and paste the sharing link in the Photo URL field.');
+  };
+  reader.readAsDataURL(file);
+});
 
-function disableButton(btn, state=true) {
+/* -----------------------------
+   Lap Time Submission (with form reset!)
+   ----------------------------- */
+function disableButton(btn, disabled) {
   if (!btn) return;
-  btn.disabled = state;
-  btn.style.opacity = state ? 0.6 : 1;
+  btn.disabled = disabled;
+  btn.style.opacity = disabled ? '0.5' : '1';
+  btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
 }
 
 document.getElementById('lapTimeForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
-  if (!currentUser) {
-    const messageDiv = document.getElementById('lapTimeMessage'); messageDiv.style.display = 'block'; messageDiv.style.background = '#f8d7da'; messageDiv.style.color = '#721c24'; messageDiv.textContent = '❌ Please sign in to submit lap times.'; return;
-  }
+  if (!currentUser) { alert('⚠️ Please sign in first'); return; }
 
-  const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
-  const roundNumber = parseInt(document.getElementById('roundNumber2').value);
-  const sector1 = getSectorTimeValue('sector1');
-  const sector2 = getSectorTimeValue('sector2');
-  const sector3 = getSectorTimeValue('sector3');
+  const submitBtn = this.querySelector('button[type="submit"]');
   const messageDiv = document.getElementById('lapTimeMessage');
-
-  if (!sector1 || !sector2 || !sector3) { messageDiv.style.display='block'; messageDiv.style.background='#f8d7da'; messageDiv.style.color='#721c24'; messageDiv.textContent='❌ Please fill in all sector times.'; return; }
-  const pat = /^\d{2}:\d{2},\d{3}$/;
-  if (!pat.test(sector1) || !pat.test(sector2) || !pat.test(sector3)) { messageDiv.style.display='block'; messageDiv.style.background='#f8d7da'; messageDiv.style.color='#721c24'; messageDiv.textContent='❌ Invalid time format.'; return; }
-
-  messageDiv.style.display='block'; messageDiv.style.background='#d1ecf1'; messageDiv.style.color='#0c5460'; messageDiv.textContent='⏳ Submitting lap time...';
-  const submitBtn = document.querySelector('#lapTimeForm button[type="submit"]');
   disableButton(submitBtn, true);
+  messageDiv.style.display='block'; messageDiv.style.background='#d1ecf1'; messageDiv.style.color='#0c5460'; messageDiv.textContent='⏳ Submitting...';
 
   try {
-    const s1 = timeToSeconds(sector1), s2 = timeToSeconds(sector2), s3 = timeToSeconds(sector3);
+    // Read all sector input fields
+    const s1sec = document.getElementById('sector1-sec').value.trim();
+    const s1ms = document.getElementById('sector1-ms').value.trim();
+    const s2sec = document.getElementById('sector2-sec').value.trim();
+    const s2ms = document.getElementById('sector2-ms').value.trim();
+    const s3sec = document.getElementById('sector3-sec').value.trim();
+    const s3ms = document.getElementById('sector3-ms').value.trim();
+
+    if (!s1sec || !s1ms || !s2sec || !s2ms || !s3sec || !s3ms) throw new Error('Please fill all sector time fields');
+
+    const s1 = parseFloat(s1sec) + parseFloat(s1ms)/1000;
+    const s2 = parseFloat(s2sec) + parseFloat(s2ms)/1000;
+    const s3 = parseFloat(s3sec) + parseFloat(s3ms)/1000;
     const totalTime = s1 + s2 + s3;
 
-    // Use cached setup
+    const roundNumber = parseInt(document.getElementById('roundNumber').value);
+    const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
+    if (!roundNumber || !seasonNumber) throw new Error('Please select both round and season');
+
+    // Ensure setup exists
     if (!CACHE.setupArray) {
-      const snap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
-      CACHE.setupArray = toArray(snap.val());
+      const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
+      CACHE.setupArray = toArray(setupSnap.val());
     }
     const roundSetup = CACHE.setupArray.find(s => s && Number(s.Round_Number) == roundNumber && Number(s.Season) == seasonNumber);
     if (!roundSetup) throw new Error(`Round ${roundNumber} Season ${seasonNumber} not configured!`);
@@ -1035,6 +1072,9 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
 
     await window.firebasePush(window.firebaseRef(window.firebaseDB, 'Form_responses_1'), lapTimeData);
     messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Lap time submitted! Server is calculating...';
+
+    // FIXED: Reset the form after successful submission
+    document.getElementById('lapTimeForm').reset();
 
     // refresh caches/loaders
     CACHE.roundDataArray = null;
@@ -1149,87 +1189,72 @@ function waitFor(predicate, timeout = 3000) {
    Basic DOM helpers (sector inputs etc.)
    ----------------------------- */
 function setupSectorTimeInputs() {
-  const sectorInputs = ['sector1','sector2','sector3'];
-  sectorInputs.forEach(id => {
-    const sec = document.getElementById(`${id}-sec`);
-    const ms = document.getElementById(`${id}-ms`);
-    if (!sec || !ms) return;
-    [sec,ms].forEach(i => i.addEventListener('input', ()=> i.value = i.value.replace(/[^0-9]/g,'')));
-    sec.addEventListener('input', ()=> { if (sec.value.length >= 2) ms.focus(); });
-    ms.addEventListener('keydown', e => { if (e.key === 'Backspace' && ms.value.length === 0) { sec.focus(); setTimeout(()=> sec.selectionStart = sec.selectionEnd = sec.value.length, 0); }});
+  const sectorInputs = document.querySelectorAll('.time-input-split-field');
+  sectorInputs.forEach(input => {
+    input.addEventListener('input', function(e) {
+      const maxLen = parseInt(this.getAttribute('maxlength'));
+      if (this.value.length >= maxLen) {
+        const nextInput = this.nextElementSibling?.nextElementSibling;
+        if (nextInput && nextInput.classList.contains('time-input-split-field')) nextInput.focus();
+      }
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value.length === 0) {
+        const prevInput = this.previousElementSibling?.previousElementSibling;
+        if (prevInput && prevInput.classList.contains('time-input-split-field')) {
+          prevInput.focus();
+          prevInput.setSelectionRange(prevInput.value.length, prevInput.value.length);
+        }
+      }
+    });
   });
 }
-function getSectorTimeValue(sectorId) {
-  const sec = document.getElementById(`${sectorId}-sec`);
-  const ms = document.getElementById(`${sectorId}-ms`);
-  if (!sec || !ms) return '';
-  if (!sec.value || !ms.value) return '';
-  const paddedSeconds = sec.value.padStart(2,'0');
-  const paddedMs = ms.value.padStart(3,'0');
-  const total = parseInt(paddedSeconds);
-  const minutes = Math.floor(total/60);
-  const remaining = total % 60;
-  return `${String(minutes).padStart(2,'0')}:${String(remaining).padStart(2,'0')},${paddedMs}`;
+
+// Mobile logo switch
+function handleResponsiveUI() {
+  const desktopLogo = document.getElementById('desktopLogo');
+  const mobileLogo = document.getElementById('mobileLogo');
+  if (window.innerWidth <= 480) {
+    if (desktopLogo) desktopLogo.style.display = 'none';
+    if (mobileLogo) mobileLogo.style.display = 'block';
+  } else {
+    if (desktopLogo) desktopLogo.style.display = 'block';
+    if (mobileLogo) mobileLogo.style.display = 'none';
+  }
 }
 
-/* -----------------------------
-   Photo input handler
-   ----------------------------- */
-document.getElementById('photoFile')?.addEventListener('change', function(e){
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    document.getElementById('photoPreviewImg').src = ev.target.result;
-    document.getElementById('photoPreview').style.display = 'block';
-    alert('⚠️ Photo upload to storage not implemented. Please upload to Google Drive and paste link in Photo URL field.');
-  };
-  reader.readAsDataURL(file);
-});
-
-/* -----------------------------
-   DOMContent loaded & initial wiring
-   ----------------------------- */
-document.addEventListener('DOMContentLoaded', async function(){
-  // Wire enter key for login
-  document.getElementById('passwordInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
-  document.getElementById('driverNameInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
-
-  // Mobile quick click for leaderboard rows
-  if (window.innerWidth <= 480) {
-    const tbody = document.getElementById('leaderboard-body');
-    if (tbody) tbody.addEventListener('click', function(e){
-      const row = e.target.closest('tr');
-      if (!row) return;
-      const link = row.querySelector('.driver-link');
-      if (link) goToDriverCurrentRound(link.getAttribute('data-driver'));
+window.addEventListener('resize', handleResponsiveUI);
+document.addEventListener('DOMContentLoaded', function() {
+  handleResponsiveUI();
+  
+  const passwordInput = document.getElementById('passwordInput');
+  const driverNameInput = document.getElementById('driverNameInput');
+  
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') login();
+    });
+  }
+  
+  if (driverNameInput) {
+    driverNameInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') login();
     });
   }
 
-  // Hide submit/setup if not logged in
-  const submitTab = document.querySelector('.tab-button[onclick*="submit"]');
-  const setupTab = document.querySelector('.tab-button[onclick*="setup"]');
-  if (!currentUser) { if (submitTab) submitTab.style.display = 'none'; if (setupTab) setupTab.style.display = 'none'; }
-
-  // Initialize core config & UI
-  await loadConfig();
-  await loadTracksAndCars();
-  setupSectorTimeInputs();
-  checkExistingSession();
-  populateSeasonFilter();
-  loadLeaderboard();
-  loadRoundSetup();
+  if (window.innerWidth <= 480) {
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    if (leaderboardBody) {
+      leaderboardBody.addEventListener('click', function(e) {
+        const row = e.target.closest('tr');
+        if (row) {
+          const driverLink = row.querySelector('.driver-link');
+          if (driverLink) {
+            const driverName = driverLink.getAttribute('data-driver');
+            goToDriverCurrentRound(driverName);
+          }
+        }
+      });
+    }
+  }
 });
-
-/* -----------------------------
-   Exports for manual calls (optional)
-   ----------------------------- */
-window.appHelpers = {
-  loadLeaderboard,
-  loadRoundData,
-  loadDriverStats,
-  loadRoundSetup,
-  goToDriverProfile,
-  goToDriverCurrentRound
-};
