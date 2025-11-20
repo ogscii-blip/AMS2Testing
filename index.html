@@ -74,6 +74,9 @@
                 </div>
             </div>
 
+            <!-- Points Progression Graph -->
+            <div id="points-progression-graph" style="display: none; background: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"></div>
+
             <div id="leaderboard-loading" class="loading">Loading leaderboard data...</div>
             <div id="leaderboard-content" style="display: none;">
                 <table class="leaderboard-table">
@@ -90,6 +93,9 @@
                 </table>
             </div>
         </div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
         <!-- Round Results Tab -->
         <div id="round" class="tab-content">
@@ -419,7 +425,7 @@
 </script>
 
 <!-- Your main application script - loads BEFORE Firebase calls functions -->
-<script src="script.js?v=4"></script>
+<script src="script.js?v=3"></script>
 
 </body>
 </html>
