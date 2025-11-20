@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.6
+   Optimized script.js for AMS2 Racing League - v4.7
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -9,6 +9,8 @@
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
    - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
+   - FIXED: Chart respects login status (no photos when logged out)
+   - FIXED: Chart mobile-responsive with proper aspect ratio
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
    ========================================================= */
@@ -364,6 +366,9 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
     const driverColor = colors[colorIndex % colors.length];
     colorIndex++;
 
+    // FIXED: Only use photos if user is logged in
+    const usePhoto = currentUser && profile.photoUrl;
+
     datasets.push({
       label: getFormattedDriverName(driver, false),
       data: cumulativePoints,
@@ -374,7 +379,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
       pointRadius: 6,
       pointHoverRadius: 8,
       driverName: driver,
-      photoUrl: profile.photoUrl ? normalizePhotoUrl(profile.photoUrl) : null,
+      photoUrl: usePhoto ? normalizePhotoUrl(profile.photoUrl) : null,
       driverNumber: profile.number || '?'
     });
   });
@@ -393,7 +398,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: 2.5,
+      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5, // Mobile-friendly aspect ratio
       animation: false, // Disable initial animation
       plugins: {
         legend: {
@@ -401,15 +406,21 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
           position: 'top',
           labels: {
             usePointStyle: true,
-            padding: 15,
-            font: { size: 12, weight: 'bold' }
+            padding: window.innerWidth <= 480 ? 8 : 15,
+            font: { 
+              size: window.innerWidth <= 480 ? 10 : 12, 
+              weight: 'bold' 
+            }
           }
         },
         title: {
           display: true,
           text: selectedSeason ? `Season ${selectedSeason} Points Progression` : 'Overall Points Progression',
-          font: { size: 18, weight: 'bold' },
-          padding: 20
+          font: { 
+            size: window.innerWidth <= 480 ? 14 : 18, 
+            weight: 'bold' 
+          },
+          padding: window.innerWidth <= 480 ? 10 : 20
         },
         tooltip: {
           mode: 'index',
@@ -425,19 +436,23 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
         y: {
           beginAtZero: true,
           title: {
-            display: true,
+            display: window.innerWidth > 480,
             text: 'Total Points',
             font: { size: 14, weight: 'bold' }
           },
           ticks: {
-            stepSize: 5
+            stepSize: 5,
+            font: { size: window.innerWidth <= 480 ? 10 : 12 }
           }
         },
         x: {
           title: {
-            display: true,
+            display: window.innerWidth > 480,
             text: 'Round',
             font: { size: 14, weight: 'bold' }
+          },
+          ticks: {
+            font: { size: window.innerWidth <= 480 ? 10 : 12 }
           }
         }
       },
