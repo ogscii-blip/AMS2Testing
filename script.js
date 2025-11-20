@@ -190,10 +190,8 @@ function showTab(tabName, sourceButton = null) {
   if (tabName === 'overall') {
     loadLeaderboard();
   } else if (tabName === 'round') {
-    // preselect same season as overall
-    const seasonOverall = document.getElementById('seasonSelect')?.value || '';
-    const roundDropdown = document.getElementById('roundSeasonSelect');
-    if (roundDropdown) roundDropdown.value = seasonOverall;
+    // FIXED: Pre-select current (latest) season in Round Results by default
+    preSelectCurrentSeasonInRoundResults();
     loadRoundData();
   } else if (tabName === 'drivers') {
     loadDriverStats();
@@ -204,11 +202,40 @@ function showTab(tabName, sourceButton = null) {
   }
 }
 
-/* goToDriverCurrentRound: uses season selected in Overall */
+// FIXED: Helper to pre-select current season when opening Round Results
+async function preSelectCurrentSeasonInRoundResults() {
+  const roundDropdown = document.getElementById('roundSeasonSelect');
+  if (!roundDropdown) return;
+  
+  // If roundDropdown already has a value, keep it (user may have set it)
+  if (roundDropdown.value) return;
+  
+  // Otherwise, set to current (latest) season
+  if (!CACHE.setupArray) {
+    const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
+    CACHE.setupArray = toArray(setupSnap.val());
+  }
+  const seasons = [...new Set(CACHE.setupArray.map(s => s.Season))].filter(s=>s).sort((a,b)=>b-a);
+  const currentSeason = seasons[0] || '';
+  if (currentSeason) roundDropdown.value = currentSeason;
+}
+
+/* goToDriverCurrentRound: uses season selected in Overall, or latest season if "All Seasons" */
 async function goToDriverCurrentRound(driverName) {
   showTab('round');
 
-  const selectedSeason = document.getElementById('seasonSelect')?.value || '';
+  let selectedSeason = document.getElementById('seasonSelect')?.value || '';
+  
+  // FIXED: If "All Seasons" selected, find the latest season
+  if (!selectedSeason) {
+    if (!CACHE.setupArray) {
+      const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
+      CACHE.setupArray = toArray(setupSnap.val());
+    }
+    const seasons = [...new Set(CACHE.setupArray.map(s => s.Season))].filter(s=>s).sort((a,b)=>b-a);
+    selectedSeason = seasons[0] || ''; // Use latest season
+  }
+  
   const roundDropdown = document.getElementById('roundSeasonSelect');
   if (roundDropdown) roundDropdown.value = selectedSeason;
 
@@ -218,22 +245,23 @@ async function goToDriverCurrentRound(driverName) {
   await wait(200);
 
   // Find round details for this season only
-  const keyPrefix = `details-S${selectedSeason}-R`;
+  const keyPrefix = selectedSeason ? `details-S${selectedSeason}-R` : 'details-S';
   const matches = Array.from(document.querySelectorAll(`[id^="${keyPrefix}"]`));
   if (!matches.length) {
     console.warn('No rounds for season', selectedSeason);
     return;
   }
 
-  // Extract keys like "S3-R6"
+  // Extract keys like "S3-R6" - with descending sort, first item is latest
   const keys = matches.map(el => el.id.replace('details-', ''));
   keys.sort((a,b) => {
-    const ra = parseInt(a.split('-R')[1],10) || 0;
-    const rb = parseInt(b.split('-R')[1],10) || 0;
-    return ra - rb;
+    const [sa, ra] = a.replace('S','').split('-R').map(Number);
+    const [sb, rb] = b.replace('S','').split('-R').map(Number);
+    if (sa !== sb) return sb - sa; // Descending
+    return rb - ra; // Descending
   });
 
-  const latestKey = keys[keys.length - 1];
+  const latestKey = keys[0]; // First is now latest
   const details = document.getElementById(`details-${latestKey}`);
   const icon = document.getElementById(`toggle-${latestKey}`);
   if (!details) return;
@@ -268,46 +296,34 @@ async function loadLeaderboard() {
     const seasonSelect = document.getElementById('seasonSelect');
     const selectedSeason = seasonSelect?.value || '';
 
-    // Load leaderboard and raw lap data
-    const [leaderboardSnapshot, rawLapsSnapshot] = await Promise.all([
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Leaderboard')),
+    // FIXED: Load Round_Data to calculate points accurately per season
+    const [roundDataSnapshot, rawLapsSnapshot] = await Promise.all([
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'))
     ]);
     
-    const raw = leaderboardSnapshot.val();
-    const leaderboardData = toArray(raw).filter(r => r && r.Driver);
+    const roundData = toArray(roundDataSnapshot.val()).filter(r => r && r.Driver);
     const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver);
 
-    // Cache last read (for driver stats, etc.)
-    CACHE.leaderboardArray = leaderboardData;
+    // Filter Round_Data by season
+    const filteredRoundData = selectedSeason 
+      ? roundData.filter(r => String(r.Season) == String(selectedSeason))
+      : roundData;
 
-    // Filter by season (or all seasons)
-    const filtered = selectedSeason ? leaderboardData.filter(r => String(r.Season) == String(selectedSeason)) : leaderboardData.slice();
-
-    // FIXED: Build driver totals correctly per season
+    // FIXED: Calculate driver totals from Round_Data (actual scored rounds)
     const driverMap = {};
     
-    if (selectedSeason) {
-      // For specific season: sum only that season's data
-      filtered.forEach(row => {
-        const name = row.Driver;
-        if (!driverMap[name]) driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
-        driverMap[name].points += parseInt(row['Total_Points']) || 0;
-        driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
-        driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
-      });
-    } else {
-      // For all seasons: group by driver and sum across all their season entries
-      leaderboardData.forEach(row => {
-        const name = row.Driver;
-        if (!driverMap[name]) driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
-        driverMap[name].points += parseInt(row['Total_Points']) || 0;
-        driverMap[name].purpleSectors += parseInt(row['Total_Purple_Sectors']) || 0;
-        driverMap[name].wins += parseInt(row['Total_Wins']) || 0;
-      });
-    }
+    filteredRoundData.forEach(row => {
+      const name = row.Driver;
+      if (!driverMap[name]) {
+        driverMap[name] = { driver: name, points: 0, purpleSectors: 0, wins: 0 };
+      }
+      driverMap[name].points += parseInt(row['Total_Points']) || 0;
+      driverMap[name].purpleSectors += parseInt(row['Purple_Sectors']) || 0;
+      if (parseInt(row.Position) === 1) driverMap[name].wins += 1;
+    });
 
-    // FIXED: Include drivers who have submitted laps but may not be in leaderboard yet
+    // FIXED: Include drivers who have submitted laps but may not be in Round_Data yet
     const filteredLaps = selectedSeason 
       ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
       : rawLapsData;
@@ -336,7 +352,7 @@ async function loadLeaderboard() {
 
     displayLeaderboard(displayData);
 
-    // Cards
+    // Cards - use filtered data
     document.getElementById('totalDrivers').textContent = displayData.length;
     const totalPoints = displayData.reduce((s,d)=>s + (d.points||0), 0);
     document.getElementById('totalPoints').textContent = totalPoints;
@@ -540,15 +556,15 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   container.innerHTML = '';
   const frag = document.createDocumentFragment();
 
-  // FIXED: Placeholder images properly defined
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
+  // FIXED: Sort rounds in DESCENDING order (latest first)
   const sortedKeys = Object.keys(roundGroups).sort((a,b) => {
     const [sa, ra] = a.replace('S','').split('-R').map(Number);
     const [sb, rb] = b.replace('S','').split('-R').map(Number);
-    if (sa !== sb) return sa - sb;
-    return ra - rb;
+    if (sa !== sb) return sb - sa; // Descending by season
+    return rb - ra; // Descending by round
   });
 
   sortedKeys.forEach(key => {
@@ -647,10 +663,10 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     });
   });
 
-  // FIXED: Auto-expand the LATEST round (last in sorted list)
+  // FIXED: Auto-expand the FIRST round (which is the latest due to descending sort)
   if (sortedKeys.length > 0) {
     setTimeout(() => {
-      const latestKey = sortedKeys[sortedKeys.length - 1]; // Get the last (latest) round
+      const latestKey = sortedKeys[0]; // First in list is now the latest
       const d = document.getElementById(`details-${latestKey}`);
       const i = document.getElementById(`toggle-${latestKey}`);
       if (d) d.classList.add('expanded');
@@ -1188,18 +1204,38 @@ function applyUserUI() {
 function updateSubmitTabVisibility() {
   const submitTab = document.querySelector('.tab-button[onclick*="submit"]');
   const setupTab = document.querySelector('.tab-button[onclick*="setup"]');
-  if (currentUser) { if (submitTab) submitTab.style.display = ''; if (setupTab) setupTab.style.display = ''; document.getElementById('authWarning').style.display = 'none'; document.getElementById('lapTimeFormContainer').style.display = 'block'; }
-  else { if (submitTab) submitTab.style.display = 'none'; if (setupTab) setupTab.style.display = 'none'; document.getElementById('authWarning').style.display = 'block'; document.getElementById('lapTimeFormContainer').style.display = 'none'; }
+  const authWarning = document.getElementById('authWarning');
+  const lapTimeFormContainer = document.getElementById('lapTimeFormContainer');
+  
+  if (currentUser) { 
+    if (submitTab) submitTab.style.display = ''; 
+    if (setupTab) setupTab.style.display = ''; 
+    if (authWarning) authWarning.style.display = 'none'; 
+    if (lapTimeFormContainer) lapTimeFormContainer.style.display = 'block'; 
+  } else { 
+    if (submitTab) submitTab.style.display = 'none'; 
+    if (setupTab) setupTab.style.display = 'none'; 
+    if (authWarning) authWarning.style.display = 'block'; 
+    if (lapTimeFormContainer) lapTimeFormContainer.style.display = 'none'; 
+  }
 }
 
 async function checkExistingSession() {
   const stored = sessionStorage.getItem('currentUser');
-  if (!stored) return;
+  if (!stored) {
+    updateSubmitTabVisibility(); // Ensure tabs are hidden if no session
+    return;
+  }
   currentUser = JSON.parse(stored);
   // Wait for profiles to load via onValue from loadConfig()
   await waitFor(()=> Object.keys(DRIVER_PROFILES).length > 0, 2000);
   applyUserUI();
 }
+
+// Call this on initial page load to hide tabs before login
+document.addEventListener('DOMContentLoaded', function() {
+  updateSubmitTabVisibility(); // Set initial state before any login
+  handleResponsiveUI();
 
 /* -----------------------------
    Small utilities & init
