@@ -1106,7 +1106,6 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     }
   }
 
-  
   function animate() {
   const { startX, finishX, sector1End, sector2End } = getPositions();
   
@@ -1257,25 +1256,6 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     startTime = Date.now();
     animationId = requestAnimationFrame(animate);
   }
-   
-    let startTime;
-
-  function startAnimation() {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-    }
-    
-    drivers.forEach(d => {
-      d.progress = 0;
-      d.finished = false;
-      d.finishTime = null;
-      d.lanePosition = 1; // Reset to middle lane
-    });
-
-    isAnimating = true;
-    startTime = Date.now();
-    animationId = requestAnimationFrame(animate);
-  }
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1295,6 +1275,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     startAnimation();
   });
 }
+
 /* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
