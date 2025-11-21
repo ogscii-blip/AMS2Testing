@@ -1222,12 +1222,49 @@ function animate() {
     drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
   });
 
-  if (progress < 1) {
-    animationId = requestAnimationFrame(animate);
-  } else {
-    isAnimating = false;
+    if (progress < 1) {
+      animationId = requestAnimationFrame(animate);
+    } else {
+      isAnimating = false;
+    }
   }
-}   
+
+  let startTime;
+
+  function startAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+    
+    drivers.forEach(d => {
+      d.progress = 0;
+      d.finished = false;
+      d.finishTime = null;
+    });
+
+    isAnimating = true;
+    startTime = Date.now();
+    animationId = requestAnimationFrame(animate);
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !hasAnimated) {
+        hasAnimated = true;
+        setTimeout(() => startAnimation(), 300);
+      }
+    });
+  }, {
+    threshold: 0.3
+  });
+
+  observer.observe(canvas);
+
+  replayBtn.addEventListener('click', () => {
+    hasAnimated = true;
+    startAnimation();
+  });
+}  
 
 /* -----------------------------
    Core: Leaderboard (season-aware)
