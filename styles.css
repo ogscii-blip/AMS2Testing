@@ -54,6 +54,37 @@ header p {
 }
 
 @media screen and (max-width: 480px) {
+    /* Ensure position-3 cards in Round Results expand to show all data */
+    #round .leaderboard-table tr.position-3 {
+        min-height: auto !important;
+        height: auto !important;
+    }
+    
+    /* Make sure all td elements are visible */
+    #round .leaderboard-table tr.position-3 td {
+        display: grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    #round .leaderboard-table tr.position-3 td:first-child {
+        display: grid !important;
+    }
+    
+    /* Ensure the bronze gradient doesn't interfere */
+    .position-3 {
+        overflow: visible !important;
+    }
+    
+    /* Make sure Points column (last td) is visible */
+    #round .leaderboard-table tr.position-3 td:last-child {
+        display: grid !important;
+        grid-template-columns: 110px 1fr;
+        border-bottom: none;
+    }
+}
+
+@media screen and (max-width: 480px) {
     #overall .leaderboard-table tr {
         cursor: pointer;
     }
