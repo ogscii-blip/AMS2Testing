@@ -704,14 +704,30 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   let animationId = null;
   let hasAnimated = false;
 
-  // Set canvas size
-  const resizeCanvas = () => {
-    const container = canvas.parentElement;
-    canvas.width = container.clientWidth;
-    canvas.height = canvas.offsetHeight;
-  };
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+   // Set canvas size
+   const resizeCanvas = () => {
+     const container = canvas.parentElement;
+     const rect = container.getBoundingClientRect();
+     canvas.width = rect.width; // Use actual rendered width
+     canvas.height = canvas.offsetHeight;
+   };
+   resizeCanvas();
+   
+   // Add debounced resize handler
+   let resizeTimeout;
+   const debouncedResize = () => {
+     clearTimeout(resizeTimeout);
+     resizeTimeout = setTimeout(() => {
+       resizeCanvas();
+       // Redraw if animation hasn't started
+       if (!hasAnimated) {
+         drawTrack();
+       }
+     }, 250);
+   };
+   
+   window.addEventListener('resize', debouncedResize);
+   window.addEventListener('orientationchange', debouncedResize);
 
   // Driver colors (matching points graph)
   const colors = ['#667eea', '#e74c3c', '#f39c12'];
