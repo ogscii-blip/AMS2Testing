@@ -1339,10 +1339,19 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       tbody.appendChild(tr);
     });
 
-    details.appendChild(table);
-    roundDiv.appendChild(header);
-    roundDiv.appendChild(details);
-    frag.appendChild(roundDiv);
+   details.appendChild(table);
+
+   // ADD RACE ANIMATION HERE
+   const raceAnimationHtml = createRaceAnimation(key, results);
+   if (raceAnimationHtml) {
+     const raceDiv = document.createElement('div');
+     raceDiv.innerHTML = raceAnimationHtml;
+     details.appendChild(raceDiv.firstElementChild);
+   }
+   
+   roundDiv.appendChild(header);
+   roundDiv.appendChild(details);
+   frag.appendChild(roundDiv);
   });
 
   container.appendChild(frag);
