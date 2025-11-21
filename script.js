@@ -913,6 +913,14 @@ async function loadRoundData() {
   }
 }
 
+function toggleRound(key) {
+  const details = document.getElementById(`details-${key}`);
+  const icon = document.getElementById(`toggle-${key}`);
+  if (!details) return;
+  details.classList.toggle('expanded');
+  if (icon) icon.classList.toggle('expanded');
+}
+
 function displayRoundData(roundGroups, tracksMap, carsMap) {
   const container = document.getElementById('round-content');
   container.innerHTML = '';
