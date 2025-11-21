@@ -1130,13 +1130,13 @@ function animate() {
 
   const trackLength = finishX - startX;
   
-  // Calculate each driver's position based on simple linear interpolation
+  // Calculate each driver's position
   const driverStates = drivers.map((driver, idx) => {
-    // Faster drivers finish earlier in the animation
+    // Calculate overall progress for this driver (faster drivers finish earlier)
     const timeRatio = driver.totalTime / slowestTime;
     const driverProgress = Math.min(progress / timeRatio, 1);
     
-    // Simple linear position from start to finish
+    // Simple linear position
     let x = startX + (trackLength * driverProgress);
     let finished = false;
     
@@ -1154,19 +1154,38 @@ function animate() {
       finishOrder.push({ driver, idx, finishTime: driver.finishTime });
     }
 
-    // For ranking purposes, use cumulative time based on their actual lap time
-    const cumulativeTime = driverProgress * driver.totalTime;
+    // Calculate cumulative time through sectors for ranking
+    let cumulativeTime = 0;
+    const totalProgress = driverProgress; // 0 to 1
+    
+    // Determine which "checkpoint" we're past for ranking purposes
+    const s1Ratio = driver.sector1 / driver.totalTime;
+    const s2Ratio = (driver.sector1 + driver.sector2) / driver.totalTime;
+    
+    if (totalProgress <= s1Ratio) {
+      // Still in S1 - ranking based on S1 time
+      cumulativeTime = (totalProgress / s1Ratio) * driver.sector1;
+    } else if (totalProgress <= s2Ratio) {
+      // In S2 - ranking based on S1+S2 time
+      const progressIntoS2 = (totalProgress - s1Ratio) / (s2Ratio - s1Ratio);
+      cumulativeTime = driver.sector1 + (progressIntoS2 * driver.sector2);
+    } else {
+      // In S3 or finished - ranking based on S1+S2+S3 time
+      const progressIntoS3 = (totalProgress - s2Ratio) / (1 - s2Ratio);
+      cumulativeTime = driver.sector1 + driver.sector2 + (progressIntoS3 * driver.sector3);
+    }
 
     return {
       driver,
       idx,
       x,
-      cumulativeTime,
+      xProgress: driverProgress, // For visual position
+      cumulativeTime, // For ranking
       finished: driver.finished
     };
   });
 
-  // Sort by cumulative time (who's ahead in their race)
+  // Sort by cumulative time (who's ahead based on sector completion)
   driverStates.sort((a, b) => {
     if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
       return a.cumulativeTime - b.cumulativeTime;
