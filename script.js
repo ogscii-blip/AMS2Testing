@@ -1115,10 +1115,8 @@ function animate() {
   // Slow down the last 20% of the race for dramatic effect
   let adjustedProgress;
   if (elapsed / ANIMATION_DURATION < 0.8) {
-    // First 80% runs normally
     adjustedProgress = (elapsed / ANIMATION_DURATION) / 0.8 * 0.8;
   } else {
-    // Last 20% runs at 50% speed (more dramatic)
     const remainingProgress = (elapsed / ANIMATION_DURATION - 0.8) / 0.2;
     adjustedProgress = 0.8 + (remainingProgress * 0.5 * 0.2);
   }
@@ -1130,42 +1128,37 @@ function animate() {
   const laneHeight = canvas.height / 3;
   let finishOrder = [];
 
-  const trackLength = finishX - startX;
-  const totalTrackTime = slowestTime;
-  const timeElapsed = progress * totalTrackTime;
+  // Use ANIMATION_DURATION as the base for smooth movement
+  const raceProgress = progress; // 0 to 1 throughout the animation
   
   // Calculate each driver's position
   const driverStates = drivers.map((driver, idx) => {
+    // Each driver completes their lap in proportion to their actual lap time
+    const timeRatio = driver.totalTime / slowestTime;
+    const driverProgress = Math.min(raceProgress / timeRatio, 1);
+    const driverElapsedTime = driverProgress * driver.totalTime;
+    
     let x = startX;
     let currentSector = 0;
-    let driverCumulativeTime = 0;
     let finished = false;
     
-    // Calculate X position based on proportion through the driver's entire lap
-    const sector1EndTime = driver.sector1;
-    const sector2EndTime = driver.sector1 + driver.sector2;
-    const sector3EndTime = driver.sector1 + driver.sector2 + driver.sector3;
-    
-    if (timeElapsed <= sector1EndTime) {
+    if (driverElapsedTime < driver.sector1) {
       // In Sector 1
       currentSector = 1;
-      driverCumulativeTime = timeElapsed;
-      const progressThroughS1 = timeElapsed / driver.sector1;
+      const progressThroughS1 = driverElapsedTime / driver.sector1;
       x = startX + (sector1End - startX) * progressThroughS1;
       
-    } else if (timeElapsed <= sector2EndTime) {
+    } else if (driverElapsedTime < driver.sector1 + driver.sector2) {
       // In Sector 2
       currentSector = 2;
-      driverCumulativeTime = timeElapsed;
-      const timeIntoS2 = timeElapsed - sector1EndTime;
+      const timeIntoS2 = driverElapsedTime - driver.sector1;
       const progressThroughS2 = timeIntoS2 / driver.sector2;
       x = sector1End + (sector2End - sector1End) * progressThroughS2;
       
-    } else if (timeElapsed <= sector3EndTime) {
+    } else if (driverElapsedTime < driver.totalTime) {
       // In Sector 3
       currentSector = 3;
-      driverCumulativeTime = timeElapsed;
-      const timeIntoS3 = timeElapsed - sector2EndTime;
+      const timeIntoS3 = driverElapsedTime - driver.sector1 - driver.sector2;
       const progressThroughS3 = timeIntoS3 / driver.sector3;
       x = sector2End + (finishX - sector2End) * progressThroughS3;
       
@@ -1173,7 +1166,6 @@ function animate() {
       // Finished
       currentSector = 4;
       x = finishX;
-      driverCumulativeTime = driver.totalTime;
       finished = true;
       
       if (!driver.finished) {
@@ -1191,7 +1183,7 @@ function animate() {
       idx,
       x,
       currentSector,
-      cumulativeTime: driverCumulativeTime,
+      cumulativeTime: driverElapsedTime,
       finished: driver.finished
     };
   });
@@ -1234,12 +1226,14 @@ function animate() {
     drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
   });
 
-  // Draw finish carpets
-  finishOrder.sort((a, b) => a.finishTime - b.finishTime);
-  finishOrder.forEach((item, finishPos) => {
-    const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
-    drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
-  });
+  // Draw finish carpets - FIXED: ensure all finishers get carpets
+  if (finishOrder.length > 0) {
+    finishOrder.sort((a, b) => a.finishTime - b.finishTime);
+    finishOrder.forEach((item, finishPos) => {
+      const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
+      drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+    });
+  }
 
   if (progress < 1) {
     animationId = requestAnimationFrame(animate);
