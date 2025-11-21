@@ -913,6 +913,369 @@ header p {
     display: block;
 }
 
+/* ========================================
+   Admin Tools Styles
+   ======================================== */
+
+.admin-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.admin-filter-select {
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    background: white;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.admin-filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.admin-filter-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.admin-filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.admin-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.admin-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.admin-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #2c3e50;
+}
+
+.admin-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-btn-edit,
+.admin-btn-delete {
+    padding: 6px 12px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.admin-btn-edit {
+    background: #3498db;
+    color: white;
+}
+
+.admin-btn-edit:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.admin-btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.admin-btn-delete:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+/* Admin Modal */
+.admin-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-modal.show {
+    opacity: 1;
+}
+
+.admin-modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.admin-modal.show .admin-modal-content {
+    transform: translateY(0);
+}
+
+.admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.admin-modal-header h3 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.admin-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2em;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+}
+
+.admin-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-modal-body {
+    padding: 25px;
+    color: #2c3e50;
+}
+
+.admin-modal-body p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.admin-edit-form {
+    margin-top: 20px;
+}
+
+.admin-form-group {
+    margin-bottom: 20px;
+}
+
+.admin-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.admin-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+.admin-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.admin-modal-footer {
+    padding: 20px;
+    border-top: 2px solid #f0f0f0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.admin-btn-save,
+.admin-btn-cancel {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.admin-btn-save {
+    background: #2ecc71;
+    color: white;
+}
+
+.admin-btn-save:hover {
+    background: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(46, 204, 113, 0.4);
+}
+
+.admin-btn-cancel {
+    background: #95a5a6;
+    color: white;
+}
+
+.admin-btn-cancel:hover {
+    background: #7f8c8d;
+}
+
+/* Mobile responsive for Admin Tools */
+@media screen and (max-width: 768px) {
+    .admin-filters {
+        flex-direction: column;
+    }
+
+    .admin-filter-select {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .admin-filter-btn {
+        width: 100%;
+    }
+
+    .admin-table {
+        font-size: 0.9em;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 10px;
+    }
+
+    .admin-btn-edit,
+    .admin-btn-delete {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .admin-modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+
+    .admin-modal-footer {
+        flex-direction: column;
+    }
+
+    .admin-btn-save,
+    .admin-btn-cancel {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .admin-table thead {
+        display: none;
+    }
+
+    .admin-table,
+    .admin-table tbody,
+    .admin-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-table tr {
+        margin-bottom: 15px;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 15px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .admin-table td {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        padding: 8px 0;
+        border: none;
+        text-align: left;
+        gap: 10px;
+    }
+
+    .admin-table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .admin-table td:last-child {
+        grid-template-columns: 1fr;
+        margin-top: 10px;
+    }
+
+    .admin-table td:last-child:before {
+        display: none;
+    }
+
+    .admin-modal-header h3 {
+        font-size: 1.2em;
+    }
+
+    .admin-modal-body {
+        padding: 15px;
+    }
+}
+
 @media screen and (max-width: 768px) {
     .race-canvas {
         height: 250px;
