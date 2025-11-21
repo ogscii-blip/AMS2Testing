@@ -1093,7 +1093,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
   }
 
-  function animate() {
+  /*function animate() {
     const { startX, finishX, sector1End, sector2End } = getPositions();
     
     const now = Date.now();
@@ -1173,6 +1173,61 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     startAnimation();
   });
 }
+*/
+function animate() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  const now = Date.now();
+  const elapsed = now - startTime;
+  const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / 3;
+  let finishOrder = [];
+
+  drivers.forEach((driver, idx) => {
+    const laneY = (idx + 0.5) * laneHeight;
+
+    // Calculate how much "real time" has passed in the animation
+    const elapsedRealTime = progress * slowestTime;
+    
+    // Calculate what percentage of their total lap time has elapsed
+    const driverProgress = Math.min(elapsedRealTime / driver.totalTime, 1);
+    
+    // Map this directly to position on track (linear interpolation)
+    let x = startX + (finishX - startX) * driverProgress;
+
+    // Check if finished
+    if (driverProgress >= 1 && !driver.finished) {
+      driver.finished = true;
+      driver.finishTime = now;
+      // Clamp to finish line
+      x = finishX;
+    }
+
+    // NEW: Draw glowing lane ONLY if car has finished
+    if (driver.finished) {
+      drawGlowingLane(startX, finishX, laneY, laneHeight, driver.color);
+      finishOrder.push({ driver, idx, finishTime: driver.finishTime });
+    }
+
+    drawCar(x, laneY, driver.color, driver.name, driver.position);
+  });
+
+  // Sort by finish time and draw finish carpets
+  finishOrder.sort((a, b) => a.finishTime - b.finishTime);
+  finishOrder.forEach((item, finishPos) => {
+    const laneY = (item.idx + 0.5) * laneHeight;
+    drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+  });
+
+  if (progress < 1) {
+    animationId = requestAnimationFrame(animate);
+  } else {
+    isAnimating = false;
+  }
+}   
 
 /* -----------------------------
    Core: Leaderboard (season-aware)
@@ -1254,6 +1309,45 @@ async function loadLeaderboard() {
   } catch (err) {
     console.error('loadLeaderboard error', err);
   }
+}
+
+function drawGlowingLane(startX, finishX, laneY, laneHeight, color) {
+  ctx.save();
+
+  // Create gradient from transparent to light color across the full lane
+  const gradient = ctx.createLinearGradient(startX, 0, finishX, 0);
+  
+  // Parse the color and create a lighter, transparent version
+  const lightColor = hexToRgba(color, 0.1); // Very light at the start
+  const mediumColor = hexToRgba(color, 0.2); // Medium in middle
+  const strongColor = hexToRgba(color, 0.3); // Stronger at finish
+  
+  gradient.addColorStop(0, lightColor);
+  gradient.addColorStop(0.7, mediumColor);
+  gradient.addColorStop(1, strongColor);
+
+  ctx.fillStyle = gradient;
+  
+  // Draw the glowing lane strip for the entire track
+  const laneTop = laneY - laneHeight/2 + 5; // Add small padding
+  const stripHeight = laneHeight - 10; // Subtract padding
+  
+  ctx.fillRect(startX, laneTop, finishX - startX, stripHeight);
+
+  ctx.restore();
+}
+
+// Helper function to convert hex color to rgba
+function hexToRgba(hex, alpha) {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Parse hex values
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function displayLeaderboard(data) {
