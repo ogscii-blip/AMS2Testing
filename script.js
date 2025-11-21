@@ -744,24 +744,25 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
   // Parse sector times and calculate animation durations
   const drivers = top3.map((result, idx) => {
-    const s1 = timeToSeconds(result.sector1);
-    const s2 = timeToSeconds(result.sector2);
-    const s3 = timeToSeconds(result.sector3);
-    const total = s1 + s2 + s3;
+  const s1 = timeToSeconds(result.sector1);
+  const s2 = timeToSeconds(result.sector2);
+  const s3 = timeToSeconds(result.sector3);
+  const total = s1 + s2 + s3;
 
-    return {
-      name: result.driver,
-      position: result.position,
-      sector1: s1,
-      sector2: s2,
-      sector3: s3,
-      totalTime: total,
-      color: colors[idx],
-      currentSector: 0,
-      progress: 0,
-      finished: false
-    };
-  });
+  return {
+    name: result.driver,
+    position: result.position,
+    sector1: s1,
+    sector2: s2,
+    sector3: s3,
+    totalTime: total,
+    color: colors[idx],
+    currentSector: 0,
+    progress: 0,
+    finished: false,
+    finishTime: null  // ADD THIS LINE
+  };
+});
 
   // Animation settings
   const ANIMATION_DURATION = 4000; // 4 seconds total
@@ -871,6 +872,106 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
         );
       }
     }
+
+     function drawFinishCarpet(finishX, laneY, finishPosition, driverColor) {
+  const carpetWidth = 35;
+  const carpetHeight = 25;
+  const carpetX = finishX - carpetWidth - 10; // Position carpet before finish line
+  const carpetY = laneY - carpetHeight / 2;
+
+  ctx.save();
+
+  // Carpet base color based on finish position
+  let carpetBaseColor;
+  if (finishPosition === 1) {
+    carpetBaseColor = '#FFD700'; // Gold
+  } else if (finishPosition === 2) {
+    carpetBaseColor = '#C0C0C0'; // Silver
+  } else if (finishPosition === 3) {
+    carpetBaseColor = '#CD7F32'; // Bronze
+  }
+
+  // Draw carpet shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.fillRect(carpetX + 2, carpetY + 2, carpetWidth, carpetHeight);
+
+  // Draw carpet gradient
+  const gradient = ctx.createLinearGradient(carpetX, carpetY, carpetX, carpetY + carpetHeight);
+  gradient.addColorStop(0, carpetBaseColor);
+  gradient.addColorStop(1, shadeColor(carpetBaseColor, -20));
+  ctx.fillStyle = gradient;
+  ctx.fillRect(carpetX, carpetY, carpetWidth, carpetHeight);
+
+  // Draw carpet border with driver color accent
+  ctx.strokeStyle = driverColor;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(carpetX, carpetY, carpetWidth, carpetHeight);
+
+  // Inner border (white)
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(carpetX + 3, carpetY + 3, carpetWidth - 6, carpetHeight - 6);
+
+  // Draw finish position number
+  ctx.fillStyle = '#2c3e50';
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Add ordinal suffix (1st, 2nd, 3rd)
+  const ordinal = finishPosition === 1 ? 'st' : finishPosition === 2 ? 'nd' : 'rd';
+  ctx.fillText(`${finishPosition}${ordinal}`, carpetX + carpetWidth / 2, carpetY + carpetHeight / 2);
+
+  // Draw sparkle effect for winner
+  if (finishPosition === 1) {
+    drawSparkles(carpetX + carpetWidth / 2, carpetY + carpetHeight / 2, carpetWidth);
+  }
+
+  ctx.restore();
+}
+
+// Helper function to darken colors
+function shadeColor(color, percent) {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  return '#' + (
+    0x1000000 +
+    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+    (B < 255 ? (B < 1 ? 0 : B) : 255)
+  ).toString(16).slice(1);
+}
+
+// Draw sparkles for winner
+function drawSparkles(x, y, size) {
+  const sparkleCount = 4;
+  const sparkleSize = 3;
+  const sparkleDistance = size / 2 + 5;
+  
+  ctx.fillStyle = '#FFD700';
+  
+  for (let i = 0; i < sparkleCount; i++) {
+    const angle = (Math.PI * 2 / sparkleCount) * i + (Date.now() / 500); // Rotating sparkles
+    const sx = x + Math.cos(angle) * sparkleDistance;
+    const sy = y + Math.sin(angle) * sparkleDistance;
+    
+    // Draw star sparkle
+    ctx.beginPath();
+    for (let j = 0; j < 5; j++) {
+      const starAngle = (Math.PI * 2 / 5) * j + angle;
+      const radius = j % 2 === 0 ? sparkleSize : sparkleSize / 2;
+      const px = sx + Math.cos(starAngle) * radius;
+      const py = sy + Math.sin(starAngle) * radius;
+      if (j === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+}
 
     // Border around flag
     ctx.strokeStyle = '#2c3e50';
@@ -1005,53 +1106,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
   }
 
-  /*function animate() {
-    const { startX, finishX, sector1End, sector2End } = getPositions();
-    
-    const now = Date.now();
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-
-    drawTrack();
-
-    const laneHeight = canvas.height / 3;
-
-    drivers.forEach((driver, idx) => {
-      const laneY = (idx + 0.5) * laneHeight;
-
-      // Calculate position based on normalized time
-      const timeProgress = progress * slowestTime;
-      
-      let x = startX;
-      
-      if (timeProgress <= driver.sector1) {
-        // In sector 1
-        const s1Progress = timeProgress / driver.sector1;
-        x = startX + (sector1End - startX) * s1Progress;
-      } else if (timeProgress <= driver.sector1 + driver.sector2) {
-        // In sector 2
-        const s2Progress = (timeProgress - driver.sector1) / driver.sector2;
-        x = sector1End + (sector2End - sector1End) * s2Progress;
-      } else if (timeProgress <= driver.totalTime) {
-        // In sector 3
-        const s3Progress = (timeProgress - driver.sector1 - driver.sector2) / driver.sector3;
-        x = sector2End + (finishX - sector2End) * s3Progress;
-      } else {
-        // Finished
-        x = finishX;
-        driver.finished = true;
-      }
-
-      drawCar(x, laneY, driver.color, driver.name, driver.position);
-    });
-
-    if (progress < 1) {
-      animationId = requestAnimationFrame(animate);
-    } else {
-      isAnimating = false;
-    }
-  }*/
-   function animate() {
+   /*function animate() {
   const { startX, finishX, sector1End, sector2End } = getPositions();
   
   const now = Date.now();
@@ -1124,6 +1179,61 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     hasAnimated = true;
     startAnimation();
   });
+}*/
+   function animate() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  const now = Date.now();
+  const elapsed = now - startTime;
+  const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / 3;
+  
+  // Track finish order
+  let finishOrder = [];
+
+  drivers.forEach((driver, idx) => {
+    const laneY = (idx + 0.5) * laneHeight;
+
+    // Calculate how much "real time" has passed in the animation
+    const elapsedRealTime = progress * slowestTime;
+    
+    // Calculate what percentage of their total lap time has elapsed
+    const driverProgress = Math.min(elapsedRealTime / driver.totalTime, 1);
+    
+    // Map this directly to position on track (linear interpolation)
+    let x = startX + (finishX - startX) * driverProgress;
+
+    // Check if finished
+    if (driverProgress >= 1 && !driver.finished) {
+      driver.finished = true;
+      driver.finishTime = now;
+      // Clamp to finish line
+      x = finishX;
+    }
+
+    // Collect finished drivers for podium
+    if (driver.finished) {
+      finishOrder.push({ driver, idx, finishTime: driver.finishTime });
+    }
+
+    drawCar(x, laneY, driver.color, driver.name, driver.position);
+  });
+
+  // Sort by finish time and draw finish carpets
+  finishOrder.sort((a, b) => a.finishTime - b.finishTime);
+  finishOrder.forEach((item, finishPos) => {
+    const laneY = (item.idx + 0.5) * laneHeight;
+    drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+  });
+
+  if (progress < 1) {
+    animationId = requestAnimationFrame(animate);
+  } else {
+    isAnimating = false;
+  }
 }
 /* -----------------------------
    Core: Leaderboard (season-aware)
