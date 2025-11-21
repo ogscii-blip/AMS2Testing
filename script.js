@@ -1262,45 +1262,131 @@ function animate() {
       return a.cumulativeTime - b.cumulativeTime;
     }
     return b.x - a.x;
+function animate() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+
+  const now = performance.now();
+  const elapsed = now - startTime;
+
+  // TRUE smooth easing (no sprinting)
+  const t = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+  // Slow last 20% with cubic easing
+  const easeOut = x => 1 - Math.pow(1 - x, 3);
+
+  let adjustedProgress;
+  if (t <= 0.8) {
+    adjustedProgress = t / 0.8; // first 80% normal
+  } else {
+    const lastPart = (t - 0.8) / 0.2;
+    adjustedProgress = 0.8 + easeOut(lastPart) * 0.2 * 0.5; 
+  }
+
+  const progress = Math.min(adjustedProgress, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / drivers.length; // supports any number
+  let finishOrder = [];
+
+  // 1. CALCULATE EACH DRIVER'S CONTINUOUS POSITION
+  const driverStates = drivers.map((driver, idx) => {
+    // SMOOTH lap progress (no sector stutter)
+    const driverProgress = Math.min(progress * (slowestTime / driver.totalTime), 1);
+    const driverElapsed = driverProgress * driver.totalTime;
+
+    let x = startX;
+    let finished = false;
+
+    if (driverElapsed <= driver.sector1) {
+      // SECTOR 1
+      const p = driverElapsed / driver.sector1;
+      x = startX + (sector1End - startX) * p;
+
+    } else if (driverElapsed <= driver.sector1 + driver.sector2) {
+      // SECTOR 2
+      const timeInto = driverElapsed - driver.sector1;
+      const p = timeInto / driver.sector2;
+      x = sector1End + (sector2End - sector1End) * p;
+
+    } else if (driverElapsed < driver.totalTime) {
+      // SECTOR 3
+      const timeInto = driverElapsed - driver.sector1 - driver.sector2;
+      const p = timeInto / driver.sector3;
+      x = sector2End + (finishX - sector2End) * p;
+
+    } else {
+      // FINISHED
+      x = finishX;
+      finished = true;
+
+      if (!driver.finished) {
+        driver.finished = true;
+        driver.finishTime = now;
+      }
+    }
+
+    if (finished) {
+      finishOrder.push({ driver, idx, finishTime: driver.finishTime });
+    }
+
+    return {
+      driver,
+      idx,
+      x,
+      finished,
+      cumulativeTime: driverElapsed
+    };
   });
 
-  // Assign lanes with smooth transitions
+  // 2. SORT FOR RACE ORDER (no hide / no missing P3)
+  driverStates.sort((a, b) => {
+    if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.001) {
+      return a.cumulativeTime - b.cumulativeTime;
+    }
+    return b.x - a.x;
+  });
+
+  // 3. SMOOTH LANE MOVEMENT (float lane positions)
   driverStates.forEach((state, position) => {
-    state.targetLane = position;
-    
-    const currentLane = state.driver.lanePosition;
-    const laneChangeSpeed = 0.03;
-    
-    if (Math.abs(currentLane - state.targetLane) < 0.01) {
-      state.driver.lanePosition = state.targetLane;
-    } else if (currentLane < state.targetLane) {
-      state.driver.lanePosition = Math.min(currentLane + laneChangeSpeed, state.targetLane);
-    } else if (currentLane > state.targetLane) {
-      state.driver.lanePosition = Math.max(currentLane - laneChangeSpeed, state.targetLane);
+    const targetLane = position;
+    const currentLane = state.driver.lanePosition ?? position;
+
+    const speed = 0.05; // smooth sliding
+
+    if (Math.abs(currentLane - targetLane) < 0.01) {
+      state.driver.lanePosition = targetLane;
+    } else if (currentLane < targetLane) {
+      state.driver.lanePosition = currentLane + speed;
+    } else {
+      state.driver.lanePosition = currentLane - speed;
     }
   });
 
-  // Draw glowing lanes for finished drivers
-  driverStates.forEach(state => {
-    if (state.finished) {
-      const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
-      drawGlowingLane(startX, finishX, laneY, laneHeight, state.driver.color);
-    }
-  });
-
-  // Draw cars
+  // 4. DRAW EVERYTHING
   driverStates.forEach(state => {
     const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
-    drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
+
+    if (state.finished) {
+      drawGlowingLane(startX, finishX, laneY, laneHeight, state.driver.color);
+    }
+
+    drawCar(
+      state.x,
+      laneY,
+      state.driver.color,
+      state.driver.name,
+      state.idx + 1 // POSITION LABEL FIXED (P1/P2/P3 always correct)
+    );
   });
 
-  // Draw finish carpets
   finishOrder.sort((a, b) => a.finishTime - b.finishTime);
-  finishOrder.forEach((item, finishPos) => {
+  finishOrder.forEach((item, i) => {
     const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
-    drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+    drawFinishCarpet(finishX, laneY, i + 1, item.driver.color);
   });
 
+  // 5. LOOP
   if (progress < 1) {
     animationId = requestAnimationFrame(animate);
   } else {
