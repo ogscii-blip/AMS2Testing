@@ -306,7 +306,8 @@ header p {
 }
 
 .round-details.expanded {
-    max-height: 1000px;
+    max-height: 5000px !important;  /* Increased from 1000px */
+    overflow: visible !important;   /* Changed from hidden to visible */
 }
 
 .round-details table {
