@@ -1130,46 +1130,39 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   const laneHeight = canvas.height / 3;
   let finishOrder = [];
 
-  // Global elapsed time that applies to all drivers uniformly
-  const globalElapsedTime = progress * slowestTime;
-
-  // Calculate each driver's state
+  // Calculate each driver's state based on their individual sector times
   const driverStates = drivers.map((driver, idx) => {
-    // Each driver progresses through their own lap at their own pace
-    // But we use the same global elapsed time for all
     let x = startX;
     let currentSector = 0;
     let cumulativeTime = 0;
     
-    // Calculate where this driver is based on how much of their lap they've completed
-    let timeIntoLap = 0;
+    // Calculate position based on progress through driver's own lap
+    // Each driver has their own pace through sectors
+    const driverTotalProgress = progress * (slowestTime / driver.totalTime);
+    const driverElapsedTime = Math.min(driverTotalProgress * driver.totalTime, driver.totalTime);
     
-    // Figure out which sector they're in based on global elapsed time
-    if (globalElapsedTime <= driver.sector1) {
-      // Still in sector 1
+    if (driverElapsedTime <= driver.sector1) {
+      // In sector 1
       currentSector = 1;
-      timeIntoLap = globalElapsedTime;
-      const s1Progress = timeIntoLap / driver.sector1;
+      const s1Progress = driverElapsedTime / driver.sector1;
       x = startX + (sector1End - startX) * s1Progress;
-      cumulativeTime = timeIntoLap;
-    } else if (globalElapsedTime <= driver.sector1 + driver.sector2) {
+      cumulativeTime = driverElapsedTime;
+    } else if (driverElapsedTime <= driver.sector1 + driver.sector2) {
       // In sector 2
       currentSector = 2;
-      timeIntoLap = globalElapsedTime;
-      const s2Elapsed = globalElapsedTime - driver.sector1;
+      const s2Elapsed = driverElapsedTime - driver.sector1;
       const s2Progress = s2Elapsed / driver.sector2;
       x = sector1End + (sector2End - sector1End) * s2Progress;
-      cumulativeTime = timeIntoLap;
-    } else if (globalElapsedTime <= driver.sector1 + driver.sector2 + driver.sector3) {
+      cumulativeTime = driverElapsedTime;
+    } else if (driverElapsedTime < driver.totalTime) {
       // In sector 3
       currentSector = 3;
-      timeIntoLap = globalElapsedTime;
-      const s3Elapsed = globalElapsedTime - driver.sector1 - driver.sector2;
+      const s3Elapsed = driverElapsedTime - driver.sector1 - driver.sector2;
       const s3Progress = s3Elapsed / driver.sector3;
       x = sector2End + (finishX - sector2End) * s3Progress;
-      cumulativeTime = timeIntoLap;
+      cumulativeTime = driverElapsedTime;
     } else {
-      // This driver has finished
+      // Finished
       currentSector = 4;
       x = finishX;
       cumulativeTime = driver.totalTime;
