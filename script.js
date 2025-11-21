@@ -1120,34 +1120,39 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
   const elapsedRealTime = progress * slowestTime;
 
-  // Calculate actual progress for each driver based on their sector times
+  // Calculate each driver's state
   const driverStates = drivers.map((driver, idx) => {
-    // Calculate how far this specific driver has progressed through THEIR lap
     const driverElapsedTime = Math.min(elapsedRealTime, driver.totalTime);
     
-    // Determine which sector they're in and calculate position
     let x = startX;
-    let completedTime = 0; // How much of their lap time they've completed
+    let currentSector = 0; // 0=not started, 1=in S1, 2=in S2, 3=in S3, 4=finished
+    let cumulativeTime = 0; // Time to reach current position
+    let sectorProgress = 0; // Progress within current sector (0-1)
     
     if (driverElapsedTime <= driver.sector1) {
       // In sector 1
-      const s1Progress = driverElapsedTime / driver.sector1;
-      x = startX + (sector1End - startX) * s1Progress;
-      completedTime = driverElapsedTime;
+      currentSector = 1;
+      sectorProgress = driverElapsedTime / driver.sector1;
+      x = startX + (sector1End - startX) * sectorProgress;
+      cumulativeTime = driverElapsedTime;
     } else if (driverElapsedTime <= driver.sector1 + driver.sector2) {
       // In sector 2
-      const s2Progress = (driverElapsedTime - driver.sector1) / driver.sector2;
-      x = sector1End + (sector2End - sector1End) * s2Progress;
-      completedTime = driverElapsedTime;
+      currentSector = 2;
+      sectorProgress = (driverElapsedTime - driver.sector1) / driver.sector2;
+      x = sector1End + (sector2End - sector1End) * sectorProgress;
+      cumulativeTime = driverElapsedTime;
     } else if (driverElapsedTime < driver.totalTime) {
       // In sector 3
-      const s3Progress = (driverElapsedTime - driver.sector1 - driver.sector2) / driver.sector3;
-      x = sector2End + (finishX - sector2End) * s3Progress;
-      completedTime = driverElapsedTime;
+      currentSector = 3;
+      sectorProgress = (driverElapsedTime - driver.sector1 - driver.sector2) / driver.sector3;
+      x = sector2End + (finishX - sector2End) * sectorProgress;
+      cumulativeTime = driverElapsedTime;
     } else {
       // Finished
+      currentSector = 4;
+      sectorProgress = 1;
       x = finishX;
-      completedTime = driver.totalTime;
+      cumulativeTime = driver.totalTime;
       
       if (!driver.finished) {
         driver.finished = true;
@@ -1159,32 +1164,52 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
       finishOrder.push({ driver, idx, finishTime: driver.finishTime });
     }
 
+    // Calculate time to current checkpoint for ranking
+    let timeToCheckpoint = 0;
+    if (currentSector === 1) {
+      // In S1: rank by S1 time (extrapolated)
+      timeToCheckpoint = driverElapsedTime;
+    } else if (currentSector === 2) {
+      // In S2: rank by S1+S2 time (extrapolated)
+      timeToCheckpoint = driverElapsedTime;
+    } else if (currentSector === 3) {
+      // In S3: rank by S1+S2+S3 time (extrapolated)
+      timeToCheckpoint = driverElapsedTime;
+    } else if (currentSector === 4) {
+      // Finished: rank by total time
+      timeToCheckpoint = driver.totalTime;
+    }
+
     return {
       driver,
       idx,
       x,
-      completedTime,
+      currentSector,
+      sectorProgress,
+      cumulativeTime,
+      timeToCheckpoint,
       finished: driver.finished
     };
   });
 
-  // Sort by X position (who's actually ahead on the track)
+  // Sort by cumulative time (fastest cumulative time = leader)
+  // This means if you have S1+S2 combined faster, you're ahead during S2
   driverStates.sort((a, b) => {
-    // Primary sort: by x position (who's further along the track)
-    if (Math.abs(b.x - a.x) > 5) { // 5px threshold to avoid jitter
-      return b.x - a.x;
+    // First, sort by cumulative time (lower is better)
+    if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
+      return a.cumulativeTime - b.cumulativeTime;
     }
-    // Tiebreaker: by time completed (more accurate for close races)
-    return b.completedTime - a.completedTime;
+    // Tiebreaker: if same cumulative time, sort by X position
+    return b.x - a.x;
   });
 
-  // Assign lanes based on current race position
+  // Assign lanes based on ranking (0 = fastest/leader = top lane)
   driverStates.forEach((state, position) => {
     state.targetLane = position; // 0 = top (leader), 1 = middle, 2 = bottom
     
     // Smooth lane transition
     const currentLane = state.driver.lanePosition;
-    const laneChangeSpeed = 0.08; // Adjust for smoother/faster transitions
+    const laneChangeSpeed = 0.1; // Faster transitions for more dynamic racing
     
     if (Math.abs(currentLane - state.targetLane) < 0.01) {
       state.driver.lanePosition = state.targetLane;
