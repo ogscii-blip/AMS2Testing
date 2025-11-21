@@ -1080,46 +1080,64 @@ header p {
         cursor: pointer;
     }
     
-    /* Round Results - ensure ALL td elements display for ALL positions */
+    /* Round Results - FORCE all cells to display */
+    #round .leaderboard-table tr {
+        display: block !important;
+        min-height: auto !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    #round .leaderboard-table tbody {
+        display: block !important;
+    }
+    
     #round .leaderboard-table td {
         display: grid !important;
-        grid-template-columns: 110px 1fr;
-        padding: 10px 20px;
-        border: none;
-        text-align: left;
-        gap: 15px;
-        align-items: center;
+        grid-template-columns: 110px 1fr !important;
+        padding: 10px 20px !important;
+        border: none !important;
+        text-align: left !important;
+        gap: 15px !important;
+        align-items: center !important;
         visibility: visible !important;
         opacity: 1 !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
     
     #round .leaderboard-table td:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: #667eea;
-        text-align: left;
-        font-size: 0.9em;
+        content: attr(data-label) !important;
+        font-weight: 600 !important;
+        color: #667eea !important;
+        text-align: left !important;
+        font-size: 0.9em !important;
+        display: block !important;
     }
     
     #round .leaderboard-table td:not(:last-child) {
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid #f0f0f0 !important;
     }
     
     #round .leaderboard-table td:last-child {
-        border-bottom: none;
+        border-bottom: none !important;
     }
     
     /* First cell override (Driver name with background) */
     #round .leaderboard-table td:first-child {
-        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
-        border-radius: 7px 7px 0 0;
-        font-weight: bold;
-        padding: 15px 20px 10px 20px;
+        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%) !important;
+        border-radius: 7px 7px 0 0 !important;
+        font-weight: bold !important;
+        padding: 15px 20px 10px 20px !important;
     }
     
-    /* Ensure position-3 cards expand properly */
+    /* Remove any height restrictions on position rows */
+    #round .leaderboard-table tr.position-1,
+    #round .leaderboard-table tr.position-2,
     #round .leaderboard-table tr.position-3 {
         min-height: auto !important;
+        max-height: none !important;
         height: auto !important;
         overflow: visible !important;
     }
@@ -1269,65 +1287,5 @@ header p {
         width: 70px;
         height: 70px;
         font-size: 1.8em;
-    }
-
-       /* Round Results - FORCE all cells to display */
-    #round .leaderboard-table tr {
-        display: block !important;
-        min-height: auto !important;
-        height: auto !important;
-    }
-    
-    #round .leaderboard-table tbody {
-        display: block !important;
-    }
-    
-    #round .leaderboard-table td {
-        display: grid !important;
-        grid-template-columns: 110px 1fr !important;
-        padding: 10px 20px !important;
-        border: none !important;
-        text-align: left !important;
-        gap: 15px !important;
-        align-items: center !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        max-height: none !important;
-        overflow: visible !important;
-    }
-    
-    #round .leaderboard-table td:before {
-        content: attr(data-label) !important;
-        font-weight: 600 !important;
-        color: #667eea !important;
-        text-align: left !important;
-        font-size: 0.9em !important;
-        display: block !important;
-    }
-    
-    #round .leaderboard-table td:not(:last-child) {
-        border-bottom: 1px solid #f0f0f0 !important;
-    }
-    
-    #round .leaderboard-table td:last-child {
-        border-bottom: none !important;
-    }
-    
-    /* First cell override (Driver name with background) */
-    #round .leaderboard-table td:first-child {
-        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%) !important;
-        border-radius: 7px 7px 0 0 !important;
-        font-weight: bold !important;
-        padding: 15px 20px 10px 20px !important;
-    }
-    
-    /* Remove any height restrictions on position rows */
-    #round .leaderboard-table tr.position-1,
-    #round .leaderboard-table tr.position-2,
-    #round .leaderboard-table tr.position-3 {
-        min-height: auto !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
     }
 }
