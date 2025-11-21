@@ -1647,6 +1647,9 @@ function isAdmin() {
 // Update admin username from config
 function updateAdminUsername(configMap) {
   ADMIN_USERNAME = configMap['admin_username'] || null;
+  console.log('Admin username set to:', ADMIN_USERNAME);
+  console.log('Current user:', currentUser);
+  console.log('Is admin?', isAdmin());
   updateAdminTabVisibility();
 }
 
