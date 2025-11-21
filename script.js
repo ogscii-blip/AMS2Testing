@@ -978,12 +978,15 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       <thead>
         <tr>
           <th>Driver</th><th>Sector 1</th><th>Sector 2</th><th>Sector 3</th>
-          <th>Total Time</th><th>Position</th><th>Purple Sectors</th><th>Points</th>
+          <th>Total Time</th><th>Gap</th><th>Position</th><th>Purple Sectors</th><th>Points</th>
         </tr>
       </thead>
       <tbody></tbody>
     `;
     const tbody = table.querySelector('tbody');
+
+    // Calculate winner's time for gap calculations
+    const winnerTime = results.length > 0 ? timeToSeconds(results[0].totalTime) : 0;
 
     results.forEach(row => {
       const tr = document.createElement('tr');
@@ -997,12 +1000,27 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
       const formattedName = getFormattedDriverName(row.driver);
 
+      // Calculate gap to winner
+      let gapHtml = '';
+      if (row.position === 1) {
+        gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Winner</span>';
+      } else {
+        const driverTime = timeToSeconds(row.totalTime);
+        const gap = driverTime - winnerTime;
+        if (gap > 0 && isFinite(gap)) {
+          gapHtml = `<span style="color:#e74c3c;">+${gap.toFixed(3)}s</span>`;
+        } else {
+          gapHtml = '-';
+        }
+      }
+
       tr.innerHTML = `
         <td data-label="Driver"><strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer;color:#667eea">${formattedName}</strong></td>
         <td data-label="Sector 1">${sector1Html}</td>
         <td data-label="Sector 2">${sector2Html}</td>
         <td data-label="Sector 3">${sector3Html}</td>
         <td data-label="Total Time"><strong>${formatTime(row.totalTime)}</strong></td>
+        <td data-label="Gap">${gapHtml}</td>
         <td data-label="Position">${row.position}</td>
         <td data-label="Purple Sectors">${row.purpleSectors}</td>
         <td data-label="Points"><strong>${row.points}</strong></td>
@@ -1039,15 +1057,6 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   document.getElementById('round-loading').style.display = 'none';
   document.getElementById('round-content').style.display = 'block';
 }
-
-function toggleRound(key) {
-  const details = document.getElementById(`details-${key}`);
-  const icon = document.getElementById(`toggle-${key}`);
-  if (!details) return;
-  details.classList.toggle('expanded');
-  if (icon) icon.classList.toggle('expanded');
-}
-
 /* -----------------------------
    Round Setup & Cards
    ----------------------------- */
