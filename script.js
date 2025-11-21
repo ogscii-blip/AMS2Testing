@@ -1005,7 +1005,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
   }
 
-  function animate() {
+  /*function animate() {
     const { startX, finishX, sector1End, sector2End } = getPositions();
     
     const now = Date.now();
@@ -1050,7 +1050,43 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     } else {
       isAnimating = false;
     }
+  }*/
+   function animate() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  const now = Date.now();
+  const elapsed = now - startTime;
+  const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / 3;
+
+  drivers.forEach((driver, idx) => {
+    const laneY = (idx + 0.5) * laneHeight;
+
+    // Calculate how much "real time" has passed in the animation
+    const elapsedRealTime = progress * slowestTime;
+    
+    // Calculate what percentage of their total lap time has elapsed
+    const driverProgress = Math.min(elapsedRealTime / driver.totalTime, 1);
+    
+    // Map this directly to position on track (linear interpolation)
+    const x = startX + (finishX - startX) * driverProgress;
+
+    if (driverProgress >= 1) {
+      driver.finished = true;
+    }
+
+    drawCar(x, laneY, driver.color, driver.name, driver.position);
+  });
+
+  if (progress < 1) {
+    animationId = requestAnimationFrame(animate);
+  } else {
+    isAnimating = false;
   }
+}
 
   let startTime;
 
