@@ -950,7 +950,6 @@ header p {
         grid-template-columns: repeat(2, 1fr);
     }
 }
-
 @media screen and (max-width: 480px) {
     #desktopLogo {
         display: none !important;
@@ -1004,6 +1003,7 @@ header p {
         font-size: 2em;
     }
 
+    /* ===== LEADERBOARD TABLE BASE ===== */
     .leaderboard-table thead {
         display: none !important;
     }
@@ -1011,7 +1011,7 @@ header p {
     .leaderboard-table,
     .leaderboard-table tbody,
     .leaderboard-table tr {
-        display: block;
+        display: block !important;
         width: 100%;
     }
 
@@ -1023,6 +1023,11 @@ header p {
         background: white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         position: relative;
+    }
+
+    /* ===== OVERALL LEADERBOARD ===== */
+    #overall .leaderboard-table tr {
+        cursor: pointer;
     }
 
     #overall .leaderboard-table tr.position-1 {
@@ -1057,7 +1062,7 @@ header p {
     }
 
     #overall .leaderboard-table td:not(:first-child) {
-        display: grid;
+        display: grid !important;
         grid-template-columns: 110px 1fr;
         padding: 10px 20px;
         border: none;
@@ -1078,24 +1083,19 @@ header p {
         border-bottom: 1px solid #f0f0f0;
     }
 
-    /* Overall leaderboard - make rows clickable */
-    #overall .leaderboard-table tr {
-        cursor: pointer;
+    /* ===== ROUND RESULTS ===== */
+    #round .leaderboard-table tr.position-1 {
+        border-color: #ffd700;
     }
-    
-    /* Round Results - FORCE all cells to display */
-    #round .leaderboard-table tr {
-        display: block !important;
-        min-height: auto !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
+
+    #round .leaderboard-table tr.position-2 {
+        border-color: #c0c0c0;
     }
-    
-    #round .leaderboard-table tbody {
-        display: block !important;
+
+    #round .leaderboard-table tr.position-3 {
+        border-color: #cd7f32;
     }
-    
+
     #round .leaderboard-table td {
         display: grid !important;
         grid-template-columns: 110px 1fr !important;
@@ -1104,45 +1104,29 @@ header p {
         text-align: left !important;
         gap: 15px !important;
         align-items: center !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        max-height: none !important;
-        overflow: visible !important;
     }
-    
+
     #round .leaderboard-table td:before {
         content: attr(data-label) !important;
         font-weight: 600 !important;
         color: #667eea !important;
         text-align: left !important;
         font-size: 0.9em !important;
-        display: block !important;
     }
-    
+
     #round .leaderboard-table td:not(:last-child) {
         border-bottom: 1px solid #f0f0f0 !important;
     }
-    
+
     #round .leaderboard-table td:last-child {
         border-bottom: none !important;
     }
-    
-    /* First cell override (Driver name with background) */
+
     #round .leaderboard-table td:first-child {
         background: linear-gradient(to bottom, #f8f9fa 0%, white 100%) !important;
         border-radius: 7px 7px 0 0 !important;
         font-weight: bold !important;
         padding: 15px 20px 10px 20px !important;
-    }
-    
-    /* Remove any height restrictions on position rows */
-    #round .leaderboard-table tr.position-1,
-    #round .leaderboard-table tr.position-2,
-    #round .leaderboard-table tr.position-3 {
-        min-height: auto !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
     }
 
     .container {
@@ -1292,88 +1276,4 @@ header p {
         font-size: 1.8em;
     }
 }
-/* ---------------------------------------
-   FIX: Mobile formatting for Round Results
-   (match Overall table responsive behaviour)
------------------------------------------*/
-@media screen and (max-width: 480px) {
 
-    /* Hide table header on mobile */
-    #round .leaderboard-table thead {
-        display: none !important;
-    }
-
-    /* Convert table to block layout */
-    #round .leaderboard-table,
-    #round .leaderboard-table tbody,
-    #round .leaderboard-table tr {
-        display: block;
-        width: 100%;
-    }
-
-    #round .leaderboard-table tr {
-        margin-bottom: 12px;
-        border: 3px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 0;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        position: relative;
-    }
-
-    /* Special coloring for podium rows */
-    #round .leaderboard-table tr.position-1 {
-        border-color: #ffd700;
-    }
-    #round .leaderboard-table tr.position-2 {
-        border-color: #c0c0c0;
-    }
-    #round .leaderboard-table tr.position-3 {
-        border-color: #cd7f32;
-    }
-
-    /* Individual table cells converted to grid rows */
-    #round .leaderboard-table td {
-        display: grid;
-        grid-template-columns: 110px 1fr;
-        padding: 10px 20px;
-        border: none;
-        text-align: left;
-        gap: 15px;
-        align-items: center;
-    }
-
-    /* Driver column header formatted visually */
-    #round .leaderboard-table td:first-child {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 15px 0 10px 0;
-        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
-        border-radius: 7px 7px 0 0;
-        font-weight: bold;
-        font-size: 1.2em;
-    }
-}
-/* Fix: Round details overlapping next round on mobile */
-.round-group {
-    position: relative;
-    margin-bottom: 20px;       /* ensures space after each round */
-    z-index: 1;
-}
-
-.round-details {
-    overflow: visible !important;   /* prevent content clipping */
-    position: relative;
-}
-
-.round-details.expanded {
-    max-height: none !important;    /* allow natural height */
-    padding-bottom: 15px;           /* spacing for last row */
-}
-
-.round-header {
-    position: relative;
-    z-index: 2;                   /* stays above only its own box */
-    background: white;
-}
