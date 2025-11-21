@@ -913,6 +913,44 @@ header p {
     display: block;
 }
 
+@media screen and (max-width: 768px) {
+    .race-canvas {
+        height: 250px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .race-canvas {
+        height: 200px;
+    }
+}
+
+/* NEW: Landscape mobile fix */
+@media screen and (max-height: 480px) and (orientation: landscape) {
+    .race-canvas {
+        height: 180px;
+        width: 100% !important;
+    }
+    
+    .race-animation-container {
+        margin: 10px 0;
+        padding: 10px;
+    }
+    
+    .race-animation-header {
+        margin-bottom: 10px;
+    }
+    
+    .race-animation-header h4 {
+        font-size: 0.9em;
+    }
+    
+    .replay-button {
+        padding: 5px 12px;
+        font-size: 0.8em;
+    }
+}
+
 /* ========================================
    Admin Tools Styles
    ======================================== */
