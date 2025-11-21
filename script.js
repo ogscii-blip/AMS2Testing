@@ -1174,6 +1174,45 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   });
 }
 */
+function drawGlowingLane(startX, finishX, laneY, laneHeight, color) {
+  ctx.save();
+
+  // Create gradient from transparent to light color across the full lane
+  const gradient = ctx.createLinearGradient(startX, 0, finishX, 0);
+  
+  // Parse the color and create a lighter, transparent version
+  const lightColor = hexToRgba(color, 0.1); // Very light at the start
+  const mediumColor = hexToRgba(color, 0.2); // Medium in middle
+  const strongColor = hexToRgba(color, 0.3); // Stronger at finish
+  
+  gradient.addColorStop(0, lightColor);
+  gradient.addColorStop(0.7, mediumColor);
+  gradient.addColorStop(1, strongColor);
+
+  ctx.fillStyle = gradient;
+  
+  // Draw the glowing lane strip for the entire track
+  const laneTop = laneY - laneHeight/2 + 5; // Add small padding
+  const stripHeight = laneHeight - 10; // Subtract padding
+  
+  ctx.fillRect(startX, laneTop, finishX - startX, stripHeight);
+
+  ctx.restore();
+}
+
+// Helper function to convert hex color to rgba
+function hexToRgba(hex, alpha) {
+  // Remove # if present
+  hex = hex.replace('#', '');
+  
+  // Parse hex values
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+   
 function animate() {
   const { startX, finishX, sector1End, sector2End } = getPositions();
   
@@ -1348,44 +1387,7 @@ async function loadLeaderboard() {
   }
 }
 
-function drawGlowingLane(startX, finishX, laneY, laneHeight, color) {
-  ctx.save();
 
-  // Create gradient from transparent to light color across the full lane
-  const gradient = ctx.createLinearGradient(startX, 0, finishX, 0);
-  
-  // Parse the color and create a lighter, transparent version
-  const lightColor = hexToRgba(color, 0.1); // Very light at the start
-  const mediumColor = hexToRgba(color, 0.2); // Medium in middle
-  const strongColor = hexToRgba(color, 0.3); // Stronger at finish
-  
-  gradient.addColorStop(0, lightColor);
-  gradient.addColorStop(0.7, mediumColor);
-  gradient.addColorStop(1, strongColor);
-
-  ctx.fillStyle = gradient;
-  
-  // Draw the glowing lane strip for the entire track
-  const laneTop = laneY - laneHeight/2 + 5; // Add small padding
-  const stripHeight = laneHeight - 10; // Subtract padding
-  
-  ctx.fillRect(startX, laneTop, finishX - startX, stripHeight);
-
-  ctx.restore();
-}
-
-// Helper function to convert hex color to rgba
-function hexToRgba(hex, alpha) {
-  // Remove # if present
-  hex = hex.replace('#', '');
-  
-  // Parse hex values
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function displayLeaderboard(data) {
   const tbody = document.getElementById('leaderboard-body');
