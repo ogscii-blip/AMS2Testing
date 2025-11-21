@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v5.1
+   Optimized script.js for AMS2 Racing League - v5.2
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -18,6 +18,8 @@
    - NEW: Intersection Observer - chart animates only when scrolled into view
    - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
    - NEW: Race animation showing top 3 cars racing through sectors
+   - NEW: Smooth race animation with finish line carpets (gold/silver/bronze)
+   - NEW: Admin Tools for lap time management (edit/delete)
    ========================================================= */
 
 /* -----------------------------
@@ -111,7 +113,7 @@ async function loadConfig() {
 
       APPS_SCRIPT_URL = configMap['apps_script_url'];
 
-      // ADD THIS LINE - Set admin username
+      // Set admin username
       updateAdminUsername(configMap);
 
       // Build ALLOWED_USERS from config allowed_name_i, allowed_email_i, allowed_password_i
@@ -127,8 +129,6 @@ async function loadConfig() {
       ALLOWED_USERS = allowed;
       console.log('Config loaded. Users:', Object.keys(ALLOWED_USERS).length);
     });
-    
-    // ... rest of loadConfig code stays the same
 
     // Load driver profiles (object keyed by username if available)
     // We'll use onValue so profile edits are reflected live
@@ -328,6 +328,7 @@ function toggleRound(key) {
   details.classList.toggle('expanded');
   if (icon) icon.classList.toggle('expanded');
 }
+
 /* -----------------------------
    Points Progression Graph with Animated Driver Photos
    ----------------------------- */
@@ -663,6 +664,7 @@ function animateDriverAvatars(chart, rounds) {
 
   requestAnimationFrame(animate);
 }
+
 /* -----------------------------
    Race Animation for Round Results
    ----------------------------- */
@@ -744,25 +746,25 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
   // Parse sector times and calculate animation durations
   const drivers = top3.map((result, idx) => {
-  const s1 = timeToSeconds(result.sector1);
-  const s2 = timeToSeconds(result.sector2);
-  const s3 = timeToSeconds(result.sector3);
-  const total = s1 + s2 + s3;
+    const s1 = timeToSeconds(result.sector1);
+    const s2 = timeToSeconds(result.sector2);
+    const s3 = timeToSeconds(result.sector3);
+    const total = s1 + s2 + s3;
 
-  return {
-    name: result.driver,
-    position: result.position,
-    sector1: s1,
-    sector2: s2,
-    sector3: s3,
-    totalTime: total,
-    color: colors[idx],
-    currentSector: 0,
-    progress: 0,
-    finished: false,
-    finishTime: null  // ADD THIS LINE
-  };
-});
+    return {
+      name: result.driver,
+      position: result.position,
+      sector1: s1,
+      sector2: s2,
+      sector3: s3,
+      totalTime: total,
+      color: colors[idx],
+      currentSector: 0,
+      progress: 0,
+      finished: false,
+      finishTime: null
+    };
+  });
 
   // Animation settings
   const ANIMATION_DURATION = 4000; // 4 seconds total
@@ -854,7 +856,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fillText('FINISH', finishX, canvas.height - 10);
   }
 
- function drawCheckeredFlag(x) {
+  function drawCheckeredFlag(x) {
     const squareSize = 8;
     const flagHeight = canvas.height;
     const cols = 3;
@@ -884,7 +886,6 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     );
   }
 
-  // These functions must be OUTSIDE drawCheckeredFlag
   function drawFinishCarpet(finishX, laneY, finishPosition, driverColor) {
     const carpetWidth = 35;
     const carpetHeight = 25;
@@ -995,11 +996,13 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.closePath();
     ctx.fill();
 
+    // Cockpit/windshield area
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
     ctx.ellipse(x + carWidth/6, y, carWidth/4, carHeight/3, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // Front wing
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.8;
     ctx.beginPath();
@@ -1011,6 +1014,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fill();
     ctx.globalAlpha = 1;
 
+    // Rear wing
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.8;
     ctx.beginPath();
@@ -1022,6 +1026,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.fill();
     ctx.globalAlpha = 1;
 
+    // Wheels
     ctx.fillStyle = '#1a1a1a';
     const wheelRadius = 4;
     const wheelOffset = carWidth/3;
@@ -1040,6 +1045,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.arc(x - wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
     ctx.fill();
 
+    // Wheel rims
     ctx.fillStyle = '#ffffff';
     const rimRadius = 2;
     ctx.beginPath();
@@ -1055,6 +1061,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     ctx.arc(x - wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
     ctx.fill();
 
+    // Racing stripes
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1068,6 +1075,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
     ctx.restore();
 
+    // Driver name and position
     ctx.fillStyle = '#2c3e50';
     ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'left';
@@ -1139,6 +1147,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     drivers.forEach(d => {
       d.progress = 0;
       d.finished = false;
+      d.finishTime = null;
     });
 
     isAnimating = true;
@@ -1163,6 +1172,8 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     hasAnimated = true;
     startAnimation();
   });
+}
+
 /* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
@@ -1171,7 +1182,6 @@ async function loadLeaderboard() {
     const seasonSelect = document.getElementById('seasonSelect');
     const selectedSeason = seasonSelect?.value || '';
 
-    // FIXED: Load Round_Data to calculate points accurately per season
     const [roundDataSnapshot, rawLapsSnapshot] = await Promise.all([
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'))
@@ -1180,12 +1190,10 @@ async function loadLeaderboard() {
     const roundData = toArray(roundDataSnapshot.val()).filter(r => r && r.Driver);
     const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver);
 
-    // Filter Round_Data by season
     const filteredRoundData = selectedSeason 
       ? roundData.filter(r => String(r.Season) == String(selectedSeason))
       : roundData;
 
-    // FIXED: Calculate driver totals from Round_Data (actual scored rounds)
     const driverMap = {};
     
     filteredRoundData.forEach(row => {
@@ -1198,7 +1206,6 @@ async function loadLeaderboard() {
       if (parseInt(row.Position) === 1) driverMap[name].wins += 1;
     });
 
-    // FIXED: Include drivers who have submitted laps but may not be in Round_Data yet
     const filteredLaps = selectedSeason 
       ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
       : rawLapsData;
@@ -1216,7 +1223,6 @@ async function loadLeaderboard() {
       return b.purpleSectors - a.purpleSectors;
     });
 
-    // Attach ranks
     const displayData = driversArr.map((d,i)=>({
       position: i+1,
       driver: d.driver,
@@ -1227,12 +1233,10 @@ async function loadLeaderboard() {
 
     displayLeaderboard(displayData);
 
-    // Cards - use filtered data
     document.getElementById('totalDrivers').textContent = displayData.length;
     const totalPoints = displayData.reduce((s,d)=>s + (d.points||0), 0);
     document.getElementById('totalPoints').textContent = totalPoints;
 
-    // FIXED: Rounds completed - count rounds with 3+ submissions (completed rounds)
     const roundSubmissions = {};
     filteredLaps.forEach(lap => {
       const key = `S${lap.Season}-R${lap.Round}`;
@@ -1243,10 +1247,8 @@ async function loadLeaderboard() {
     const completedRounds = Object.values(roundSubmissions).filter(drivers => drivers.size >= 3).length;
     document.getElementById('totalRounds').textContent = completedRounds;
 
-    // FIXED: Create animated points progression graph
     createPointsProgressionGraph(filteredRoundData, selectedSeason);
 
-    // Populate season dropdowns from cached setup (but call populate if needed)
     populateSeasonFilter();
 
   } catch (err) {
@@ -1281,7 +1283,6 @@ function displayLeaderboard(data) {
 
   tbody.appendChild(frag);
 
-  // Add click listeners
   tbody.querySelectorAll('.driver-link').forEach(link=>{
     link.addEventListener('click', function(e){
       const driverName = this.getAttribute('data-driver');
@@ -1298,7 +1299,6 @@ function displayLeaderboard(data) {
    ----------------------------- */
 async function populateSeasonFilter() {
   try {
-    // Use cached setup if present
     if (!CACHE.setupArray) {
       const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
       const snap = await window.firebaseGet(setupRef);
@@ -1332,12 +1332,12 @@ async function populateSeasonFilter() {
     console.error('populateSeasonFilter error', err);
   }
 }
+
 /* -----------------------------
    Round Data (season-aware)
    ----------------------------- */
 async function loadRoundData() {
   try {
-    // Load once and cache heavy objects
     if (!CACHE.roundDataArray || !CACHE.tracksMap || !CACHE.carsMap || !CACHE.setupArray) {
       const [roundSnapshot, tracksSnapshot, carsSnapshot, setupSnapshot] = await Promise.all([
         window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
@@ -1363,7 +1363,6 @@ async function loadRoundData() {
     const roundSeasonSelect = document.getElementById('roundSeasonSelect');
     const selectedSeason = roundSeasonSelect?.value || '';
 
-    // Build filtered and normalized allData array
     let filtered = roundDataRaw.filter(r => r && r.Driver && r.Position);
     if (selectedSeason) filtered = filtered.filter(r => String(r.Season) == String(selectedSeason));
 
@@ -1395,7 +1394,6 @@ async function loadRoundData() {
       };
     });
 
-    // Group by S{season}-R{round}
     const roundGroups = {};
     allData.forEach(r => {
       const key = `S${r.season}-R${r.round}`;
@@ -1403,7 +1401,6 @@ async function loadRoundData() {
       roundGroups[key].results.push(r);
     });
 
-    // Determine fastest sectors & sort results for each group
     Object.keys(roundGroups).forEach(key => {
       const rs = roundGroups[key].results;
       const fastest1 = Math.min(...rs.map(r => parseFloat(r.sector1) || Infinity));
@@ -1436,12 +1433,11 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
-  // FIXED: Sort rounds in DESCENDING order (latest first)
   const sortedKeys = Object.keys(roundGroups).sort((a,b) => {
     const [sa, ra] = a.replace('S','').split('-R').map(Number);
     const [sb, rb] = b.replace('S','').split('-R').map(Number);
-    if (sa !== sb) return sb - sa; // Descending by season
-    return rb - ra; // Descending by round
+    if (sa !== sb) return sb - sa;
+    return rb - ra;
   });
 
   sortedKeys.forEach(key => {
@@ -1500,7 +1496,6 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     `;
     const tbody = table.querySelector('tbody');
 
-    // Calculate winner's time for gap calculations
     const winnerTime = results.length > 0 ? timeToSeconds(results[0].totalTime) : 0;
 
     results.forEach(row => {
@@ -1515,7 +1510,6 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
       const formattedName = getFormattedDriverName(row.driver);
 
-      // Calculate gap to winner
       let gapHtml = '';
       if (row.position === 1) {
         gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Winner</span>';
@@ -1545,7 +1539,6 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
     details.appendChild(table);
 
-    // ADD RACE ANIMATION HERE
     const raceAnimationHtml = createRaceAnimation(key, results);
     if (raceAnimationHtml) {
       const raceDiv = document.createElement('div');
@@ -1560,17 +1553,15 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
   container.appendChild(frag);
 
-  // Add driver link click handlers
   container.querySelectorAll('.driver-link-round').forEach(link => {
     link.addEventListener('click', function() {
       goToDriverProfile(this.getAttribute('data-driver'));
     });
   });
 
-  // FIXED: Auto-expand the FIRST round (which is the latest due to descending sort)
   if (sortedKeys.length > 0) {
     setTimeout(() => {
-      const latestKey = sortedKeys[0]; // First in list is now the latest
+      const latestKey = sortedKeys[0];
       const d = document.getElementById(`details-${latestKey}`);
       const i = document.getElementById(`toggle-${latestKey}`);
       if (d) d.classList.add('expanded');
@@ -1581,11 +1572,11 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   document.getElementById('round-loading').style.display = 'none';
   document.getElementById('round-content').style.display = 'block';
 }
+
 /* -----------------------------
    Round Setup & Cards
    ----------------------------- */
 async function loadTracksAndCars() {
-  // Ensure caches exist
   if (!CACHE.tracksMap || !CACHE.carsMap) {
     const [tracksSnap, carsSnap] = await Promise.all([
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
@@ -1597,7 +1588,6 @@ async function loadTracksAndCars() {
     CACHE.carsMap = {}; cars.forEach(r=> { if (r && r['Car_Name']) CACHE.carsMap[r['Car_Name'].trim()] = r['Car_Image_URL'] || ''; });
   }
 
-  // Populate selects
   const trackSelect = document.getElementById('trackLayout');
   const carSelect = document.getElementById('carName');
   if (trackSelect) {
@@ -1630,7 +1620,6 @@ document.getElementById('roundSetupForm')?.addEventListener('submit', async func
     await window.firebasePush(setupRef, setupData);
     messageDiv.style.background = '#d4edda'; messageDiv.style.color = '#155724'; messageDiv.textContent = '✅ Round configuration saved!';
     document.getElementById('roundSetupForm').reset();
-    // Invalidate cache so populateSeasonFilter picks it up
     CACHE.setupArray = null;
     await wait(350);
     loadRoundSetup();
@@ -1650,7 +1639,6 @@ async function loadRoundSetup() {
     const setupArr = toArray(setupSnap.val());
     const roundArr = toArray(roundSnap.val());
 
-    // Create unique latest setup per season/round
     const unique = {};
     setupArr.forEach(row => {
       if (!row || !row.Round_Number) return;
@@ -1663,7 +1651,6 @@ async function loadRoundSetup() {
     displayRoundCards(finalSetup, roundArr, CACHE.tracksMap || {}, CACHE.carsMap || {});
     document.getElementById('setup-cards-loading').style.display = 'none';
     document.getElementById('setup-cards-content').style.display = 'block';
-    // update cached setup
     CACHE.setupArray = setupArr;
     populateSeasonFilter();
 
@@ -1677,12 +1664,10 @@ async function loadRoundSetup() {
    ----------------------------- */
 let ADMIN_USERNAME = null;
 
-// Check if current user is admin
 function isAdmin() {
   return currentUser && ADMIN_USERNAME && currentUser.name === ADMIN_USERNAME;
 }
 
-// Update admin username from config
 function updateAdminUsername(configMap) {
   ADMIN_USERNAME = configMap['admin_username'] || null;
   console.log('Admin username set to:', ADMIN_USERNAME);
@@ -1705,11 +1690,9 @@ async function loadAdminTools() {
   }
 
   try {
-    // Load all lap submissions
     const lapsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'));
     const lapsData = toArray(lapsSnapshot.val());
     
-    // Store with Firebase keys for editing/deleting
     const lapsWithKeys = [];
     const lapsObject = lapsSnapshot.val();
     if (lapsObject && typeof lapsObject === 'object') {
@@ -1731,12 +1714,10 @@ function displayAdminLapTimes(lapsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
 
-  // Get unique drivers, seasons, rounds for filters
   const drivers = [...new Set(lapsData.map(l => l.Driver).filter(Boolean))].sort();
   const seasons = [...new Set(lapsData.map(l => l.Season).filter(Boolean))].sort((a,b) => b-a);
   const rounds = [...new Set(lapsData.map(l => l.Round).filter(Boolean))].sort((a,b) => a-b);
 
-  // Build filter HTML
   const filterHtml = `
     <div class="admin-filters">
       <select id="adminFilterDriver" class="admin-filter-select">
@@ -1756,14 +1737,12 @@ function displayAdminLapTimes(lapsData) {
     </div>
   `;
 
-  // Sort by timestamp descending (newest first)
   lapsData.sort((a, b) => {
     const timeA = new Date(a.Timestamp).getTime();
     const timeB = new Date(b.Timestamp).getTime();
     return timeB - timeA;
   });
 
-  // Build table
   const tableHtml = `
     <table class="admin-table">
       <thead>
@@ -1787,7 +1766,6 @@ function displayAdminLapTimes(lapsData) {
 
   container.innerHTML = filterHtml + tableHtml;
 
-  // Store data globally for filtering
   window.adminLapsData = lapsData;
 }
 
@@ -1827,7 +1805,6 @@ function filterAdminLaps() {
   if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
   if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
 
-  // Update table body only
   const tbody = document.getElementById('adminLapsTableBody');
   if (tbody) {
     tbody.innerHTML = filtered.map(lap => createAdminLapRow(lap)).join('');
@@ -1845,7 +1822,6 @@ async function editAdminLap(firebaseKey) {
   const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
   if (!lap) return;
 
-  // Create modal
   const modal = document.createElement('div');
   modal.className = 'admin-modal';
   modal.innerHTML = `
@@ -1898,10 +1874,8 @@ async function saveAdminLapEdit(firebaseKey) {
 
     const totalTime = s1 + s2 + s3;
 
-    // Get original lap data
     const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
     
-    // Update in Firebase
     const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
     await window.firebaseSet(lapRef, {
       ...lap,
@@ -1916,10 +1890,8 @@ async function saveAdminLapEdit(firebaseKey) {
     alert('✅ Lap time updated successfully!');
     closeAdminModal();
     
-    // Refresh admin view
     loadAdminTools();
     
-    // Invalidate caches
     CACHE.roundDataArray = null;
 
   } catch (err) {
@@ -1938,14 +1910,12 @@ async function deleteAdminLap(firebaseKey) {
 
   try {
     const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
-    await window.firebaseSet(lapRef, null); // Delete by setting to null
+    await window.firebaseSet(lapRef, null);
 
     alert('✅ Lap time deleted successfully!');
     
-    // Refresh admin view
     loadAdminTools();
     
-    // Invalidate caches
     CACHE.roundDataArray = null;
 
   } catch (err) {
@@ -1971,13 +1941,11 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     return;
   }
 
-  // FIXED: Placeholder images properly defined for cards
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
-  // Pre-index roundData by (season,round) and combo
   const bySeasonRound = {};
-  const byCombo = {}; // track|car -> array
+  const byCombo = {};
   const rdArr = toArray(roundData);
   rdArr.forEach(r => {
     if (!r) return;
@@ -2028,8 +1996,10 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   container.appendChild(frag);
 }
 
+/* Driver Stats section continues in next file due to length... */
+/* The rest remains the same as your original file from loadDriverStats onwards */
 /* -----------------------------
-   Driver Stats
+   Driver Stats (CONTINUATION FROM PART 1)
    ----------------------------- */
 async function loadDriverStats() {
   try {
@@ -2040,19 +2010,16 @@ async function loadDriverStats() {
     const roundArr = toArray(roundSnap.val());
     const leaderboardArr = toArray(leaderboardSnap.val());
 
-    // Precompute champion positions map
     const champSorted = leaderboardArr.slice().filter(l=>l && l.Driver).sort((a,b)=> (parseInt(b['Total_Points'])||0) - (parseInt(a['Total_Points'])||0));
     const champPos = {};
     champSorted.forEach((r,i)=> { if (r && r.Driver) champPos[r.Driver] = i+1; });
 
-    // Unique drivers from leaderboard (or round data fallback)
     const drivers = [...new Set((leaderboardArr.map(r=>r.Driver).filter(Boolean)).concat(roundArr.map(r=>r.Driver).filter(Boolean)))].filter(Boolean);
 
     const driversContent = document.getElementById('drivers-content');
     driversContent.innerHTML = '';
     const frag = document.createDocumentFragment();
 
-    // Index round data by driver for faster queries
     const roundsByDriver = {};
     roundArr.forEach(r => { if (!r || !r.Driver) return; if (!roundsByDriver[r.Driver]) roundsByDriver[r.Driver] = []; roundsByDriver[r.Driver].push(r); });
 
@@ -2065,7 +2032,6 @@ async function loadDriverStats() {
       const totalRounds = driverRoundData.length;
       const avgPosition = totalRounds > 0 ? (driverRoundData.reduce((s,r)=> s + (parseInt(r.Position)||0),0)/totalRounds).toFixed(1) : 'N/A';
 
-      // Personal best
       let personalBest = null;
       if (driverRoundData.length) {
         personalBest = driverRoundData.reduce((best,cur)=> {
@@ -2075,7 +2041,6 @@ async function loadDriverStats() {
         }, null);
       }
 
-      // Track+Car records for this driver
       const trackCarRecordsMap = {};
       driverRoundData.forEach(r => {
         const key = `${r['Track-Layout'] || ''} - ${r['Car_Name'] || ''}`;
@@ -2084,13 +2049,11 @@ async function loadDriverStats() {
       });
       const trackCarRecordsArray = Object.values(trackCarRecordsMap).sort((a,b)=>a.time-b.time);
 
-      // Favorite track/car
       const trackCounts = {}; const carCounts = {};
       driverRoundData.forEach(r => { if (r['Track-Layout']) trackCounts[r['Track-Layout']] = (trackCounts[r['Track-Layout']]||0)+1; if (r['Car_Name']) carCounts[r['Car_Name']] = (carCounts[r['Car_Name']]||0)+1; });
       const favoriteTrack = Object.keys(trackCounts).sort((a,b)=>trackCounts[b]-trackCounts[a])[0] || 'N/A';
       const favoriteCar = Object.keys(carCounts).sort((a,b)=>carCounts[b]-carCounts[a])[0] || 'N/A';
 
-      // Head-to-heads (optimized): build positions per round
       const positionsByRound = {};
       roundArr.forEach(r => {
         if (!r || !r.Round) return;
@@ -2110,17 +2073,14 @@ async function loadDriverStats() {
         if (wins || losses) h2hRecords[op] = { wins, losses };
       });
 
-      // profile lookup by username key
       const profileKey = encodeKey(driverName);
       const profile = DRIVER_PROFILES[profileKey] || {};
 
-      // FIXED: Format names based on login status
       let formattedName, formattedShortName;
       if (currentUser && profile && profile.surname) {
         formattedName = `${profile.name} ${profile.surname}`;
         formattedShortName = `${profile.name.charAt(0)}. ${profile.surname}`;
       } else if (!currentUser && profile && profile.surname) {
-        // Not logged in: show initials only
         formattedName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
         formattedShortName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
       } else {
@@ -2130,15 +2090,12 @@ async function loadDriverStats() {
       
       const championshipPosition = champPos[driverName] || 'N/A';
 
-      // Build card
       const card = document.createElement('div'); card.className = 'driver-card'; card.setAttribute('data-driver', driverName);
       
-      // FIXED: Show different content based on login status
       let desktopPhotoHtml = '';
       let mobilePhotoHtml = '';
       
       if (currentUser) {
-        // Logged in: show photo if available
         desktopPhotoHtml = profile && profile.photoUrl 
           ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
           : '';
@@ -2146,7 +2103,6 @@ async function loadDriverStats() {
           ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` 
           : '';
       } else {
-        // Not logged in: show number badge instead of photo
         const driverNumber = profile && profile.number ? profile.number : '?';
         desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
         mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
@@ -2177,6 +2133,7 @@ async function loadDriverStats() {
     document.getElementById('drivers-loading').innerHTML = '<p style="color:red;">Error loading driver statistics</p>';
   }
 }
+
 /* -----------------------------
    Profile: load & save (by username key)
    ----------------------------- */
@@ -2213,7 +2170,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       Bio: document.getElementById('profileBio').value.trim()
     };
 
-    // Save to Driver_Profiles/{usernameKey}
     const usernameKey = encodeKey(currentUser.name);
     const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
     await window.firebaseSet(profileRef, {
@@ -2224,7 +2180,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       Bio: profileData.Bio
     });
 
-    // Update local cache
     DRIVER_PROFILES[usernameKey] = {
       name: profileData.Name,
       surname: profileData.Surname,
@@ -2255,7 +2210,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
   }
 });
 
-// Photo file input handler
 document.getElementById('photoFile')?.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -2289,7 +2243,6 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
   messageDiv.style.display='block'; messageDiv.style.background='#d1ecf1'; messageDiv.style.color='#0c5460'; messageDiv.textContent='⏳ Submitting...';
 
   try {
-    // Read all sector input fields
     const s1sec = document.getElementById('sector1-sec').value.trim();
     const s1ms = document.getElementById('sector1-ms').value.trim();
     const s2sec = document.getElementById('sector2-sec').value.trim();
@@ -2308,7 +2261,6 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
     if (!roundNumber || !seasonNumber) throw new Error('Please select both round and season');
 
-    // Ensure setup exists
     if (!CACHE.setupArray) {
       const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
       CACHE.setupArray = toArray(setupSnap.val());
@@ -2332,10 +2284,8 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     await window.firebasePush(window.firebaseRef(window.firebaseDB, 'Form_responses_1'), lapTimeData);
     messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Lap time submitted! Server is calculating...';
 
-    // FIXED: Reset the form after successful submission
     document.getElementById('lapTimeForm').reset();
 
-    // refresh caches/loaders
     CACHE.roundDataArray = null;
     await wait(2000);
     loadLeaderboard();
@@ -2354,10 +2304,8 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
    Login / Session handling
    ----------------------------- */
 function getFormattedDriverName(driverLoginName, includeNumber = true) {
-  // driverLoginName is the username used in ALLOWED_USERS
   const profile = DRIVER_PROFILES[encodeKey(driverLoginName)];
   
-  // If logged in and profile exists with full info, show formatted name with number
   if (currentUser && profile && profile.surname && profile.name) {
     const number = profile.number || '?';
     return includeNumber 
@@ -2365,12 +2313,10 @@ function getFormattedDriverName(driverLoginName, includeNumber = true) {
       : `${profile.name.charAt(0)}. ${profile.surname}`;
   }
   
-  // If NOT logged in but profile exists, show initials only
   if (!currentUser && profile && profile.surname && profile.name) {
     return `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
   }
   
-  // Fallback to username
   return driverLoginName;
 }
 
@@ -2401,7 +2347,6 @@ function applyUserUI() {
     if (userInfo) userInfo.style.display = 'block';
     document.getElementById('userName').textContent = currentUser.name;
 
-    // profile display
     const profile = DRIVER_PROFILES[encodeKey(currentUser.name)];
     const photoContainer = document.getElementById('userPhotoContainer');
     const photoElement = document.getElementById('userProfilePhoto');
@@ -2424,6 +2369,7 @@ function applyUserUI() {
     document.getElementById('passwordInput').value = '';
   }
   updateSubmitTabVisibility();
+  updateAdminTabVisibility();
 }
 
 function updateSubmitTabVisibility() {
@@ -2448,11 +2394,10 @@ function updateSubmitTabVisibility() {
 async function checkExistingSession() {
   const stored = sessionStorage.getItem('currentUser');
   if (!stored) {
-    updateSubmitTabVisibility(); // Ensure tabs are hidden if no session
+    updateSubmitTabVisibility();
     return;
   }
   currentUser = JSON.parse(stored);
-  // Wait for profiles to load via onValue from loadConfig()
   await waitFor(()=> Object.keys(DRIVER_PROFILES).length > 0, 2000);
   applyUserUI();
 }
@@ -2496,7 +2441,6 @@ function setupSectorTimeInputs() {
   });
 }
 
-// Mobile logo switch
 function handleResponsiveUI() {
   const desktopLogo = document.getElementById('desktopLogo');
   const mobileLogo = document.getElementById('mobileLogo');
@@ -2511,9 +2455,7 @@ function handleResponsiveUI() {
 
 window.addEventListener('resize', handleResponsiveUI);
 
-// Consolidated DOMContentLoaded listener
 document.addEventListener('DOMContentLoaded', function() {
-  // Set initial tab visibility before any login
   updateSubmitTabVisibility();
   handleResponsiveUI();
   
