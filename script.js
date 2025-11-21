@@ -1107,7 +1107,7 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   }
 
  // Option A - Synchronized (replace your animate with this)
-function animateSynchronized() {
+function animate() {
   const { startX, finishX, sector1End, sector2End, trackLength } = getPositions();
   const now = Date.now();
   const elapsed = now - startTime;
@@ -1233,7 +1233,7 @@ function animateSynchronized() {
 
   // continue or stop
   if (t < 1) {
-    animationId = requestAnimationFrame(animateSynchronized);
+    animationId = requestAnimationFrame(animate);
   } else {
     isAnimating = false;
   }
