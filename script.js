@@ -1128,43 +1128,19 @@ function animate() {
   const laneHeight = canvas.height / 3;
   let finishOrder = [];
 
-  // Use ANIMATION_DURATION as the base for smooth movement
-  const raceProgress = progress; // 0 to 1 throughout the animation
+  const trackLength = finishX - startX;
   
-  // Calculate each driver's position
+  // Calculate each driver's position based on simple linear interpolation
   const driverStates = drivers.map((driver, idx) => {
-    // Each driver completes their lap in proportion to their actual lap time
+    // Faster drivers finish earlier in the animation
     const timeRatio = driver.totalTime / slowestTime;
-    const driverProgress = Math.min(raceProgress / timeRatio, 1);
-    const driverElapsedTime = driverProgress * driver.totalTime;
+    const driverProgress = Math.min(progress / timeRatio, 1);
     
-    let x = startX;
-    let currentSector = 0;
+    // Simple linear position from start to finish
+    let x = startX + (trackLength * driverProgress);
     let finished = false;
     
-    if (driverElapsedTime < driver.sector1) {
-      // In Sector 1
-      currentSector = 1;
-      const progressThroughS1 = driverElapsedTime / driver.sector1;
-      x = startX + (sector1End - startX) * progressThroughS1;
-      
-    } else if (driverElapsedTime < driver.sector1 + driver.sector2) {
-      // In Sector 2
-      currentSector = 2;
-      const timeIntoS2 = driverElapsedTime - driver.sector1;
-      const progressThroughS2 = timeIntoS2 / driver.sector2;
-      x = sector1End + (sector2End - sector1End) * progressThroughS2;
-      
-    } else if (driverElapsedTime < driver.totalTime) {
-      // In Sector 3
-      currentSector = 3;
-      const timeIntoS3 = driverElapsedTime - driver.sector1 - driver.sector2;
-      const progressThroughS3 = timeIntoS3 / driver.sector3;
-      x = sector2End + (finishX - sector2End) * progressThroughS3;
-      
-    } else {
-      // Finished
-      currentSector = 4;
+    if (driverProgress >= 1) {
       x = finishX;
       finished = true;
       
@@ -1178,17 +1154,19 @@ function animate() {
       finishOrder.push({ driver, idx, finishTime: driver.finishTime });
     }
 
+    // For ranking purposes, use cumulative time based on their actual lap time
+    const cumulativeTime = driverProgress * driver.totalTime;
+
     return {
       driver,
       idx,
       x,
-      currentSector,
-      cumulativeTime: driverElapsedTime,
+      cumulativeTime,
       finished: driver.finished
     };
   });
 
-  // Sort by cumulative time
+  // Sort by cumulative time (who's ahead in their race)
   driverStates.sort((a, b) => {
     if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
       return a.cumulativeTime - b.cumulativeTime;
@@ -1226,7 +1204,7 @@ function animate() {
     drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
   });
 
-  // Draw finish carpets - FIXED: ensure all finishers get carpets
+  // Draw finish carpets
   if (finishOrder.length > 0) {
     finishOrder.sort((a, b) => a.finishTime - b.finishTime);
     finishOrder.forEach((item, finishPos) => {
