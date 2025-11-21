@@ -862,6 +862,78 @@ header p {
     line-height: 1.8;
 }
 
+/* Race Animation Styles */
+.race-animation-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    position: relative;
+}
+
+.race-animation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.race-animation-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.replay-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.replay-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.replay-button:active {
+    transform: translateY(0);
+}
+
+.race-canvas {
+    width: 100%;
+    height: 300px;
+    background: white;
+    border-radius: 8px;
+    display: block;
+}
+
+@media screen and (max-width: 768px) {
+    .race-canvas {
+        height: 250px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .race-canvas {
+        height: 200px;
+    }
+    
+    .race-animation-header h4 {
+        font-size: 1em;
+    }
+    
+    .replay-button {
+        padding: 6px 15px;
+        font-size: 0.85em;
+    }
+}
+
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
     #points-progression-graph {
