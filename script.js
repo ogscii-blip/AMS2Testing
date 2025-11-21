@@ -522,6 +522,309 @@ function animateDriverAvatars(chart, rounds) {
     }
   });
 
+   /* -----------------------------
+   Race Animation for Round Results
+   ----------------------------- */
+function createRaceAnimation(roundKey, results) {
+  // Only show top 3
+  const top3 = results.slice(0, 3);
+  if (top3.length === 0) return '';
+
+  const containerId = `race-animation-${roundKey}`;
+  const canvasId = `race-canvas-${roundKey}`;
+  const replayBtnId = `replay-${roundKey}`;
+
+  // Create HTML structure
+  const html = `
+    <div class="race-animation-container" id="${containerId}">
+      <div class="race-animation-header">
+        <h4>🏁 Race Replay - Top 3</h4>
+        <button class="replay-button" id="${replayBtnId}">↻ Replay</button>
+      </div>
+      <canvas id="${canvasId}" class="race-canvas"></canvas>
+    </div>
+  `;
+
+  // Schedule animation setup after DOM insertion
+  setTimeout(() => {
+    setupRaceAnimation(canvasId, replayBtnId, top3, roundKey);
+  }, 100);
+
+  return html;
+}
+
+function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
+  const canvas = document.getElementById(canvasId);
+  const replayBtn = document.getElementById(replayBtnId);
+  
+  if (!canvas || !replayBtn) return;
+
+  const ctx = canvas.getContext('2d');
+  let animationId = null;
+  let hasAnimated = false;
+
+  // Set canvas size
+  const resizeCanvas = () => {
+    const container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = canvas.offsetHeight;
+  };
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Driver colors (matching points graph)
+  const colors = ['#667eea', '#e74c3c', '#f39c12'];
+
+  // Parse sector times and calculate animation durations
+  const drivers = top3.map((result, idx) => {
+    const s1 = timeToSeconds(result.sector1);
+    const s2 = timeToSeconds(result.sector2);
+    const s3 = timeToSeconds(result.sector3);
+    const total = s1 + s2 + s3;
+
+    return {
+      name: result.driver,
+      position: result.position,
+      sector1: s1,
+      sector2: s2,
+      sector3: s3,
+      totalTime: total,
+      color: colors[idx],
+      currentSector: 0,
+      progress: 0,
+      finished: false
+    };
+  });
+
+  // Animation settings
+  const ANIMATION_DURATION = 4000; // 4 seconds total
+  const startX = 80;
+  const finishX = canvas.width - 80;
+  const trackLength = finishX - startX;
+  
+  // Calculate sector positions (each sector is 1/3 of track)
+  const sector1End = startX + (trackLength / 3);
+  const sector2End = startX + (2 * trackLength / 3);
+
+  // Find slowest total time to normalize animation
+  const slowestTime = Math.max(...drivers.map(d => d.totalTime));
+
+  // Draw static elements
+  function drawTrack() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const laneHeight = canvas.height / 3;
+
+    // Draw lane dividers
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 5]);
+    for (let i = 1; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(startX, i * laneHeight);
+      ctx.lineTo(finishX, i * laneHeight);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Draw sector markers
+    ctx.strokeStyle = '#bbb';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    
+    // S1/S2 boundary
+    ctx.beginPath();
+    ctx.moveTo(sector1End, 0);
+    ctx.lineTo(sector1End, canvas.height);
+    ctx.stroke();
+    
+    // S2/S3 boundary
+    ctx.beginPath();
+    ctx.moveTo(sector2End, 0);
+    ctx.lineTo(sector2End, canvas.height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Sector labels
+    ctx.fillStyle = '#999';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('S1', (startX + sector1End) / 2, 15);
+    ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
+    ctx.fillText('S3', (sector2End + finishX) / 2, 15);
+
+    // Draw start line
+    ctx.strokeStyle = '#2ecc71';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX, 0);
+    ctx.lineTo(startX, canvas.height);
+    ctx.stroke();
+
+    // Start label
+    ctx.fillStyle = '#2ecc71';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('START', startX, canvas.height - 10);
+
+    // Draw checkered finish line
+    drawCheckeredFlag(finishX);
+
+    // Finish label
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('FINISH', finishX, canvas.height - 10);
+  }
+
+  function drawCheckeredFlag(x) {
+    const squareSize = 8;
+    const flagHeight = canvas.height;
+    const cols = 3;
+    const rows = Math.ceil(flagHeight / squareSize);
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const isBlack = (row + col) % 2 === 0;
+        ctx.fillStyle = isBlack ? '#2c3e50' : '#fff';
+        ctx.fillRect(
+          x - (cols * squareSize / 2) + (col * squareSize),
+          row * squareSize,
+          squareSize,
+          squareSize
+        );
+      }
+    }
+
+    // Border around flag
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      x - (cols * squareSize / 2),
+      0,
+      cols * squareSize,
+      flagHeight
+    );
+  }
+
+  function drawCar(x, y, color, driverName, position) {
+    const carWidth = 40;
+    const carHeight = 20;
+
+    // Car body (rounded rectangle)
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x - carWidth/2, y - carHeight/2, carWidth, carHeight, 4);
+    ctx.fill();
+
+    // Car windshield
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.beginPath();
+    ctx.roundRect(x - carWidth/4, y - carHeight/2 + 3, carWidth/2, carHeight/3, 2);
+    ctx.fill();
+
+    // Car wheels
+    ctx.fillStyle = '#2c3e50';
+    const wheelRadius = 3;
+    // Front wheel
+    ctx.beginPath();
+    ctx.arc(x + carWidth/2 - 8, y + carHeight/2 + 2, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    // Rear wheel
+    ctx.beginPath();
+    ctx.arc(x - carWidth/2 + 8, y + carHeight/2 + 2, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Driver name and position
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'left';
+    const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
+    const displayName = currentUser && profile.name && profile.surname
+      ? `${profile.name.charAt(0)}. ${profile.surname}`
+      : driverName;
+    ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 5, y + 4);
+  }
+
+  function animate() {
+    const now = Date.now();
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+    drawTrack();
+
+    const laneHeight = canvas.height / 3;
+
+    drivers.forEach((driver, idx) => {
+      const laneY = (idx + 0.5) * laneHeight;
+
+      // Calculate position based on normalized time
+      const timeProgress = progress * slowestTime;
+      
+      let x = startX;
+      
+      if (timeProgress <= driver.sector1) {
+        // In sector 1
+        const s1Progress = timeProgress / driver.sector1;
+        x = startX + (sector1End - startX) * s1Progress;
+      } else if (timeProgress <= driver.sector1 + driver.sector2) {
+        // In sector 2
+        const s2Progress = (timeProgress - driver.sector1) / driver.sector2;
+        x = sector1End + (sector2End - sector1End) * s2Progress;
+      } else if (timeProgress <= driver.totalTime) {
+        // In sector 3
+        const s3Progress = (timeProgress - driver.sector1 - driver.sector2) / driver.sector3;
+        x = sector2End + (finishX - sector2End) * s3Progress;
+      } else {
+        // Finished
+        x = finishX;
+        driver.finished = true;
+      }
+
+      drawCar(x, laneY, driver.color, driver.name, driver.position);
+    });
+
+    if (progress < 1) {
+      animationId = requestAnimationFrame(animate);
+    }
+  }
+
+  let startTime;
+
+  function startAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+    
+    drivers.forEach(d => {
+      d.progress = 0;
+      d.finished = false;
+    });
+
+    startTime = Date.now();
+    animate();
+  }
+
+  // Intersection Observer - animate when scrolled into view
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !hasAnimated) {
+        hasAnimated = true;
+        setTimeout(() => startAnimation(), 300);
+      }
+    });
+  }, {
+    threshold: 0.3
+  });
+
+  observer.observe(canvas);
+
+  // Replay button
+  replayBtn.addEventListener('click', () => {
+    hasAnimated = true;
+    startAnimation();
+  });
+}
+
   function animate() {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / animationDuration, 1);
