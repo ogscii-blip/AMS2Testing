@@ -926,15 +926,18 @@ header p {
 }
 
 /* NEW: Landscape mobile fix */
+/* Landscape mobile fix - improved */
 @media screen and (max-height: 480px) and (orientation: landscape) {
     .race-canvas {
-        height: 180px;
+        height: 180px !important;
         width: 100% !important;
+        max-width: 100% !important;
     }
     
     .race-animation-container {
-        margin: 10px 0;
-        padding: 10px;
+        margin: 10px 0 !important;
+        padding: 10px !important;
+        width: 100% !important;
     }
     
     .race-animation-header {
@@ -948,6 +951,11 @@ header p {
     .replay-button {
         padding: 5px 12px;
         font-size: 0.8em;
+    }
+    
+    /* Force round details to be full width */
+    .round-details {
+        width: 100% !important;
     }
 }
 
