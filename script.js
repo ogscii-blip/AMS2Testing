@@ -1608,7 +1608,7 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
       let gapHtml = '';
       if (row.position === 1) {
-        gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Winner</span>';
+        gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Interval</span>';
       } else {
         const driverTime = timeToSeconds(row.totalTime);
         const gap = driverTime - winnerTime;
