@@ -1130,42 +1130,45 @@ function animate() {
   const laneHeight = canvas.height / 3;
   let finishOrder = [];
 
-  // Calculate track positions (0 to 1) for the entire track
   const trackLength = finishX - startX;
+  const totalTrackTime = slowestTime;
+  const timeElapsed = progress * totalTrackTime;
   
   // Calculate each driver's position
   const driverStates = drivers.map((driver, idx) => {
-    // Calculate what proportion of the track each sector represents for this driver
-    const totalTrackTime = slowestTime;
-    const timeElapsed = progress * totalTrackTime;
-    
-    // Calculate cumulative time for this driver at current moment
-    let driverCumulativeTime = 0;
     let x = startX;
     let currentSector = 0;
+    let driverCumulativeTime = 0;
     let finished = false;
     
-    // Determine which sector they're in based on time elapsed
-    if (timeElapsed < driver.sector1) {
+    // Calculate X position based on proportion through the driver's entire lap
+    const sector1EndTime = driver.sector1;
+    const sector2EndTime = driver.sector1 + driver.sector2;
+    const sector3EndTime = driver.sector1 + driver.sector2 + driver.sector3;
+    
+    if (timeElapsed <= sector1EndTime) {
       // In Sector 1
       currentSector = 1;
       driverCumulativeTime = timeElapsed;
-      const progressInS1 = timeElapsed / driver.sector1;
-      x = startX + (sector1End - startX) * progressInS1;
-    } else if (timeElapsed < driver.sector1 + driver.sector2) {
+      const progressThroughS1 = timeElapsed / driver.sector1;
+      x = startX + (sector1End - startX) * progressThroughS1;
+      
+    } else if (timeElapsed <= sector2EndTime) {
       // In Sector 2
       currentSector = 2;
       driverCumulativeTime = timeElapsed;
-      const timeInS2 = timeElapsed - driver.sector1;
-      const progressInS2 = timeInS2 / driver.sector2;
-      x = sector1End + (sector2End - sector1End) * progressInS2;
-    } else if (timeElapsed < driver.sector1 + driver.sector2 + driver.sector3) {
+      const timeIntoS2 = timeElapsed - sector1EndTime;
+      const progressThroughS2 = timeIntoS2 / driver.sector2;
+      x = sector1End + (sector2End - sector1End) * progressThroughS2;
+      
+    } else if (timeElapsed <= sector3EndTime) {
       // In Sector 3
       currentSector = 3;
       driverCumulativeTime = timeElapsed;
-      const timeInS3 = timeElapsed - driver.sector1 - driver.sector2;
-      const progressInS3 = timeInS3 / driver.sector3;
-      x = sector2End + (finishX - sector2End) * progressInS3;
+      const timeIntoS3 = timeElapsed - sector2EndTime;
+      const progressThroughS3 = timeIntoS3 / driver.sector3;
+      x = sector2End + (finishX - sector2End) * progressThroughS3;
+      
     } else {
       // Finished
       currentSector = 4;
@@ -1193,16 +1196,15 @@ function animate() {
     };
   });
 
-  // Sort by cumulative time (who has covered more of their lap)
+  // Sort by cumulative time
   driverStates.sort((a, b) => {
-    // Sort by cumulative time - less time = further ahead
     if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
       return a.cumulativeTime - b.cumulativeTime;
     }
     return b.x - a.x;
   });
 
-  // Assign lanes
+  // Assign lanes with smooth transitions
   driverStates.forEach((state, position) => {
     state.targetLane = position;
     
