@@ -53,43 +53,6 @@ header p {
     text-shadow: 0 0 2px rgba(156, 39, 176, 0.3);
 }
 
-@media screen and (max-width: 480px) {
-    /* Ensure position-3 cards in Round Results expand to show all data */
-    #round .leaderboard-table tr.position-3 {
-        min-height: auto !important;
-        height: auto !important;
-    }
-    
-    /* Make sure all td elements are visible */
-    #round .leaderboard-table tr.position-3 td {
-        display: grid !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    #round .leaderboard-table tr.position-3 td:first-child {
-        display: grid !important;
-    }
-    
-    /* Ensure the bronze gradient doesn't interfere */
-    .position-3 {
-        overflow: visible !important;
-    }
-    
-    /* Make sure Points column (last td) is visible */
-    #round .leaderboard-table tr.position-3 td:last-child {
-        display: grid !important;
-        grid-template-columns: 110px 1fr;
-        border-bottom: none;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    #overall .leaderboard-table tr {
-        cursor: pointer;
-    }
-}
-
 .tabs {
     display: flex;
     gap: 10px;
@@ -581,9 +544,6 @@ header p {
     font-weight: bold;
     border: 3px solid #667eea;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-    border: 3px solid white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .driver-info h2 {
@@ -1093,28 +1053,7 @@ header p {
         margin: 0;
     }
 
-    #round .leaderboard-table td:first-child {
-        display: grid;
-        grid-template-columns: 110px 1fr;
-        padding: 15px 20px 10px 20px;
-        border: none;
-        text-align: left;
-        gap: 15px;
-        align-items: center;
-        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
-        border-radius: 7px 7px 0 0;
-        font-weight: bold;
-    }
-
-    #round .leaderboard-table td:first-child:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: #667eea;
-        text-align: left;
-        font-size: 0.9em;
-    }
-
-    .leaderboard-table td:not(:first-child) {
+    #overall .leaderboard-table td:not(:first-child) {
         display: grid;
         grid-template-columns: 110px 1fr;
         padding: 10px 20px;
@@ -1124,7 +1063,7 @@ header p {
         align-items: center;
     }
 
-    .leaderboard-table td:not(:first-child):before {
+    #overall .leaderboard-table td:not(:first-child):before {
         content: attr(data-label);
         font-weight: 600;
         color: #667eea;
@@ -1132,12 +1071,57 @@ header p {
         font-size: 0.9em;
     }
 
-    .leaderboard-table td:not(:last-child):not(:first-child) {
+    #overall .leaderboard-table td:not(:last-child):not(:first-child) {
         border-bottom: 1px solid #f0f0f0;
     }
 
+    /* Overall leaderboard - make rows clickable */
+    #overall .leaderboard-table tr {
+        cursor: pointer;
+    }
+    
+    /* Round Results - ensure ALL td elements display for ALL positions */
+    #round .leaderboard-table td {
+        display: grid !important;
+        grid-template-columns: 110px 1fr;
+        padding: 10px 20px;
+        border: none;
+        text-align: left;
+        gap: 15px;
+        align-items: center;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    #round .leaderboard-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #667eea;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    
+    #round .leaderboard-table td:not(:last-child) {
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
     #round .leaderboard-table td:last-child {
         border-bottom: none;
+    }
+    
+    /* First cell override (Driver name with background) */
+    #round .leaderboard-table td:first-child {
+        background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
+        border-radius: 7px 7px 0 0;
+        font-weight: bold;
+        padding: 15px 20px 10px 20px;
+    }
+    
+    /* Ensure position-3 cards expand properly */
+    #round .leaderboard-table tr.position-3 {
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
     .container {
