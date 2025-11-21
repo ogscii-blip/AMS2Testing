@@ -1106,80 +1106,72 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     }
   }
 
-  function animate() {
-  const { startX, finishX, sector1End, sector2End } = getPositions();
-  
+ // Option A - Synchronized (replace your animate with this)
+function animateSynchronized() {
+  const { startX, finishX, sector1End, sector2End, trackLength } = getPositions();
   const now = Date.now();
   const elapsed = now - startTime;
-  const t = Math.min(elapsed / ANIMATION_DURATION, 1); // normalized 0 → 1
+  const t = Math.min(elapsed / ANIMATION_DURATION, 1); // 0..1
 
-  // ---------------------------------------------------------
-  // JERK-FREE EASING CURVE
-  // ---------------------------------------------------------
-  // 0–60%   → smooth acceleration
-  // 60–80%  → steady cruising
-  // 80–100% → dramatic slow-motion finish
+  // JERK-FREE GLOBAL EASING (same as discussed)
   let eased;
   if (t < 0.6) {
     const x = t / 0.6;
-    eased = 0.5 * x * x;            // quadratic ease-in (smooth start)
+    eased = 0.5 * x * x;
   } else if (t < 0.8) {
     const x = (t - 0.6) / 0.2;
-    eased = 0.5 + 0.3 * x;          // smooth constant-speed cruise
+    eased = 0.5 + 0.3 * x;
   } else {
     const x = (t - 0.8) / 0.2;
-    eased = 0.8 + 0.2 * (1 - Math.pow(1 - x, 3)); 
-                                     // cubic ease-out (smooth slow-mo)
+    eased = 0.8 + 0.2 * (1 - Math.pow(1 - x, 3));
   }
-  const progress = eased;
+
+  // Map eased global progress to a "real time" elapsed relative to slowest driver.
+  // This avoids multiplying progress by a per-driver ratio (which caused the sprint).
+  const globalRealTime = eased * slowestTime; // 0 .. slowestTime
 
   drawTrack();
 
   const laneHeight = canvas.height / 3;
   let finishOrder = [];
 
-  // ---------------------------------------------------------
-  // DRIVER POSITION CALCULATION BASED ON SECTORS
-  // ---------------------------------------------------------
-  const driverStates = drivers.map((driver, idx) => {
-    let x = startX;
-    let currentSector = 0;
-    let cumulativeTime = 0;
-
-    // Scale progress depending on each driver's pace
-    const driverTotalProgress = progress * (slowestTime / driver.totalTime);
-    const driverElapsedTime = Math.min(driverTotalProgress * driver.totalTime, driver.totalTime);
-
-    if (driverElapsedTime <= driver.sector1) {
-      currentSector = 1;
-      const p = driverElapsedTime / driver.sector1;
-      x = startX + (sector1End - startX) * p;
-      cumulativeTime = driverElapsedTime;
-
-    } else if (driverElapsedTime <= driver.sector1 + driver.sector2) {
-      currentSector = 2;
-      const s2Elapsed = driverElapsedTime - driver.sector1;
-      const p = s2Elapsed / driver.sector2;
-      x = sector1End + (sector2End - sector1End) * p;
-      cumulativeTime = driverElapsedTime;
-
-    } else if (driverElapsedTime < driver.totalTime) {
-      currentSector = 3;
-      const s3Elapsed = driverElapsedTime - driver.sector1 - driver.sector2;
-      const p = s3Elapsed / driver.sector3;
-      x = sector2End + (finishX - sector2End) * p;
-      cumulativeTime = driverElapsedTime;
-
+  // helper: convert fractionOfTrack -> x position (handles zero-length sectors)
+  function xFromFrac(frac, driver) {
+    frac = Math.max(0, Math.min(1, frac));
+    // convert sector fractions (based on driver sector times)
+    const s1f = driver.sector1 / driver.totalTime || 0;
+    const s2f = driver.sector2 / driver.totalTime || 0;
+    const s3f = driver.sector3 / driver.totalTime || 0;
+    // ensure they sum to 1 (avoid division by zero edgecases)
+    const sum = s1f + s2f + s3f || 1;
+    const a = (s1f / sum) * trackLength;
+    const b = (s2f / sum) * trackLength;
+    // a = track length of sector1, b = sector2, remainder = sector3
+    const d = frac * trackLength;
+    if (d <= a) {
+      return startX + (d / a) * (sector1End - startX);
+    } else if (d <= a + b) {
+      const dd = d - a;
+      return sector1End + (dd / b) * (sector2End - sector1End);
     } else {
-      // FINISHED
-      currentSector = 4;
-      x = finishX;
-      cumulativeTime = driver.totalTime;
+      const dd = d - a - b;
+      const c = trackLength - a - b;
+      return sector2End + (dd / (c || 1)) * (finishX - sector2End);
+    }
+  }
 
-      if (!driver.finished) {
-        driver.finished = true;
-        driver.finishTime = now;
-      }
+  // Build driver states
+  const driverStates = drivers.map((driver, idx) => {
+    const laneY = 0;
+    // driverElapsedTime is globalRealTime but clamped to the driver's actual totalTime
+    const driverElapsedTime = Math.min(globalRealTime, driver.totalTime);
+    const frac = driver.totalTime === 0 ? 1 : driverElapsedTime / driver.totalTime; // 0..1
+    const x = xFromFrac(frac, driver);
+
+    // mark finished
+    if (driverElapsedTime >= driver.totalTime && !driver.finished) {
+      driver.finished = true;
+      driver.finishTime = now;
     }
 
     if (driver.finished) {
@@ -1190,43 +1182,35 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
       driver,
       idx,
       x,
-      currentSector,
-      cumulativeTime,
+      currentSector: driverElapsedTime >= (driver.sector1 + driver.sector2 + driver.sector3) ? 4
+                    : (driverElapsedTime <= driver.sector1 ? 1
+                       : (driverElapsedTime <= driver.sector1 + driver.sector2 ? 2 : 3)),
+      cumulativeTime: Math.min(driverElapsedTime, driver.totalTime),
       finished: driver.finished
     };
   });
 
-  // ---------------------------------------------------------
-  // RANKING LOGIC
-  // ---------------------------------------------------------
+  // ranking
   driverStates.sort((a, b) => {
-    if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
-      return a.cumulativeTime - b.cumulativeTime;
-    }
+    if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) return a.cumulativeTime - b.cumulativeTime;
     return b.x - a.x;
   });
 
-  // ---------------------------------------------------------
-  // LANE SWITCHING ANIMATION
-  // ---------------------------------------------------------
+  // lane switching (smooth)
   driverStates.forEach((state, position) => {
     state.targetLane = position;
-
     const currentLane = state.driver.lanePosition;
     const laneChangeSpeed = 0.03;
-
     if (Math.abs(currentLane - state.targetLane) < 0.01) {
       state.driver.lanePosition = state.targetLane;
     } else if (currentLane < state.targetLane) {
       state.driver.lanePosition = Math.min(currentLane + laneChangeSpeed, state.targetLane);
-    } else if (currentLane > state.targetLane) {
+    } else {
       state.driver.lanePosition = Math.max(currentLane - laneChangeSpeed, state.targetLane);
     }
   });
 
-  // ---------------------------------------------------------
-  // DRAW GLOWING LANES & CARS
-  // ---------------------------------------------------------
+  // draw glowing lanes for finished
   driverStates.forEach(state => {
     if (state.finished) {
       const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
@@ -1234,29 +1218,27 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     }
   });
 
+  // draw cars
   driverStates.forEach(state => {
     const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
     drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
   });
 
-  // ---------------------------------------------------------
-  // DRAW FINISH CARPETS
-  // ---------------------------------------------------------
+  // finish carpets
   finishOrder.sort((a, b) => a.finishTime - b.finishTime);
   finishOrder.forEach((item, finishPos) => {
     const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
     drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
   });
 
-  // ---------------------------------------------------------
-  // CONTINUE OR STOP
-  // ---------------------------------------------------------
-  if (progress < 1) {
-    animationId = requestAnimationFrame(animate);
+  // continue or stop
+  if (t < 1) {
+    animationId = requestAnimationFrame(animateSynchronized);
   } else {
     isAnimating = false;
   }
 }
+
 
   let startTime;
 
