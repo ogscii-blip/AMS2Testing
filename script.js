@@ -111,6 +111,9 @@ async function loadConfig() {
 
       APPS_SCRIPT_URL = configMap['apps_script_url'];
 
+      // ADD THIS LINE - Set admin username
+      updateAdminUsername(configMap);
+
       // Build ALLOWED_USERS from config allowed_name_i, allowed_email_i, allowed_password_i
       const allowed = {};
       for (let i = 1; i <= 20; i++) {
@@ -124,6 +127,8 @@ async function loadConfig() {
       ALLOWED_USERS = allowed;
       console.log('Config loaded. Users:', Object.keys(ALLOWED_USERS).length);
     });
+    
+    // ... rest of loadConfig code stays the same
 
     // Load driver profiles (object keyed by username if available)
     // We'll use onValue so profile edits are reflected live
@@ -202,7 +207,6 @@ function showTab(tabName, sourceButton = null) {
   if (tabName === 'overall') {
     loadLeaderboard();
   } else if (tabName === 'round') {
-    // FIXED: Pre-select current (latest) season in Round Results by default
     preSelectCurrentSeasonInRoundResults();
     loadRoundData();
   } else if (tabName === 'drivers') {
@@ -211,6 +215,8 @@ function showTab(tabName, sourceButton = null) {
     loadProfile();
   } else if (tabName === 'setup') {
     loadRoundSetup();
+  } else if (tabName === 'admin') {
+    loadAdminTools();
   }
 }
 
@@ -1466,6 +1472,293 @@ async function loadRoundSetup() {
 
   } catch (err) {
     console.error('loadRoundSetup error', err);
+  }
+}
+
+/* -----------------------------
+   Admin Tools - Lap Time Management
+   ----------------------------- */
+let ADMIN_USERNAME = null;
+
+// Check if current user is admin
+function isAdmin() {
+  return currentUser && ADMIN_USERNAME && currentUser.name === ADMIN_USERNAME;
+}
+
+// Update admin username from config
+function updateAdminUsername(configMap) {
+  ADMIN_USERNAME = configMap['admin_username'] || null;
+  updateAdminTabVisibility();
+}
+
+function updateAdminTabVisibility() {
+  const adminTab = document.querySelector('.tab-button[onclick*="admin"]');
+  if (adminTab) {
+    adminTab.style.display = isAdmin() ? '' : 'none';
+  }
+}
+
+async function loadAdminTools() {
+  if (!isAdmin()) {
+    document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
+    return;
+  }
+
+  try {
+    // Load all lap submissions
+    const lapsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'));
+    const lapsData = toArray(lapsSnapshot.val());
+    
+    // Store with Firebase keys for editing/deleting
+    const lapsWithKeys = [];
+    const lapsObject = lapsSnapshot.val();
+    if (lapsObject && typeof lapsObject === 'object') {
+      Object.keys(lapsObject).forEach(key => {
+        if (lapsObject[key]) {
+          lapsWithKeys.push({ ...lapsObject[key], _firebaseKey: key });
+        }
+      });
+    }
+
+    displayAdminLapTimes(lapsWithKeys);
+
+  } catch (err) {
+    console.error('loadAdminTools error', err);
+  }
+}
+
+function displayAdminLapTimes(lapsData) {
+  const container = document.getElementById('admin-lap-times-table');
+  if (!container) return;
+
+  // Get unique drivers, seasons, rounds for filters
+  const drivers = [...new Set(lapsData.map(l => l.Driver).filter(Boolean))].sort();
+  const seasons = [...new Set(lapsData.map(l => l.Season).filter(Boolean))].sort((a,b) => b-a);
+  const rounds = [...new Set(lapsData.map(l => l.Round).filter(Boolean))].sort((a,b) => a-b);
+
+  // Build filter HTML
+  const filterHtml = `
+    <div class="admin-filters">
+      <select id="adminFilterDriver" class="admin-filter-select">
+        <option value="">All Drivers</option>
+        ${drivers.map(d => `<option value="${d}">${d}</option>`).join('')}
+      </select>
+      <select id="adminFilterSeason" class="admin-filter-select">
+        <option value="">All Seasons</option>
+        ${seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('')}
+      </select>
+      <select id="adminFilterRound" class="admin-filter-select">
+        <option value="">All Rounds</option>
+        ${rounds.map(r => `<option value="${r}">Round ${r}</option>`).join('')}
+      </select>
+      <button onclick="filterAdminLaps()" class="admin-filter-btn">Apply Filters</button>
+      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear</button>
+    </div>
+  `;
+
+  // Sort by timestamp descending (newest first)
+  lapsData.sort((a, b) => {
+    const timeA = new Date(a.Timestamp).getTime();
+    const timeB = new Date(b.Timestamp).getTime();
+    return timeB - timeA;
+  });
+
+  // Build table
+  const tableHtml = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Driver</th>
+          <th>Season</th>
+          <th>Round</th>
+          <th>Sector 1</th>
+          <th>Sector 2</th>
+          <th>Sector 3</th>
+          <th>Total Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="adminLapsTableBody">
+        ${lapsData.map(lap => createAdminLapRow(lap)).join('')}
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = filterHtml + tableHtml;
+
+  // Store data globally for filtering
+  window.adminLapsData = lapsData;
+}
+
+function createAdminLapRow(lap) {
+  const timestamp = new Date(lap.Timestamp).toLocaleString();
+  const s1 = formatTime(lap.Sector_1);
+  const s2 = formatTime(lap.Sector_2);
+  const s3 = formatTime(lap.Sector_3);
+  const total = formatTime(lap.Total_Lap_Time);
+
+  return `
+    <tr data-key="${lap._firebaseKey}">
+      <td data-label="Timestamp">${timestamp}</td>
+      <td data-label="Driver">${lap.Driver}</td>
+      <td data-label="Season">${lap.Season}</td>
+      <td data-label="Round">${lap.Round}</td>
+      <td data-label="Sector 1">${s1}</td>
+      <td data-label="Sector 2">${s2}</td>
+      <td data-label="Sector 3">${s3}</td>
+      <td data-label="Total Time">${total}</td>
+      <td data-label="Actions">
+        <button onclick="editAdminLap('${lap._firebaseKey}')" class="admin-btn-edit">✏️ Edit</button>
+        <button onclick="deleteAdminLap('${lap._firebaseKey}')" class="admin-btn-delete">🗑️ Delete</button>
+      </td>
+    </tr>
+  `;
+}
+
+function filterAdminLaps() {
+  const driverFilter = document.getElementById('adminFilterDriver').value;
+  const seasonFilter = document.getElementById('adminFilterSeason').value;
+  const roundFilter = document.getElementById('adminFilterRound').value;
+
+  let filtered = window.adminLapsData || [];
+
+  if (driverFilter) filtered = filtered.filter(l => l.Driver === driverFilter);
+  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
+  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
+
+  // Update table body only
+  const tbody = document.getElementById('adminLapsTableBody');
+  if (tbody) {
+    tbody.innerHTML = filtered.map(lap => createAdminLapRow(lap)).join('');
+  }
+}
+
+function clearAdminFilters() {
+  document.getElementById('adminFilterDriver').value = '';
+  document.getElementById('adminFilterSeason').value = '';
+  document.getElementById('adminFilterRound').value = '';
+  filterAdminLaps();
+}
+
+async function editAdminLap(firebaseKey) {
+  const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+  if (!lap) return;
+
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'admin-modal';
+  modal.innerHTML = `
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3>Edit Lap Time</h3>
+        <button onclick="closeAdminModal()" class="admin-modal-close">×</button>
+      </div>
+      <div class="admin-modal-body">
+        <p><strong>Driver:</strong> ${lap.Driver}</p>
+        <p><strong>Season:</strong> ${lap.Season} | <strong>Round:</strong> ${lap.Round}</p>
+        <p><strong>Original Timestamp:</strong> ${new Date(lap.Timestamp).toLocaleString()}</p>
+        
+        <div class="admin-edit-form">
+          <div class="admin-form-group">
+            <label>Sector 1 (seconds):</label>
+            <input type="number" step="0.001" id="editS1" value="${lap.Sector_1}" class="admin-input">
+          </div>
+          <div class="admin-form-group">
+            <label>Sector 2 (seconds):</label>
+            <input type="number" step="0.001" id="editS2" value="${lap.Sector_2}" class="admin-input">
+          </div>
+          <div class="admin-form-group">
+            <label>Sector 3 (seconds):</label>
+            <input type="number" step="0.001" id="editS3" value="${lap.Sector_3}" class="admin-input">
+          </div>
+        </div>
+      </div>
+      <div class="admin-modal-footer">
+        <button onclick="saveAdminLapEdit('${firebaseKey}')" class="admin-btn-save">💾 Save Changes</button>
+        <button onclick="closeAdminModal()" class="admin-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+async function saveAdminLapEdit(firebaseKey) {
+  try {
+    const s1 = parseFloat(document.getElementById('editS1').value);
+    const s2 = parseFloat(document.getElementById('editS2').value);
+    const s3 = parseFloat(document.getElementById('editS3').value);
+
+    if (!isFinite(s1) || !isFinite(s2) || !isFinite(s3)) {
+      alert('❌ Invalid sector times');
+      return;
+    }
+
+    const totalTime = s1 + s2 + s3;
+
+    // Get original lap data
+    const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+    
+    // Update in Firebase
+    const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
+    await window.firebaseSet(lapRef, {
+      ...lap,
+      Sector_1: s1,
+      Sector_2: s2,
+      Sector_3: s3,
+      Total_Lap_Time: totalTime,
+      Last_Modified: new Date().toISOString(),
+      Modified_By: currentUser.name
+    });
+
+    alert('✅ Lap time updated successfully!');
+    closeAdminModal();
+    
+    // Refresh admin view
+    loadAdminTools();
+    
+    // Invalidate caches
+    CACHE.roundDataArray = null;
+
+  } catch (err) {
+    console.error('saveAdminLapEdit error', err);
+    alert('❌ Error saving: ' + err.message);
+  }
+}
+
+async function deleteAdminLap(firebaseKey) {
+  const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+  if (!lap) return;
+
+  const confirmMsg = `⚠️ Delete this lap time?\n\nDriver: ${lap.Driver}\nSeason ${lap.Season} - Round ${lap.Round}\nTime: ${formatTime(lap.Total_Lap_Time)}\n\nThis cannot be undone!`;
+  
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
+    await window.firebaseSet(lapRef, null); // Delete by setting to null
+
+    alert('✅ Lap time deleted successfully!');
+    
+    // Refresh admin view
+    loadAdminTools();
+    
+    // Invalidate caches
+    CACHE.roundDataArray = null;
+
+  } catch (err) {
+    console.error('deleteAdminLap error', err);
+    alert('❌ Error deleting: ' + err.message);
+  }
+}
+
+function closeAdminModal() {
+  const modal = document.querySelector('.admin-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
   }
 }
 
