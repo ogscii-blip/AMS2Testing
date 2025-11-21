@@ -1106,7 +1106,8 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     }
   }
 
-  function animate() {
+  
+  /* function animate() {
   const { startX, finishX, sector1End, sector2End } = getPositions();
   
   const now = Date.now();
@@ -1256,6 +1257,49 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     startTime = Date.now();
     animationId = requestAnimationFrame(animate);
   }
+   */
+   function animate(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+
+    let allFinished = true;
+
+    cars.forEach(car => {
+        if (car.isOnCooldown) return;
+
+        const finishTime = car.finishTime;
+        let t = Math.min(elapsed / finishTime, 1); // 0 → 1 normalized time
+
+        let eased;
+
+        if (t < 0.6) {
+            // Smooth acceleration phase (0% → 60%)
+            const x = t / 0.6;
+            eased = 0.5 * x * x;  // quadratic ease-in (gentle start, smooth increase)
+        }
+        else if (t < 0.8) {
+            // Smooth cruising phase (60% → 80%)
+            const x = (t - 0.6) / 0.2;
+            eased = 0.5 + 0.3 * x; // constant, smooth slope
+        }
+        else {
+            // Smooth dramatic slowdown (80% → 100%)
+            const x = (t - 0.8) / 0.2;
+            eased = 0.8 + 0.2 * (1 - Math.pow(1 - x, 3)); 
+            // cubic ease-out → slow-motion effect
+        }
+
+        if (t < 1) allFinished = false;
+
+        car.totalDistance = eased * trackLength;
+        car.element.style.transform = `translateX(${car.totalDistance}px)`;
+    });
+
+    if (!allFinished) {
+        animationFrame = requestAnimationFrame(animate);
+    }
+}
+
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
