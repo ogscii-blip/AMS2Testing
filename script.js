@@ -703,31 +703,41 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   const ctx = canvas.getContext('2d');
   let animationId = null;
   let hasAnimated = false;
+  let isAnimating = false;
 
-   // Set canvas size
-   const resizeCanvas = () => {
-     const container = canvas.parentElement;
-     const rect = container.getBoundingClientRect();
-     canvas.width = rect.width; // Use actual rendered width
-     canvas.height = canvas.offsetHeight;
-   };
-   resizeCanvas();
-   
-   // Add debounced resize handler
-   let resizeTimeout;
-   const debouncedResize = () => {
-     clearTimeout(resizeTimeout);
-     resizeTimeout = setTimeout(() => {
-       resizeCanvas();
-       // Redraw if animation hasn't started
-       if (!hasAnimated) {
-         drawTrack();
-       }
-     }, 250);
-   };
-   
-   window.addEventListener('resize', debouncedResize);
-   window.addEventListener('orientationchange', debouncedResize);
+  // Set canvas size properly
+  const resizeCanvas = () => {
+    const container = canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+    
+    // Force canvas to match container width
+    canvas.style.width = '100%';
+    canvas.width = rect.width;
+    canvas.height = canvas.offsetHeight;
+    
+    // If animation is running, restart it
+    if (isAnimating) {
+      cancelAnimationFrame(animationId);
+      startAnimation();
+    }
+  };
+  
+  resizeCanvas();
+
+  // Handle resize and orientation change with immediate effect
+  let resizeTimeout;
+  const handleResize = () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      resizeCanvas();
+    }, 100);
+  };
+
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('orientationchange', () => {
+    // Immediate resize on orientation change
+    setTimeout(resizeCanvas, 100);
+  });
 
   // Driver colors (matching points graph)
   const colors = ['#667eea', '#e74c3c', '#f39c12'];
@@ -755,19 +765,29 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
   // Animation settings
   const ANIMATION_DURATION = 4000; // 4 seconds total
-  const startX = 80;
-  const finishX = canvas.width - 80;
-  const trackLength = finishX - startX;
   
-  // Calculate sector positions (each sector is 1/3 of track)
-  const sector1End = startX + (trackLength / 3);
-  const sector2End = startX + (2 * trackLength / 3);
+  // Calculate positions dynamically based on canvas width
+  const getPositions = () => {
+    const startX = 80;
+    const finishX = canvas.width - 80;
+    const trackLength = finishX - startX;
+    
+    return {
+      startX,
+      finishX,
+      trackLength,
+      sector1End: startX + (trackLength / 3),
+      sector2End: startX + (2 * trackLength / 3)
+    };
+  };
 
   // Find slowest total time to normalize animation
   const slowestTime = Math.max(...drivers.map(d => d.totalTime));
 
   // Draw static elements
   function drawTrack() {
+    const { startX, finishX, sector1End, sector2End } = getPositions();
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const laneHeight = canvas.height / 3;
@@ -864,128 +884,130 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   }
 
   function drawCar(x, y, color, driverName, position) {
-  const carWidth = 50;
-  const carHeight = 18;
+    const carWidth = 50;
+    const carHeight = 18;
 
-  ctx.save();
+    ctx.save();
 
-  // Main car body (streamlined)
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(x - carWidth/2 + 5, y - carHeight/2);
-  ctx.lineTo(x + carWidth/2 - 3, y - carHeight/2);
-  ctx.quadraticCurveTo(x + carWidth/2, y - carHeight/2, x + carWidth/2, y - carHeight/2 + 3);
-  ctx.lineTo(x + carWidth/2, y + carHeight/2 - 3);
-  ctx.quadraticCurveTo(x + carWidth/2, y + carHeight/2, x + carWidth/2 - 3, y + carHeight/2);
-  ctx.lineTo(x - carWidth/2 + 5, y + carHeight/2);
-  ctx.quadraticCurveTo(x - carWidth/2 + 2, y + carHeight/2, x - carWidth/2 + 2, y + carHeight/2 - 3);
-  ctx.lineTo(x - carWidth/2 + 2, y - carHeight/2 + 3);
-  ctx.quadraticCurveTo(x - carWidth/2 + 2, y - carHeight/2, x - carWidth/2 + 5, y - carHeight/2);
-  ctx.closePath();
-  ctx.fill();
+    // Main car body (streamlined)
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 5, y - carHeight/2);
+    ctx.lineTo(x + carWidth/2 - 3, y - carHeight/2);
+    ctx.quadraticCurveTo(x + carWidth/2, y - carHeight/2, x + carWidth/2, y - carHeight/2 + 3);
+    ctx.lineTo(x + carWidth/2, y + carHeight/2 - 3);
+    ctx.quadraticCurveTo(x + carWidth/2, y + carHeight/2, x + carWidth/2 - 3, y + carHeight/2);
+    ctx.lineTo(x - carWidth/2 + 5, y + carHeight/2);
+    ctx.quadraticCurveTo(x - carWidth/2 + 2, y + carHeight/2, x - carWidth/2 + 2, y + carHeight/2 - 3);
+    ctx.lineTo(x - carWidth/2 + 2, y - carHeight/2 + 3);
+    ctx.quadraticCurveTo(x - carWidth/2 + 2, y - carHeight/2, x - carWidth/2 + 5, y - carHeight/2);
+    ctx.closePath();
+    ctx.fill();
 
-  // Cockpit/windshield area (darker accent)
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-  ctx.beginPath();
-  ctx.ellipse(x + carWidth/6, y, carWidth/4, carHeight/3, 0, 0, Math.PI * 2);
-  ctx.fill();
+    // Cockpit/windshield area (darker accent)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x + carWidth/6, y, carWidth/4, carHeight/3, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Front wing
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(x + carWidth/2, y - carHeight/2 - 2);
-  ctx.lineTo(x + carWidth/2 + 5, y - carHeight/2 - 1);
-  ctx.lineTo(x + carWidth/2 + 5, y + carHeight/2 + 1);
-  ctx.lineTo(x + carWidth/2, y + carHeight/2 + 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.globalAlpha = 1;
+    // Front wing
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x + carWidth/2, y - carHeight/2 - 2);
+    ctx.lineTo(x + carWidth/2 + 5, y - carHeight/2 - 1);
+    ctx.lineTo(x + carWidth/2 + 5, y + carHeight/2 + 1);
+    ctx.lineTo(x + carWidth/2, y + carHeight/2 + 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
 
-  // Rear wing
-  ctx.fillStyle = color;
-  ctx.globalAlpha = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(x - carWidth/2 + 2, y - carHeight/2 - 3);
-  ctx.lineTo(x - carWidth/2 - 3, y - carHeight/2 - 2);
-  ctx.lineTo(x - carWidth/2 - 3, y + carHeight/2 + 2);
-  ctx.lineTo(x - carWidth/2 + 2, y + carHeight/2 + 3);
-  ctx.closePath();
-  ctx.fill();
-  ctx.globalAlpha = 1;
+    // Rear wing
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 2, y - carHeight/2 - 3);
+    ctx.lineTo(x - carWidth/2 - 3, y - carHeight/2 - 2);
+    ctx.lineTo(x - carWidth/2 - 3, y + carHeight/2 + 2);
+    ctx.lineTo(x - carWidth/2 + 2, y + carHeight/2 + 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
 
-  // Wheels (larger, more visible)
-  ctx.fillStyle = '#1a1a1a';
-  const wheelRadius = 4;
-  const wheelOffset = carWidth/3;
-  
-  // Front wheels
-  ctx.beginPath();
-  ctx.arc(x + wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x + wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Rear wheels
-  ctx.beginPath();
-  ctx.arc(x - wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x - wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
-  ctx.fill();
+    // Wheels (larger, more visible)
+    ctx.fillStyle = '#1a1a1a';
+    const wheelRadius = 4;
+    const wheelOffset = carWidth/3;
+    
+    // Front wheels
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Rear wheels
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Wheel rims (white center)
-  ctx.fillStyle = '#ffffff';
-  const rimRadius = 2;
-  ctx.beginPath();
-  ctx.arc(x + wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x + wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x - wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(x - wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
-  ctx.fill();
+    // Wheel rims (white center)
+    ctx.fillStyle = '#ffffff';
+    const rimRadius = 2;
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Racing stripes
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(x - carWidth/2 + 8, y - 2);
-  ctx.lineTo(x + carWidth/2 - 5, y - 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x - carWidth/2 + 8, y + 2);
-  ctx.lineTo(x + carWidth/2 - 5, y + 2);
-  ctx.stroke();
+    // Racing stripes
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 8, y - 2);
+    ctx.lineTo(x + carWidth/2 - 5, y - 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 8, y + 2);
+    ctx.lineTo(x + carWidth/2 - 5, y + 2);
+    ctx.stroke();
 
-  ctx.restore();
+    ctx.restore();
 
-  // Driver name and position
-  ctx.fillStyle = '#2c3e50';
-  ctx.font = 'bold 11px Arial';
-  ctx.textAlign = 'left';
-  const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
-  
-  // FIXED: Show initials when logged out
-  let displayName;
-  if (currentUser && profile.name && profile.surname) {
-    displayName = `${profile.name.charAt(0)}. ${profile.surname}`;
-  } else if (profile.name && profile.surname) {
-    // Not logged in - show initials only
-    displayName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
-  } else {
-    displayName = driverName;
+    // Driver name and position
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'left';
+    const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
+    
+    // FIXED: Show initials when logged out
+    let displayName;
+    if (currentUser && profile.name && profile.surname) {
+      displayName = `${profile.name.charAt(0)}. ${profile.surname}`;
+    } else if (profile.name && profile.surname) {
+      // Not logged in - show initials only
+      displayName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+    } else {
+      displayName = driverName;
+    }
+    
+    ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
   }
-  
-  ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
-}
 
   function animate() {
+    const { startX, finishX, sector1End, sector2End } = getPositions();
+    
     const now = Date.now();
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
@@ -1025,6 +1047,8 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
     if (progress < 1) {
       animationId = requestAnimationFrame(animate);
+    } else {
+      isAnimating = false;
     }
   }
 
@@ -1040,8 +1064,9 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
       d.finished = false;
     });
 
+    isAnimating = true;
     startTime = Date.now();
-    animate();
+    animationId = requestAnimationFrame(animate);
   }
 
   // Intersection Observer - animate when scrolled into view
@@ -1064,7 +1089,6 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     startAnimation();
   });
 }
-
 /* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
