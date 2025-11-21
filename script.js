@@ -17,6 +17,7 @@
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
    - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
+   - NEW: Race animation showing top 3 cars racing through sectors
    ========================================================= */
 
 /* -----------------------------
@@ -314,6 +315,13 @@ function goToDriverProfile(driverName) {
   }, 300);
 }
 
+function toggleRound(key) {
+  const details = document.getElementById(`details-${key}`);
+  const icon = document.getElementById(`toggle-${key}`);
+  if (!details) return;
+  details.classList.toggle('expanded');
+  if (icon) icon.classList.toggle('expanded');
+}
 /* -----------------------------
    Points Progression Graph with Animated Driver Photos
    ----------------------------- */
@@ -358,7 +366,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   let colorIndex = 0;
 
   Object.keys(driverRounds).forEach(driver => {
-    const cumulativePoints = [0];
+    const cumulativePoints = [0]; // FIXED: Start with 0 points at R0
     let total = 0;
 
     sortedRounds.forEach(round => {
@@ -370,6 +378,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
     const driverColor = colors[colorIndex % colors.length];
     colorIndex++;
 
+    // FIXED: Only use photos if user is logged in
     const usePhoto = currentUser && profile.photoUrl;
 
     datasets.push({
@@ -395,14 +404,14 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['R0', ...sortedRounds.map(r => `R${r}`)],
+      labels: ['R0', ...sortedRounds.map(r => `R${r}`)], // FIXED: Add R0 label
       datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5,
-      animation: false,
+      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5, // Mobile-friendly aspect ratio
+      animation: false, // Disable initial animation
       plugins: {
         legend: {
           display: true,
@@ -463,10 +472,12 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
 
   graphContainer.style.display = 'block';
 
-  // Use Intersection Observer to trigger animation only when visible
+  // FIXED: Use Intersection Observer to trigger animation only when visible
   setupChartVisibilityObserver(graphContainer, sortedRounds);
 }
+
 function setupChartVisibilityObserver(graphContainer, rounds) {
+  // Remove any existing observer
   if (graphContainer._observer) {
     graphContainer._observer.disconnect();
   }
@@ -522,7 +533,131 @@ function animateDriverAvatars(chart, rounds) {
     }
   });
 
-   /* -----------------------------
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / animationDuration, 1);
+    
+    const currentPositionFloat = progress * rounds.length;
+    const currentRoundIndex = Math.floor(currentPositionFloat);
+    const roundProgress = currentPositionFloat - currentRoundIndex;
+
+    // Redraw chart base (without lines)
+    chart.update('none');
+
+    // Draw our custom lines and avatars
+    chart.data.datasets.forEach((dataset, idx) => {
+      const avatar = avatars[idx];
+      const meta = chart.getDatasetMeta(idx);
+      if (!meta || !meta.data || meta.data.length === 0) return;
+
+      ctx.save();
+      
+      // Draw the line up to current progress
+      ctx.strokeStyle = dataset.borderColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let i = 0; i <= currentRoundIndex; i++) {
+        const point = meta.data[i];
+        if (!point) continue;
+        
+        const x = point.x;
+        const y = chart.scales.y.getPixelForValue(dataset.data[i]);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      
+      // Draw interpolated segment
+      if (currentRoundIndex < meta.data.length - 1 && roundProgress > 0) {
+        const currentPoint = meta.data[currentRoundIndex];
+        const nextPoint = meta.data[currentRoundIndex + 1];
+        
+        if (currentPoint && nextPoint) {
+          const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+          const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+          
+          const interpX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+          const interpY = currentY + (nextY - currentY) * roundProgress;
+          
+          ctx.lineTo(interpX, interpY);
+        }
+      }
+      
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw avatar at tip
+      const currentPoint = meta.data[currentRoundIndex];
+      const nextPoint = meta.data[currentRoundIndex + 1];
+      
+      if (!currentPoint) return;
+
+      let tipX, tipY;
+      if (nextPoint && roundProgress > 0) {
+        tipX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+        const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+        const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+        tipY = currentY + (nextY - currentY) * roundProgress;
+      } else {
+        tipX = currentPoint.x;
+        tipY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+      }
+
+      ctx.save();
+      
+      if (avatar.hasPhoto && avatar.loaded) {
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar.img, tipX - avatarSize / 2, tipY - avatarSize / 2, avatarSize, avatarSize);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = avatar.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = avatar.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(avatar.driverNumber, tipX, tipY);
+      }
+      
+      ctx.restore();
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      // Animation complete - re-enable tooltips and restore full lines
+      chart.options.plugins.tooltip.enabled = true;
+      chart.data.datasets.forEach(dataset => {
+        dataset.borderWidth = 3;
+      });
+      chart.update('none');
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+/* -----------------------------
    Race Animation for Round Results
    ----------------------------- */
 function createRaceAnimation(roundKey, results) {
@@ -825,131 +960,6 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   });
 }
 
-  function animate() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / animationDuration, 1);
-    
-    const currentPositionFloat = progress * rounds.length;
-    const currentRoundIndex = Math.floor(currentPositionFloat);
-    const roundProgress = currentPositionFloat - currentRoundIndex;
-
-    // Redraw chart base (without lines)
-    chart.update('none');
-
-    // Draw our custom lines and avatars
-    chart.data.datasets.forEach((dataset, idx) => {
-      const avatar = avatars[idx];
-      const meta = chart.getDatasetMeta(idx);
-      if (!meta || !meta.data || meta.data.length === 0) return;
-
-      ctx.save();
-      
-      // Draw the line up to current progress
-      ctx.strokeStyle = dataset.borderColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      
-      for (let i = 0; i <= currentRoundIndex; i++) {
-        const point = meta.data[i];
-        if (!point) continue;
-        
-        const x = point.x;
-        const y = chart.scales.y.getPixelForValue(dataset.data[i]);
-        
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-      
-      // Draw interpolated segment
-      if (currentRoundIndex < meta.data.length - 1 && roundProgress > 0) {
-        const currentPoint = meta.data[currentRoundIndex];
-        const nextPoint = meta.data[currentRoundIndex + 1];
-        
-        if (currentPoint && nextPoint) {
-          const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
-          const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
-          
-          const interpX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
-          const interpY = currentY + (nextY - currentY) * roundProgress;
-          
-          ctx.lineTo(interpX, interpY);
-        }
-      }
-      
-      ctx.stroke();
-      ctx.restore();
-
-      // Draw avatar at tip
-      const currentPoint = meta.data[currentRoundIndex];
-      const nextPoint = meta.data[currentRoundIndex + 1];
-      
-      if (!currentPoint) return;
-
-      let tipX, tipY;
-      if (nextPoint && roundProgress > 0) {
-        tipX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
-        const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
-        const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
-        tipY = currentY + (nextY - currentY) * roundProgress;
-      } else {
-        tipX = currentPoint.x;
-        tipY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
-      }
-
-      ctx.save();
-      
-      if (avatar.hasPhoto && avatar.loaded) {
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(avatar.img, tipX - avatarSize / 2, tipY - avatarSize / 2, avatarSize, avatarSize);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.strokeStyle = avatar.color;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
-        ctx.fillStyle = avatar.color;
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(avatar.driverNumber, tipX, tipY);
-      }
-      
-      ctx.restore();
-    });
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      // Animation complete - re-enable tooltips and restore full lines
-      chart.options.plugins.tooltip.enabled = true;
-      chart.data.datasets.forEach(dataset => {
-        dataset.borderWidth = 3;
-      });
-      chart.update('none');
-    }
-  }
-
-  requestAnimationFrame(animate);
-}
-
 /* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
@@ -1119,7 +1129,6 @@ async function populateSeasonFilter() {
     console.error('populateSeasonFilter error', err);
   }
 }
-
 /* -----------------------------
    Round Data (season-aware)
    ----------------------------- */
@@ -1214,14 +1223,6 @@ async function loadRoundData() {
   } catch (err) {
     console.error('loadRoundData error', err);
   }
-}
-
-function toggleRound(key) {
-  const details = document.getElementById(`details-${key}`);
-  const icon = document.getElementById(`toggle-${key}`);
-  if (!details) return;
-  details.classList.toggle('expanded');
-  if (icon) icon.classList.toggle('expanded');
 }
 
 function displayRoundData(roundGroups, tracksMap, carsMap) {
@@ -1339,19 +1340,19 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       tbody.appendChild(tr);
     });
 
-   details.appendChild(table);
+    details.appendChild(table);
 
-   // ADD RACE ANIMATION HERE
-   const raceAnimationHtml = createRaceAnimation(key, results);
-   if (raceAnimationHtml) {
-     const raceDiv = document.createElement('div');
-     raceDiv.innerHTML = raceAnimationHtml;
-     details.appendChild(raceDiv.firstElementChild);
-   }
-   
-   roundDiv.appendChild(header);
-   roundDiv.appendChild(details);
-   frag.appendChild(roundDiv);
+    // ADD RACE ANIMATION HERE
+    const raceAnimationHtml = createRaceAnimation(key, results);
+    if (raceAnimationHtml) {
+      const raceDiv = document.createElement('div');
+      raceDiv.innerHTML = raceAnimationHtml;
+      details.appendChild(raceDiv.firstElementChild);
+    }
+
+    roundDiv.appendChild(header);
+    roundDiv.appendChild(details);
+    frag.appendChild(roundDiv);
   });
 
   container.appendChild(frag);
@@ -1683,7 +1684,6 @@ async function loadDriverStats() {
     document.getElementById('drivers-loading').innerHTML = '<p style="color:red;">Error loading driver statistics</p>';
   }
 }
-
 /* -----------------------------
    Profile: load & save (by username key)
    ----------------------------- */
