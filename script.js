@@ -1107,86 +1107,121 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   }
 
   function animate() {
-    const { startX, finishX, sector1End, sector2End } = getPositions();
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  const now = Date.now();
+  const elapsed = now - startTime;
+  const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / 3;
+  let finishOrder = [];
+
+  const elapsedRealTime = progress * slowestTime;
+
+  // Calculate actual progress for each driver based on their sector times
+  const driverStates = drivers.map((driver, idx) => {
+    // Calculate how far this specific driver has progressed through THEIR lap
+    const driverElapsedTime = Math.min(elapsedRealTime, driver.totalTime);
     
-    const now = Date.now();
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-
-    drawTrack();
-
-    const laneHeight = canvas.height / 3;
-    let finishOrder = [];
-
-    const elapsedRealTime = progress * slowestTime;
-
-    // Calculate positions for all drivers
-    const driverStates = drivers.map((driver, idx) => {
-      const driverProgress = Math.min(elapsedRealTime / driver.totalTime, 1);
-      let x = startX + (finishX - startX) * driverProgress;
-
-      if (driverProgress >= 1 && !driver.finished) {
+    // Determine which sector they're in and calculate position
+    let x = startX;
+    let completedTime = 0; // How much of their lap time they've completed
+    
+    if (driverElapsedTime <= driver.sector1) {
+      // In sector 1
+      const s1Progress = driverElapsedTime / driver.sector1;
+      x = startX + (sector1End - startX) * s1Progress;
+      completedTime = driverElapsedTime;
+    } else if (driverElapsedTime <= driver.sector1 + driver.sector2) {
+      // In sector 2
+      const s2Progress = (driverElapsedTime - driver.sector1) / driver.sector2;
+      x = sector1End + (sector2End - sector1End) * s2Progress;
+      completedTime = driverElapsedTime;
+    } else if (driverElapsedTime < driver.totalTime) {
+      // In sector 3
+      const s3Progress = (driverElapsedTime - driver.sector1 - driver.sector2) / driver.sector3;
+      x = sector2End + (finishX - sector2End) * s3Progress;
+      completedTime = driverElapsedTime;
+    } else {
+      // Finished
+      x = finishX;
+      completedTime = driver.totalTime;
+      
+      if (!driver.finished) {
         driver.finished = true;
         driver.finishTime = now;
-        x = finishX;
       }
-
-      if (driver.finished) {
-        finishOrder.push({ driver, idx, finishTime: driver.finishTime });
-      }
-
-      return {
-        driver,
-        idx,
-        x,
-        elapsedTime: elapsedRealTime,
-        finished: driver.finished
-      };
-    });
-
-    // Sort by current position (who's ahead)
-    driverStates.sort((a, b) => b.x - a.x);
-
-    // Assign lanes based on current position (leader in top lane)
-    driverStates.forEach((state, position) => {
-      state.targetLane = position; // 0 = top (leader), 1 = middle, 2 = bottom
-      
-      // Smooth lane transition
-      const currentLane = state.driver.lanePosition;
-      if (currentLane < state.targetLane) {
-        state.driver.lanePosition = Math.min(currentLane + 0.05, state.targetLane);
-      } else if (currentLane > state.targetLane) {
-        state.driver.lanePosition = Math.max(currentLane - 0.05, state.targetLane);
-      }
-    });
-
-    // Draw glowing lanes for finished drivers
-    driverStates.forEach(state => {
-      if (state.finished) {
-        const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
-        drawGlowingLane(startX, finishX, laneY, laneHeight, state.driver.color);
-      }
-    });
-
-    // Draw cars
-    driverStates.forEach(state => {
-      const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
-      drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
-    });
-
-    // Draw finish carpets
-    finishOrder.sort((a, b) => a.finishTime - b.finishTime);
-    finishOrder.forEach((item, finishPos) => {
-      const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
-      drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
-    });
-
-    if (progress < 1) {
-      animationId = requestAnimationFrame(animate);
-    } else {
-      isAnimating = false;
     }
+
+    if (driver.finished) {
+      finishOrder.push({ driver, idx, finishTime: driver.finishTime });
+    }
+
+    return {
+      driver,
+      idx,
+      x,
+      completedTime,
+      finished: driver.finished
+    };
+  });
+
+  // Sort by X position (who's actually ahead on the track)
+  driverStates.sort((a, b) => {
+    // Primary sort: by x position (who's further along the track)
+    if (Math.abs(b.x - a.x) > 5) { // 5px threshold to avoid jitter
+      return b.x - a.x;
+    }
+    // Tiebreaker: by time completed (more accurate for close races)
+    return b.completedTime - a.completedTime;
+  });
+
+  // Assign lanes based on current race position
+  driverStates.forEach((state, position) => {
+    state.targetLane = position; // 0 = top (leader), 1 = middle, 2 = bottom
+    
+    // Smooth lane transition
+    const currentLane = state.driver.lanePosition;
+    const laneChangeSpeed = 0.08; // Adjust for smoother/faster transitions
+    
+    if (Math.abs(currentLane - state.targetLane) < 0.01) {
+      state.driver.lanePosition = state.targetLane;
+    } else if (currentLane < state.targetLane) {
+      state.driver.lanePosition = Math.min(currentLane + laneChangeSpeed, state.targetLane);
+    } else if (currentLane > state.targetLane) {
+      state.driver.lanePosition = Math.max(currentLane - laneChangeSpeed, state.targetLane);
+    }
+  });
+
+  // Draw glowing lanes for finished drivers
+  driverStates.forEach(state => {
+    if (state.finished) {
+      const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
+      drawGlowingLane(startX, finishX, laneY, laneHeight, state.driver.color);
+    }
+  });
+
+  // Draw cars
+  driverStates.forEach(state => {
+    const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
+    drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
+  });
+
+  // Draw finish carpets
+  finishOrder.sort((a, b) => a.finishTime - b.finishTime);
+  finishOrder.forEach((item, finishPos) => {
+    const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
+    drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+  });
+
+  if (progress < 1) {
+    animationId = requestAnimationFrame(animate);
+  } else {
+    isAnimating = false;
   }
+}
 
   let startTime;
 
