@@ -46,6 +46,7 @@
             <button class="tab-button" onclick="showTab('setup')">Round Setup</button>
             <button class="tab-button" onclick="showTab('drivers')">Drivers</button>
             <button class="tab-button" onclick="showTab('rules')">Rules & Scoring</button>
+            <button class="tab-button" onclick="showTab('admin', this)" style="display: none;">🔧 Admin</button>
         </div>
 
         <!-- Overall Standings Tab -->
@@ -239,6 +240,18 @@
                     </form>
                 </div>
             </div>
+        </div>
+
+        <div id="admin" class="tab-content">
+        <h2>🔧 Admin Tools</h2>
+        <p style="margin-bottom: 20px; color: #666;">Manage and edit lap time submissions</p>
+
+        <!-- Admin Tab -->
+        <div id="admin-content">
+            <div id="admin-lap-times-table">
+                <p style="text-align:center;padding:40px;">Loading admin tools...</p>
+            </div>
+        </div>
         </div>
 
         <!-- Submit Time Tab -->
