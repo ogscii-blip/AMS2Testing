@@ -985,7 +985,14 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
     }
   }
 
-  function drawCar(x, y, color, driverName, position) {
+  drawCar(
+    state.x,
+    laneY,
+    state.driver.color,
+    state.driver.name,
+    state.idx + 1       // THIS ensures P1/P2/P3 always show
+);
+ {
     const carWidth = 50;
     const carHeight = 18;
 
