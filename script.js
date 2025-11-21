@@ -848,43 +848,126 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
   }
 
   function drawCar(x, y, color, driverName, position) {
-    const carWidth = 40;
-    const carHeight = 20;
+  const carWidth = 50;
+  const carHeight = 18;
 
-    // Car body (rounded rectangle)
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(x - carWidth/2, y - carHeight/2, carWidth, carHeight, 4);
-    ctx.fill();
+  ctx.save();
 
-    // Car windshield
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.beginPath();
-    ctx.roundRect(x - carWidth/4, y - carHeight/2 + 3, carWidth/2, carHeight/3, 2);
-    ctx.fill();
+  // Main car body (streamlined)
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x - carWidth/2 + 5, y - carHeight/2);
+  ctx.lineTo(x + carWidth/2 - 3, y - carHeight/2);
+  ctx.quadraticCurveTo(x + carWidth/2, y - carHeight/2, x + carWidth/2, y - carHeight/2 + 3);
+  ctx.lineTo(x + carWidth/2, y + carHeight/2 - 3);
+  ctx.quadraticCurveTo(x + carWidth/2, y + carHeight/2, x + carWidth/2 - 3, y + carHeight/2);
+  ctx.lineTo(x - carWidth/2 + 5, y + carHeight/2);
+  ctx.quadraticCurveTo(x - carWidth/2 + 2, y + carHeight/2, x - carWidth/2 + 2, y + carHeight/2 - 3);
+  ctx.lineTo(x - carWidth/2 + 2, y - carHeight/2 + 3);
+  ctx.quadraticCurveTo(x - carWidth/2 + 2, y - carHeight/2, x - carWidth/2 + 5, y - carHeight/2);
+  ctx.closePath();
+  ctx.fill();
 
-    // Car wheels
-    ctx.fillStyle = '#2c3e50';
-    const wheelRadius = 3;
-    // Front wheel
-    ctx.beginPath();
-    ctx.arc(x + carWidth/2 - 8, y + carHeight/2 + 2, wheelRadius, 0, Math.PI * 2);
-    ctx.fill();
-    // Rear wheel
-    ctx.beginPath();
-    ctx.arc(x - carWidth/2 + 8, y + carHeight/2 + 2, wheelRadius, 0, Math.PI * 2);
-    ctx.fill();
+  // Cockpit/windshield area (darker accent)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x + carWidth/6, y, carWidth/4, carHeight/3, 0, 0, Math.PI * 2);
+  ctx.fill();
 
-    // Driver name and position
-    ctx.fillStyle = '#2c3e50';
-    ctx.font = 'bold 11px Arial';
-    ctx.textAlign = 'left';
-    const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
-    const displayName = currentUser && profile.name && profile.surname
-      ? `${profile.name.charAt(0)}. ${profile.surname}`
-      : driverName;
-    ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 5, y + 4);
+  // Front wing
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(x + carWidth/2, y - carHeight/2 - 2);
+  ctx.lineTo(x + carWidth/2 + 5, y - carHeight/2 - 1);
+  ctx.lineTo(x + carWidth/2 + 5, y + carHeight/2 + 1);
+  ctx.lineTo(x + carWidth/2, y + carHeight/2 + 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Rear wing
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(x - carWidth/2 + 2, y - carHeight/2 - 3);
+  ctx.lineTo(x - carWidth/2 - 3, y - carHeight/2 - 2);
+  ctx.lineTo(x - carWidth/2 - 3, y + carHeight/2 + 2);
+  ctx.lineTo(x - carWidth/2 + 2, y + carHeight/2 + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Wheels (larger, more visible)
+  ctx.fillStyle = '#1a1a1a';
+  const wheelRadius = 4;
+  const wheelOffset = carWidth/3;
+  
+  // Front wheels
+  ctx.beginPath();
+  ctx.arc(x + wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Rear wheels
+  ctx.beginPath();
+  ctx.arc(x - wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x - wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Wheel rims (white center)
+  ctx.fillStyle = '#ffffff';
+  const rimRadius = 2;
+  ctx.beginPath();
+  ctx.arc(x + wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x - wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x - wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Racing stripes
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x - carWidth/2 + 8, y - 2);
+  ctx.lineTo(x + carWidth/2 - 5, y - 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - carWidth/2 + 8, y + 2);
+  ctx.lineTo(x + carWidth/2 - 5, y + 2);
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Driver name and position
+  ctx.fillStyle = '#2c3e50';
+  ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'left';
+  const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
+  
+  // FIXED: Show initials when logged out
+  let displayName;
+  if (currentUser && profile.name && profile.surname) {
+    displayName = `${profile.name.charAt(0)}. ${profile.surname}`;
+  } else if (profile.name && profile.surname) {
+    // Not logged in - show initials only
+    displayName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+  } else {
+    displayName = driverName;
   }
+  
+  ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
+}
 
   function animate() {
     const now = Date.now();
