@@ -777,93 +777,127 @@ function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
 
   const slowestTime = Math.max(...drivers.map(d => d.totalTime));
 
-  function drawTrack() {
-    const { startX, finishX, sector1End, sector2End } = getPositions();
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawTrack() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const laneHeight = canvas.height / 3;
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 5]);
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(startX, i * laneHeight);
+    ctx.lineTo(finishX, i * laneHeight);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#bbb';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  
+  ctx.beginPath();
+  ctx.moveTo(sector1End, 0);
+  ctx.lineTo(sector1End, canvas.height);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(sector2End, 0);
+  ctx.lineTo(sector2End, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#999';
+  ctx.font = 'bold 12px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('S1', (startX + sector1End) / 2, 15);
+  ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
+  ctx.fillText('S3', (sector2End + finishX) / 2, 15);
+  ctx.strokeStyle = '#2ecc71';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(startX, 0);
+  ctx.lineTo(startX, canvas.height);
+  ctx.stroke();
+  ctx.fillStyle = '#2ecc71';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('START', startX, canvas.height - 10);
+  
+  // DON'T PUT } HERE - THAT'S THE ERROR!
+  
+  // Draw checkered flag at finish line
+  drawCheckeredFlag(finishX);
 
-    const laneHeight = canvas.height / 3;
+  // FINISH label - rotated 90deg clockwise, bigger, and centered
+  ctx.save();
+  ctx.translate(finishX, canvas.height / 2);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#2c3e50';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FINISH', 0, 0);
+  ctx.restore();
+} 
 
-    ctx.strokeStyle = '#ddd';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 5]);
-    for (let i = 1; i < 3; i++) {
-      ctx.beginPath();
-      ctx.moveTo(startX, i * laneHeight);
-      ctx.lineTo(finishX, i * laneHeight);
-      ctx.stroke();
+function drawCheckeredFlag(x) {
+  const squareSize = 8;
+  const flagHeight = canvas.height;
+  const cols = 3;
+  const rows = Math.ceil(flagHeight / squareSize);
+
+  // Calculate the vertical range where "FINISH" text will be (center area)
+  const textAreaTop = (canvas.height / 2) - 40; // Give 40px above center
+  const textAreaBottom = (canvas.height / 2) + 40; // Give 40px below center
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const squareY = row * squareSize;
+      
+      // Skip drawing squares in the text area
+      if (squareY >= textAreaTop && squareY <= textAreaBottom) {
+        continue;
+      }
+      
+      const isBlack = (row + col) % 2 === 0;
+      ctx.fillStyle = isBlack ? '#2c3e50' : '#fff';
+      ctx.fillRect(
+        x - (cols * squareSize / 2) + (col * squareSize),
+        row * squareSize,
+        squareSize,
+        squareSize
+      );
     }
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = '#bbb';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    
-    ctx.beginPath();
-    ctx.moveTo(sector1End, 0);
-    ctx.lineTo(sector1End, canvas.height);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(sector2End, 0);
-    ctx.lineTo(sector2End, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = '#999';
-    ctx.font = 'bold 12px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('S1', (startX + sector1End) / 2, 15);
-    ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
-    ctx.fillText('S3', (sector2End + finishX) / 2, 15);
-
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(startX, 0);
-    ctx.lineTo(startX, canvas.height);
-    ctx.stroke();
-
-    ctx.fillStyle = '#2ecc71';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('START', startX, canvas.height - 10);
-
-    drawCheckeredFlag(finishX);
-
-    ctx.fillStyle = '#2c3e50';
-    ctx.font = 'bold 14px Arial';
-    ctx.fillText('FINISH', finishX, canvas.height - 10);
   }
 
-  function drawCheckeredFlag(x) {
-    const squareSize = 8;
-    const flagHeight = canvas.height;
-    const cols = 3;
-    const rows = Math.ceil(flagHeight / squareSize);
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const isBlack = (row + col) % 2 === 0;
-        ctx.fillStyle = isBlack ? '#2c3e50' : '#fff';
-        ctx.fillRect(
-          x - (cols * squareSize / 2) + (col * squareSize),
-          row * squareSize,
-          squareSize,
-          squareSize
-        );
-      }
-    }
-
+  // Draw border for top section
+  const topSectionHeight = Math.floor(textAreaTop / squareSize) * squareSize;
+  if (topSectionHeight > 0) {
     ctx.strokeStyle = '#2c3e50';
     ctx.lineWidth = 2;
     ctx.strokeRect(
       x - (cols * squareSize / 2),
       0,
       cols * squareSize,
-      flagHeight
+      topSectionHeight
     );
   }
+
+  // Draw border for bottom section
+  const bottomSectionStart = Math.ceil(textAreaBottom / squareSize) * squareSize;
+  const bottomSectionHeight = flagHeight - bottomSectionStart;
+  if (bottomSectionHeight > 0) {
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      x - (cols * squareSize / 2),
+      bottomSectionStart,
+      cols * squareSize,
+      bottomSectionHeight
+    );
+  }
+}
+
 
   function drawGlowingLane(startX, finishX, laneY, laneHeight, color) {
     ctx.save();
@@ -1136,7 +1170,7 @@ function animate() {
     const timeRatio = driver.totalTime / slowestTime;
     const driverProgress = Math.min(progress / timeRatio, 1);
     
-    // Simple linear position
+    // Simple linear position for visual
     let x = startX + (trackLength * driverProgress);
     let finished = false;
     
@@ -1154,43 +1188,45 @@ function animate() {
       finishOrder.push({ driver, idx, finishTime: driver.finishTime });
     }
 
-    // Calculate cumulative time through sectors for ranking
-    let cumulativeTime = 0;
-    const totalProgress = driverProgress; // 0 to 1
+    // For ranking: calculate which drivers have completed each sector based on their times
+    // Use actual sector times to determine ranking
+    let rankingScore = 0;
     
-    // Determine which "checkpoint" we're past for ranking purposes
-    const s1Ratio = driver.sector1 / driver.totalTime;
-    const s2Ratio = (driver.sector1 + driver.sector2) / driver.totalTime;
+    // Figure out where we are in the overall race
+    const fastestS1 = Math.min(...drivers.map(d => d.sector1));
+    const fastestS1S2 = Math.min(...drivers.map(d => d.sector1 + d.sector2));
+    const fastestTotal = Math.min(...drivers.map(d => d.totalTime));
     
-    if (totalProgress <= s1Ratio) {
-      // Still in S1 - ranking based on S1 time
-      cumulativeTime = (totalProgress / s1Ratio) * driver.sector1;
-    } else if (totalProgress <= s2Ratio) {
-      // In S2 - ranking based on S1+S2 time
-      const progressIntoS2 = (totalProgress - s1Ratio) / (s2Ratio - s1Ratio);
-      cumulativeTime = driver.sector1 + (progressIntoS2 * driver.sector2);
+    // Determine race phase based on fastest driver
+    const globalElapsed = progress * fastestTotal;
+    
+    if (globalElapsed < fastestS1) {
+      // Phase 1: Everyone in S1, rank by S1 time (lower is better)
+      rankingScore = driver.sector1;
+    } else if (globalElapsed < fastestS1S2) {
+      // Phase 2: Best drivers in S2, rank by S1+S2 cumulative (lower is better)
+      rankingScore = driver.sector1 + driver.sector2;
     } else {
-      // In S3 or finished - ranking based on S1+S2+S3 time
-      const progressIntoS3 = (totalProgress - s2Ratio) / (1 - s2Ratio);
-      cumulativeTime = driver.sector1 + driver.sector2 + (progressIntoS3 * driver.sector3);
+      // Phase 3: In S3, rank by total time (lower is better)
+      rankingScore = driver.totalTime;
     }
 
     return {
       driver,
       idx,
       x,
-      xProgress: driverProgress, // For visual position
-      cumulativeTime, // For ranking
+      xProgress: driverProgress,
+      rankingScore, // Lower is better
       finished: driver.finished
     };
   });
 
-  // Sort by cumulative time (who's ahead based on sector completion)
+  // Sort by ranking score (LOWER is better = ahead = top lane)
   driverStates.sort((a, b) => {
-    if (Math.abs(a.cumulativeTime - b.cumulativeTime) > 0.01) {
-      return a.cumulativeTime - b.cumulativeTime;
+    if (Math.abs(a.rankingScore - b.rankingScore) > 0.001) {
+      return a.rankingScore - b.rankingScore;
     }
-    return b.x - a.x;
+    return a.idx - b.idx; // Stable sort by original position
   });
 
   // Assign lanes with smooth transitions
@@ -1198,7 +1234,7 @@ function animate() {
     state.targetLane = position;
     
     const currentLane = state.driver.lanePosition;
-    const laneChangeSpeed = 0.03;
+    const laneChangeSpeed = 0.01;
     
     if (Math.abs(currentLane - state.targetLane) < 0.01) {
       state.driver.lanePosition = state.targetLane;
@@ -1239,24 +1275,25 @@ function animate() {
   }
 }
 
+
   let startTime;
 
-  function startAnimation() {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-    }
-    
-    drivers.forEach(d => {
-      d.progress = 0;
-      d.finished = false;
-      d.finishTime = null;
-      d.lanePosition = 1; // Reset to middle lane
-    });
-
-    isAnimating = true;
-    startTime = Date.now();
-    animationId = requestAnimationFrame(animate);
+ function startAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
   }
+  
+  drivers.forEach(d => {
+    d.progress = 0;
+    d.finished = false;
+    d.finishTime = null;
+    d.lanePosition = 1; // Reset ALL cars to middle lane at start
+  });
+
+  isAnimating = true;
+  startTime = Date.now();
+  animationId = requestAnimationFrame(animate);
+}
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1815,6 +1852,14 @@ async function loadAdminTools() {
   }
 }
 
+
+// Store current filter state globally
+let currentAdminFilters = {
+  driver: '',
+  season: '',
+  round: ''
+};
+
 function displayAdminLapTimes(lapsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
@@ -1825,20 +1870,19 @@ function displayAdminLapTimes(lapsData) {
 
   const filterHtml = `
     <div class="admin-filters">
-      <select id="adminFilterDriver" class="admin-filter-select">
+      <select id="adminFilterDriver" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Drivers</option>
-        ${drivers.map(d => `<option value="${d}">${d}</option>`).join('')}
+        ${drivers.map(d => `<option value="${d}" ${currentAdminFilters.driver === d ? 'selected' : ''}>${d}</option>`).join('')}
       </select>
-      <select id="adminFilterSeason" class="admin-filter-select">
+      <select id="adminFilterSeason" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Seasons</option>
-        ${seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('')}
+        ${seasons.map(s => `<option value="${s}" ${String(currentAdminFilters.season) === String(s) ? 'selected' : ''}>Season ${s}</option>`).join('')}
       </select>
-      <select id="adminFilterRound" class="admin-filter-select">
+      <select id="adminFilterRound" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Rounds</option>
-        ${rounds.map(r => `<option value="${r}">Round ${r}</option>`).join('')}
+        ${rounds.map(r => `<option value="${r}" ${String(currentAdminFilters.round) === String(r) ? 'selected' : ''}>Round ${r}</option>`).join('')}
       </select>
-      <button onclick="filterAdminLaps()" class="admin-filter-btn">Apply Filters</button>
-      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear</button>
+      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear Filters</button>
     </div>
   `;
 
@@ -1859,7 +1903,9 @@ function displayAdminLapTimes(lapsData) {
           <th>Sector 1</th>
           <th>Sector 2</th>
           <th>Sector 3</th>
-          <th>Total Time</th>
+          <th onclick="sortAdminByTotalTime()" style="cursor:pointer;" title="Click to sort">
+            Total Time <span id="sortIndicator">⇅</span>
+          </th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -1872,7 +1918,14 @@ function displayAdminLapTimes(lapsData) {
   container.innerHTML = filterHtml + tableHtml;
 
   window.adminLapsData = lapsData;
+  
+  // Reapply filters if they exist
+  if (currentAdminFilters.driver || currentAdminFilters.season || currentAdminFilters.round) {
+    filterAdminLaps();
+  }
 }
+
+
 
 function createAdminLapRow(lap) {
   const timestamp = new Date(lap.Timestamp).toLocaleString();
@@ -1900,15 +1953,22 @@ function createAdminLapRow(lap) {
 }
 
 function filterAdminLaps() {
-  const driverFilter = document.getElementById('adminFilterDriver').value;
-  const seasonFilter = document.getElementById('adminFilterSeason').value;
-  const roundFilter = document.getElementById('adminFilterRound').value;
+  const driverFilter = document.getElementById('adminFilterDriver')?.value || '';
+  const seasonFilter = document.getElementById('adminFilterSeason')?.value || '';
+  const roundFilter = document.getElementById('adminFilterRound')?.value || '';
+
+  // Store current filter state (as strings for consistent comparison)
+  currentAdminFilters = {
+    driver: driverFilter,
+    season: seasonFilter,
+    round: roundFilter
+  };
 
   let filtered = window.adminLapsData || [];
 
   if (driverFilter) filtered = filtered.filter(l => l.Driver === driverFilter);
-  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
-  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
+  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === String(seasonFilter));
+  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === String(roundFilter));
 
   const tbody = document.getElementById('adminLapsTableBody');
   if (tbody) {
@@ -1916,12 +1976,67 @@ function filterAdminLaps() {
   }
 }
 
+
 function clearAdminFilters() {
-  document.getElementById('adminFilterDriver').value = '';
-  document.getElementById('adminFilterSeason').value = '';
-  document.getElementById('adminFilterRound').value = '';
+  // Clear stored filters
+  currentAdminFilters = {
+    driver: '',
+    season: '',
+    round: ''
+  };
+  
+  const driverFilter = document.getElementById('adminFilterDriver');
+  const seasonFilter = document.getElementById('adminFilterSeason');
+  const roundFilter = document.getElementById('adminFilterRound');
+  
+  if (driverFilter) driverFilter.value = '';
+  if (seasonFilter) seasonFilter.value = '';
+  if (roundFilter) roundFilter.value = '';
+  
   filterAdminLaps();
 }
+
+
+// Add sorting functionality
+let adminSortAscending = true;
+
+function sortAdminByTotalTime() {
+  const tbody = document.getElementById('adminLapsTableBody');
+  if (!tbody) return;
+
+  // Get current rows
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  // Sort by total time
+  rows.sort((a, b) => {
+    const keyA = a.getAttribute('data-key');
+    const keyB = b.getAttribute('data-key');
+    
+    const lapA = window.adminLapsData.find(l => l._firebaseKey === keyA);
+    const lapB = window.adminLapsData.find(l => l._firebaseKey === keyB);
+    
+    if (!lapA || !lapB) return 0;
+    
+    const timeA = parseFloat(lapA.Total_Lap_Time) || 0;
+    const timeB = parseFloat(lapB.Total_Lap_Time) || 0;
+    
+    return adminSortAscending ? timeA - timeB : timeB - timeA;
+  });
+
+  // Toggle sort direction for next click
+  adminSortAscending = !adminSortAscending;
+  
+  // Update indicator
+  const indicator = document.getElementById('sortIndicator');
+  if (indicator) {
+    indicator.textContent = adminSortAscending ? '↓' : '↑';
+  }
+
+  // Clear and re-append sorted rows
+  tbody.innerHTML = '';
+  rows.forEach(row => tbody.appendChild(row));
+}
+
 
 async function editAdminLap(firebaseKey) {
   const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
@@ -1992,10 +2107,11 @@ async function saveAdminLapEdit(firebaseKey) {
       Modified_By: currentUser.name
     });
 
-    alert('✅ Lap time updated successfully!');
+    //alert('✅ Lap time updated successfully!');
     closeAdminModal();
     
-    loadAdminTools();
+    // Reload admin tools but preserve filters
+    await loadAdminTools();
     
     CACHE.roundDataArray = null;
 
@@ -2019,7 +2135,8 @@ async function deleteAdminLap(firebaseKey) {
 
     alert('✅ Lap time deleted successfully!');
     
-    loadAdminTools();
+    // Reload admin tools but preserve filters
+    await loadAdminTools();
     
     CACHE.roundDataArray = null;
 
@@ -2028,7 +2145,6 @@ async function deleteAdminLap(firebaseKey) {
     alert('❌ Error deleting: ' + err.message);
   }
 }
-
 function closeAdminModal() {
   const modal = document.querySelector('.admin-modal');
   if (modal) {
