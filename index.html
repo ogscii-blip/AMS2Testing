@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMS2 Racing League</title>
+    <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 20px;">
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <img src="https://i.imgur.com/5ie13Vk.png" alt="Automobilista 2" style="max-width: 800px; width: 100%; height: auto;" id="desktopLogo">
+                    <img src="https://images.launchbox-app.com/a8e90521-473b-480d-aa73-c2870aa75ea3.jpg" alt="AMS2" style="max-width: 120px; width: 100%; height: auto; display: none;" id="mobileLogo">
+                    <p style="margin: 0; font-size: 1.2em; font-weight: 600; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);" id="subtitle">ABO AMS2 Racing League</p>
+                </div>
+                <div id="authSection" style="min-width: 200px;">
+                    <div id="loginForm" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                        <input type="text" id="driverNameInput" placeholder="Driver Name" style="padding: 8px 12px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.95); font-size: 0.9em; width: 140px;">
+                        <input type="password" id="passwordInput" placeholder="Password" style="padding: 8px 12px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.95); font-size: 0.9em; width: 130px;">
+                        <button onclick="login()" style="background: #4CAF50; color: white; border: none; padding: 9px 18px; border-radius: 5px; cursor: pointer; font-size: 0.9em; font-weight: bold; white-space: nowrap;">Sign In</button>
+                    </div>
+                    <div id="userInfo" style="display: none; background: rgba(255,255,255,0.15); padding: 16px 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div id="userPhotoContainer" style="position: relative; display: none; flex-shrink: 0;">
+                                <img id="userProfilePhoto" src="" alt="Profile" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
+                                <div id="userNumberBadge" style="position: absolute; bottom: -5px; right: -5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85em; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                            </div>
+                            <div id="userIconFallback" style="display: none; font-size: 2.5em; flex-shrink: 0;">👤</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                                <span style="font-size: 1.1em; color: white; font-weight: 600; margin-bottom: 4px;" id="userName"></span>
+                                <button onclick="showTab('profile')" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">My Profile</button>
+                                <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('overall')">Overall Standings</button>
+            <button class="tab-button" onclick="showTab('round')">Round Results</button>
+            <button class="tab-button" onclick="showTab('submit')">Submit Time</button>
+            <button class="tab-button" onclick="showTab('setup')">Round Setup</button>
+            <button class="tab-button" onclick="showTab('drivers')">Drivers</button>
+            <button class="tab-button" onclick="showTab('rules')">Rules & Scoring</button>
+            <button class="tab-button" onclick="showTab('admin', this)" style="display: none;">🔧 Admin</button>
+        </div>
+
+        <!-- Overall Standings Tab -->
+        <div id="overall" class="tab-content active">
+            <h2>🏆 Championship Standings</h2>
+            
+            <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                <label for="seasonSelect" style="font-weight: bold; color: #333;">Season:</label>
+                <select id="seasonSelect" onchange="loadLeaderboard()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                    <option value="">All Seasons</option>
+                </select>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalRounds">-</h3>
+                    <p>Rounds Completed</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalDrivers">3</h3>
+                    <p>Active Drivers</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalPoints">-</h3>
+                    <p>Total Points Scored</p>
+                </div>
+            </div>
+
+            <!-- Points Progression Graph -->
+            <div id="points-progression-graph" style="display: none; background: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"></div>
+
+            <div id="leaderboard-loading" class="loading">Loading leaderboard data...</div>
+            <div id="leaderboard-content" style="display: none;">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Driver</th>
+                            <th>Total Points</th>
+                            <th>Purple Sectors</th>
+                            <th>Wins</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+        <!-- Round Results Tab -->
+        <div id="round" class="tab-content">
+            <h2>📊 Round-by-Round Results</h2>
+            
+            <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                <label for="roundSeasonSelect" style="font-weight: bold; color: #333;">Season:</label>
+                <select id="roundSeasonSelect" onchange="loadRoundData()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                    <option value="">All Seasons</option>
+                </select>
+            </div>
+            
+            <div id="round-loading" class="loading">Loading round data...</div>
+            <div id="round-content" style="display: none;"></div>
+        </div>
+
+        <!-- Drivers Tab -->
+        <div id="drivers" class="tab-content">
+            <h2>🏎️ Driver Profiles</h2>
+            <p style="margin-bottom: 30px;">Complete statistics and records for each driver in the championship.</p>
+            <div id="drivers-loading" class="loading">Loading driver statistics...</div>
+            <div id="drivers-content" style="display: none;"></div>
+        </div>
+
+        <!-- My Profile Tab -->
+        <div id="profile" class="tab-content">
+            <h2>👤 My Profile</h2>
+            
+            <div id="profileAuthWarning" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #856404; text-align: center;">
+                <h3>🔒 Sign In Required</h3>
+                <p style="margin: 10px 0;">Please sign in to view and edit your profile.</p>
+            </div>
+            
+            <div id="profileContent" style="display: none;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; margin: 0 auto;">
+                    <form id="profileForm" style="display: flex; flex-direction: column; gap: 25px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <label for="profileName" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">First Name:</label>
+                                <input type="text" id="profileName" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            </div>
+                            <div>
+                                <label for="profileSurname" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Surname:</label>
+                                <input type="text" id="profileSurname" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="profileNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Racing Number:</label>
+                            <input type="number" id="profileNumber" required min="1" max="999" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            <small style="color: #666;">Choose your unique racing number (1-999)</small>
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Profile Photo:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="photoFile" accept="image/*" style="padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9em;">
+                                <div id="photoPreview" style="display: none;">
+                                    <img id="photoPreviewImg" src="" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;">
+                                </div>
+                            </div>
+                            <input type="hidden" id="profilePhotoUrl">
+                            <small style="color: #666; display: block; margin-top: 5px;">Upload to Google Drive and paste sharing link, or select file for preview.</small>
+                        </div>
+
+                        <div>
+                            <label for="profileBio" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Bio (Optional):</label>
+                            <textarea id="profileBio" rows="4" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; resize: vertical;"></textarea>
+                            <small style="color: #666;">Tell us about yourself, your racing style, achievements, etc.</small>
+                        </div>
+
+                        <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">💾 Save Profile</button>
+                        <div id="profileMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round Setup Tab -->
+        <div id="setup" class="tab-content">
+            <h2>🏁 Round Setup & Track Records</h2>
+            <p style="margin-bottom: 20px;">Configure tracks and cars for upcoming rounds and view best lap times.</p>
+            
+            <div style="margin-bottom: 30px;">
+                <h3>📋 Configured Rounds</h3>
+                
+                <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                    <label for="setupSeasonSelect" style="font-weight: bold; color: #333;">Filter by Season:</label>
+                    <select id="setupSeasonSelect" onchange="loadRoundSetup()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                        <option value="">All Seasons</option>
+                    </select>
+                </div>
+                
+                <div id="setup-cards-loading" class="loading">Loading round configurations...</div>
+                <div id="setup-cards-content" style="display: none;">
+                    <div id="round-cards-grid" class="round-cards-grid"></div>
+                </div>
+            </div>
+
+            <div style="border-top: 3px solid #667eea; padding-top: 30px; margin-top: 30px;">
+                <h3>➕ Add New Round Configuration</h3>
+                <div class="instructions">
+                    <h3>📝 How to Set Up a Round:</h3>
+                    <ol>
+                        <li>Enter the season number</li>
+                        <li>Enter the round number you want to configure</li>
+                        <li>Select a track and layout combination from the dropdown</li>
+                        <li>Select the car for this round</li>
+                        <li>Click Submit to save the configuration</li>
+                    </ol>
+                </div>
+
+                <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                    <form id="roundSetupForm" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
+                            <input type="number" id="season" name="season" required min="1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+                        
+                        <div>
+                            <label for="roundNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
+                            <input type="number" id="roundNumber" name="roundNumber" required min="1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+
+                        <div>
+                            <label for="trackLayout" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Track - Layout:</label>
+                            <select id="trackLayout" name="trackLayout" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                                <option value="">Loading tracks...</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="carName" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Car:</label>
+                            <select id="carName" name="carName" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                                <option value="">Loading cars...</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">✅ Submit Round Setup</button>
+                        <div id="setupMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin" class="tab-content">
+        <h2>🔧 Admin Tools</h2>
+        <p style="margin-bottom: 20px; color: #666;">Manage and edit lap time submissions</p>
+
+        <!-- Manual Recalculation Section -->
+        <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #ffc107;">
+            <h3 style="color: #856404; margin-top: 0;">⚙️ Manual Recalculation</h3>
+            <p style="color: #856404; margin-bottom: 15px;">
+                Use this after manually editing or deleting lap times in Firebase.
+                This will recalculate all standings, positions, purple sectors, and points.
+            </p>
+            
+            <button 
+                id="manualRecalcButton" 
+                onclick="manualRecalculate()" 
+                style="background: #667eea; color: white; border: none; padding: 12px 24px; 
+                       border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: bold;">
+                🔄 Recalculate All Standings
+            </button>
+            
+            <div id="recalcStatus" style="display: none; margin-top: 15px; padding: 15px; 
+                 border-radius: 5px; text-align: center; font-weight: bold;"></div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin-content">
+            <div id="admin-lap-times-table">
+                <p style="text-align:center;padding:40px;">Loading admin tools...</p>
+            </div>
+        </div>
+        </div>
+
+        <!-- Submit Time Tab -->
+        <div id="submit" class="tab-content">
+            <h2>⏱️ Submit Your Lap Time</h2>
+            
+            <div id="authWarning" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #856404; text-align: center;">
+                <h3>🔒 Authentication Required</h3>
+                <p style="margin: 10px 0;">Please sign in at the top of the page to submit lap times.</p>
+            </div>
+            
+            <div id="lapTimeFormContainer" style="display: none;">
+                <div class="instructions">
+                    <h3>📝 Instructions:</h3>
+                    <ol>
+                        <li>Enter the season number for this round</li>
+                        <li>Select the round number you're submitting for (must match a configured round)</li>
+                        <li>Enter your sector times using the split input fields</li>
+                        <li>You can submit multiple attempts per round - only your fastest lap counts!</li>
+                    </ol>
+                </div>
+                
+                <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                    <form id="lapTimeForm" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label for="seasonNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
+                            <input type="number" id="seasonNumber" name="seasonNumber" required min="1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+                        
+                        <div>
+                            <label for="roundNumber2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
+                            <input type="number" id="roundNumber2" name="roundNumber" required min="1" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
+                            <div class="time-input-split-container">
+                                <input type="tel" id="sector1-sec" maxlength="2" placeholder="00" inputmode="numeric" class="time-input-split-field time-input-split-seconds">
+                                <span class="time-split-separator">,</span>
+                                <input type="tel" id="sector1-ms" maxlength="3" placeholder="000" inputmode="numeric" class="time-input-split-field time-input-split-milliseconds">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
+                            <div class="time-input-split-container">
+                                <input type="tel" id="sector2-sec" maxlength="2" placeholder="00" inputmode="numeric" class="time-input-split-field time-input-split-seconds">
+                                <span class="time-split-separator">,</span>
+                                <input type="tel" id="sector2-ms" maxlength="3" placeholder="000" inputmode="numeric" class="time-input-split-field time-input-split-milliseconds">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
+                            <div class="time-input-split-container">
+                                <input type="tel" id="sector3-sec" maxlength="2" placeholder="00" inputmode="numeric" class="time-input-split-field time-input-split-seconds">
+                                <span class="time-split-separator">,</span>
+                                <input type="tel" id="sector3-ms" maxlength="3" placeholder="000" inputmode="numeric" class="time-input-split-field time-input-split-milliseconds">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">✅ Submit Lap Time</button>
+                        <div id="lapTimeMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules Tab -->
+        <div id="rules" class="tab-content">
+            <h2>📜 Rules & Scoring System</h2>
+            
+            <div class="rules-section">
+                <h3>🏁 How It Works</h3>
+                <ul>
+                    <li>Sign in with your registered email to participate</li>
+                    <li>Complete hot laps on configured tracks and record your sector times</li>
+                    <li>Enter times using split inputs: <strong>Seconds</strong> (up to 2 digits) and <strong>Milliseconds</strong> (up to 3 digits)</li>
+                    <li>Submit your times through the form - you can submit multiple attempts per round</li>
+                    <li><strong>Only your fastest lap per round counts for points</strong></li>
+                    <li>Compete across multiple seasons - each season has its own championship standings</li>
+                    <li>Purple sectors are awarded for the fastest time in each individual sector within a round</li>
+                </ul>
+            </div>
+
+            <div class="points-section">
+                <h3>🎯 Points System</h3>
+                <p>Points are awarded to the top 3 finishers in each round. Your position is determined by your <strong>best lap time</strong> for that round.</p>
+                <table class="points-table">
+                    <tr>
+                        <td>🥇 1st Place:</td>
+                        <td>10 points (no purple sector bonus)</td>
+                    </tr>
+                    <tr>
+                        <td>🥈 2nd Place:</td>
+                        <td>6 points + 1 point per purple sector (max 2 purple sectors counted)</td>
+                    </tr>
+                    <tr>
+                        <td>🥉 3rd Place:</td>
+                        <td>4 points + 2 points per purple sector (max 2 purple sectors counted)</td>
+                    </tr>
+                </table>
+                <p class="points-example"><strong>Example:</strong> If you finish 2nd with 2 purple sectors, you earn 6 + 1 + 1 = 8 points total.</p>
+            </div>
+
+            <div class="purple-sectors-section">
+                <h3>⚡ Purple Sectors</h3>
+                <p>
+                    A <strong>Purple Sector</strong> is awarded when you set the fastest time in a specific sector (Sector 1, 2, or 3) 
+                    <strong>among all drivers' best laps in that round</strong>. You can earn up to 3 purple sectors per round (one for each sector).
+                </p>
+                <p style="margin-top: 10px;">
+                    Purple sectors are calculated by comparing each driver's fastest lap for the round - not all submitted attempts.
+                </p>
+                <div class="note-text">
+                    <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors in the points calculation, but purple sectors are still tracked for tiebreakers and statistics!
+                </div>
+            </div>
+
+            <div class="championship-section">
+                <h3>🏆 Championship & Tie-Breakers</h3>
+                <p>
+                    Your championship position is determined by your <strong>total points</strong> accumulated across all rounds in a season.
+                </p>
+                <p>
+                    If two or more drivers have the same number of points, the following tie-breakers are used <strong>in order</strong>:
+                </p>
+                <ol>
+                    <li><strong>Total Wins:</strong> Driver with more 1st place finishes ranks higher</li>
+                    <li><strong>Total Purple Sectors:</strong> If still tied, driver with more purple sectors ranks higher</li>
+                    <li><strong>Head-to-Head:</strong> If still tied, head-to-head record between tied drivers in rounds they both competed</li>
+                </ol>
+            </div>
+
+            <div class="seasons-section">
+                <h3>📅 Seasons</h3>
+                <p>
+                    The league is organized into <strong>seasons</strong>. Each season contains multiple rounds with different track/car combinations.
+                </p>
+                <ul style="margin-top: 10px;">
+                    <li>Use the season filter in Overall Standings to view results for specific seasons or all seasons combined</li>
+                    <li>Round Setup requires a season designation when configuring new rounds</li>
+                    <li>Only laps submitted for the correct round and season count toward standings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+<!-- Firebase SDK - MUST be type="module" -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getDatabase, ref, onValue, set, push, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBSDmq3qjRU0kQR0k0pau3nOiFUa1j8Xpg",
+        authDomain: "ams2abo.firebaseapp.com",
+        databaseURL: "https://ams2abo-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "ams2abo",
+        storageBucket: "ams2abo.firebasestorage.app",
+        messagingSenderId: "1008932609178",
+        appId: "1:1008932609178:web:a56b8d1acbeacfc0c61323"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const functions = getFunctions(app, 'europe-west1');
+
+    window.firebaseDB = database;
+    window.firebaseFunctions = functions;
+    window.httpsCallable = httpsCallable;
+    window.firebaseRef = ref;
+    window.firebaseOnValue = onValue;
+    window.firebaseSet = set;
+    window.firebasePush = push;
+    window.firebaseGet = get;
+
+    console.log('✅ Firebase initialized successfully!');
+    
+    // Wait for script.js to load, then initialize
+    if (typeof loadConfig === 'function') {
+        loadConfig();
+        checkExistingSession();
+        loadLeaderboard();
+        setupSectorTimeInputs();
+        loadTracksAndCars();
+    }
+</script>
+
+<!-- Your main application script - loads BEFORE Firebase calls functions -->
+<script src="script.js?v=3"></script>
+
+</body>
+</html>
