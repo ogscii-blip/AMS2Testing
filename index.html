@@ -252,6 +252,15 @@
                 <p style="text-align:center;padding:40px;">Loading admin tools...</p>
             </div>
         </div>
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const functions = getFunctions(app, 'europe-west1');
+
+    window.firebaseDB = database;
+    window.firebaseFunctions = functions;
+    window.httpsCallable = httpsCallable;
+
         </div>
 
         <!-- Submit Time Tab -->
@@ -404,6 +413,7 @@
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getDatabase, ref, onValue, set, push, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 
     const firebaseConfig = {
         apiKey: "AIzaSyBSDmq3qjRU0kQR0k0pau3nOiFUa1j8Xpg",
@@ -417,8 +427,11 @@
 
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
+    const functions = getFunctions(app, 'europe-west1');
 
     window.firebaseDB = database;
+    window.firebaseFunctions = functions;
+    window.httpsCallable = httpsCallable;
     window.firebaseRef = ref;
     window.firebaseOnValue = onValue;
     window.firebaseSet = set;
