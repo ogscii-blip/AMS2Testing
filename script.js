@@ -92,6 +92,8 @@ let DRIVER_PROFILES = {};    // { usernameKey: { name, surname, number, photoUrl
 let APPS_SCRIPT_URL = null;
 let currentUser = null;      // { name: username, email? }
 
+
+
 /* -----------------------------
    Config & initial listeners
    ----------------------------- */
@@ -694,6 +696,77 @@ function createRaceAnimation(roundKey, results) {
   }, 100);
 
   return html;
+}
+
+// ============================================================================
+// ADMIN: Manual Recalculate Function
+// ============================================================================
+async function manualRecalculate() {
+    const recalcButton = document.getElementById('manualRecalcButton');
+    const statusDiv = document.getElementById('recalcStatus');
+    
+    try {
+        // Disable button and show loading
+        if (recalcButton) {
+            recalcButton.disabled = true;
+            recalcButton.textContent = '⏳ Recalculating...';
+        }
+        
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#d1ecf1';
+            statusDiv.style.color = '#0c5460';
+            statusDiv.textContent = '⏳ Recalculating all standings...';
+        }
+        
+        console.log('🔧 Calling Cloud Function to recalculate standings...');
+        
+        // Call the Cloud Function
+        const recalculateStandings = window.httpsCallable(window.firebaseFunctions, 'recalculateStandings');
+        const result = await recalculateStandings();
+        
+        console.log('✅ Cloud Function response:', result.data);
+        
+        // Show success
+        if (statusDiv) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.color = '#155724';
+            statusDiv.textContent = '✅ ' + result.data.message;
+        }
+        
+        // Re-enable button
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        // Reload data after 2 seconds
+        setTimeout(() => {
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Refresh displays
+            if (typeof loadLeaderboard === 'function') loadLeaderboard();
+            if (typeof loadRoundData === 'function') loadRoundData();
+            
+            alert('✅ Standings recalculated! Data refreshed.');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('❌ Error calling recalculate function:', error);
+        
+        if (statusDiv) {
+            statusDiv.style.background = '#f8d7da';
+            statusDiv.style.color = '#721c24';
+            statusDiv.textContent = '❌ Error: ' + error.message;
+        }
+        
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        alert('❌ Failed to recalculate: ' + error.message);
+    }
 }
 
 function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
@@ -1852,7 +1925,6 @@ async function loadAdminTools() {
   }
 }
 
-
 // Store current filter state globally
 let currentAdminFilters = {
   driver: '',
@@ -1870,19 +1942,20 @@ function displayAdminLapTimes(lapsData) {
 
   const filterHtml = `
     <div class="admin-filters">
-      <select id="adminFilterDriver" class="admin-filter-select" onchange="filterAdminLaps()">
+      <select id="adminFilterDriver" class="admin-filter-select">
         <option value="">All Drivers</option>
         ${drivers.map(d => `<option value="${d}" ${currentAdminFilters.driver === d ? 'selected' : ''}>${d}</option>`).join('')}
       </select>
-      <select id="adminFilterSeason" class="admin-filter-select" onchange="filterAdminLaps()">
+      <select id="adminFilterSeason" class="admin-filter-select">
         <option value="">All Seasons</option>
-        ${seasons.map(s => `<option value="${s}" ${String(currentAdminFilters.season) === String(s) ? 'selected' : ''}>Season ${s}</option>`).join('')}
+        ${seasons.map(s => `<option value="${s}" ${currentAdminFilters.season === s ? 'selected' : ''}>Season ${s}</option>`).join('')}
       </select>
-      <select id="adminFilterRound" class="admin-filter-select" onchange="filterAdminLaps()">
+      <select id="adminFilterRound" class="admin-filter-select">
         <option value="">All Rounds</option>
-        ${rounds.map(r => `<option value="${r}" ${String(currentAdminFilters.round) === String(r) ? 'selected' : ''}>Round ${r}</option>`).join('')}
+        ${rounds.map(r => `<option value="${r}" ${currentAdminFilters.round === r ? 'selected' : ''}>Round ${r}</option>`).join('')}
       </select>
-      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear Filters</button>
+      <button onclick="filterAdminLaps()" class="admin-filter-btn">Apply Filters</button>
+      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear</button>
     </div>
   `;
 
@@ -1926,7 +1999,6 @@ function displayAdminLapTimes(lapsData) {
 }
 
 
-
 function createAdminLapRow(lap) {
   const timestamp = new Date(lap.Timestamp).toLocaleString();
   const s1 = formatTime(lap.Sector_1);
@@ -1953,11 +2025,11 @@ function createAdminLapRow(lap) {
 }
 
 function filterAdminLaps() {
-  const driverFilter = document.getElementById('adminFilterDriver')?.value || '';
-  const seasonFilter = document.getElementById('adminFilterSeason')?.value || '';
-  const roundFilter = document.getElementById('adminFilterRound')?.value || '';
+  const driverFilter = document.getElementById('adminFilterDriver').value;
+  const seasonFilter = document.getElementById('adminFilterSeason').value;
+  const roundFilter = document.getElementById('adminFilterRound').value;
 
-  // Store current filter state (as strings for consistent comparison)
+  // Store current filter state
   currentAdminFilters = {
     driver: driverFilter,
     season: seasonFilter,
@@ -1967,15 +2039,14 @@ function filterAdminLaps() {
   let filtered = window.adminLapsData || [];
 
   if (driverFilter) filtered = filtered.filter(l => l.Driver === driverFilter);
-  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === String(seasonFilter));
-  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === String(roundFilter));
+  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
+  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
 
   const tbody = document.getElementById('adminLapsTableBody');
   if (tbody) {
     tbody.innerHTML = filtered.map(lap => createAdminLapRow(lap)).join('');
   }
 }
-
 
 function clearAdminFilters() {
   // Clear stored filters
@@ -1985,17 +2056,11 @@ function clearAdminFilters() {
     round: ''
   };
   
-  const driverFilter = document.getElementById('adminFilterDriver');
-  const seasonFilter = document.getElementById('adminFilterSeason');
-  const roundFilter = document.getElementById('adminFilterRound');
-  
-  if (driverFilter) driverFilter.value = '';
-  if (seasonFilter) seasonFilter.value = '';
-  if (roundFilter) roundFilter.value = '';
-  
+  document.getElementById('adminFilterDriver').value = '';
+  document.getElementById('adminFilterSeason').value = '';
+  document.getElementById('adminFilterRound').value = '';
   filterAdminLaps();
 }
-
 
 // Add sorting functionality
 let adminSortAscending = true;
@@ -2029,14 +2094,13 @@ function sortAdminByTotalTime() {
   // Update indicator
   const indicator = document.getElementById('sortIndicator');
   if (indicator) {
-    indicator.textContent = adminSortAscending ? '↓' : '↑';
+    indicator.textContent = adminSortAscending ? '⇅' : (adminSortAscending ? '↑' : '↓');
   }
 
   // Clear and re-append sorted rows
   tbody.innerHTML = '';
   rows.forEach(row => tbody.appendChild(row));
 }
-
 
 async function editAdminLap(firebaseKey) {
   const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
@@ -2107,7 +2171,7 @@ async function saveAdminLapEdit(firebaseKey) {
       Modified_By: currentUser.name
     });
 
-    //alert('✅ Lap time updated successfully!');
+    alert('✅ Lap time updated successfully!');
     closeAdminModal();
     
     // Reload admin tools but preserve filters
@@ -2711,497 +2775,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
-
-// Add these global variables at the top with your other admin globals
-let currentAdminTab = 'time-submissions';
-
-async function loadAdminTools() {
-  if (!isAdmin()) {
-    document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
-    return;
-  }
-
-  try {
-    const [lapsSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1')),
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars'))
-    ]);
-    
-    const lapsData = toArray(lapsSnapshot.val());
-    const tracksData = toArray(tracksSnapshot.val());
-    const carsData = toArray(carsSnapshot.val());
-    
-    const lapsWithKeys = [];
-    const lapsObject = lapsSnapshot.val();
-    if (lapsObject && typeof lapsObject === 'object') {
-      Object.keys(lapsObject).forEach(key => {
-        if (lapsObject[key]) {
-          lapsWithKeys.push({ ...lapsObject[key], _firebaseKey: key });
-        }
-      });
-    }
-
-    // Store tracks and cars data globally
-    window.adminTracksData = tracksData;
-    window.adminCarsData = carsData;
-
-    displayAdminInterface(lapsWithKeys, tracksData, carsData);
-
-  } catch (err) {
-    console.error('loadAdminTools error', err);
-  }
-}
-
-function displayAdminInterface(lapsData, tracksData, carsData) {
-  const container = document.getElementById('admin-lap-times-table');
-  if (!container) return;
-
-  // Admin tabs navigation
-  const tabsHtml = `
-    <div class="admin-tabs">
-      <button class="admin-tab-button ${currentAdminTab === 'time-submissions' ? 'active' : ''}" onclick="switchAdminTab('time-submissions')">
-        ⏱️ Time Submissions
-      </button>
-      <button class="admin-tab-button ${currentAdminTab === 'tracks-config' ? 'active' : ''}" onclick="switchAdminTab('tracks-config')">
-        🏁 Tracks Config
-      </button>
-      <button class="admin-tab-button ${currentAdminTab === 'cars-config' ? 'active' : ''}" onclick="switchAdminTab('cars-config')">
-        🏎️ Cars Config
-      </button>
-    </div>
-  `;
-
-  let contentHtml = '';
-
-  if (currentAdminTab === 'time-submissions') {
-    contentHtml = generateTimeSubmissionsContent(lapsData);
-  } else if (currentAdminTab === 'tracks-config') {
-    contentHtml = generateTracksConfigContent(tracksData);
-  } else if (currentAdminTab === 'cars-config') {
-    contentHtml = generateCarsConfigContent(carsData);
-  }
-
-  container.innerHTML = tabsHtml + contentHtml;
-
-  window.adminLapsData = lapsData;
-  
-  // Reapply filters if on time submissions tab
-  if (currentAdminTab === 'time-submissions' && (currentAdminFilters.driver || currentAdminFilters.season || currentAdminFilters.round)) {
-    filterAdminLaps();
-  }
-}
-
-function switchAdminTab(tabName) {
-  currentAdminTab = tabName;
-  loadAdminTools();
-}
-
-function generateTimeSubmissionsContent(lapsData) {
-  const drivers = [...new Set(lapsData.map(l => l.Driver).filter(Boolean))].sort();
-  const seasons = [...new Set(lapsData.map(l => l.Season).filter(Boolean))].sort((a,b) => b-a);
-  const rounds = [...new Set(lapsData.map(l => l.Round).filter(Boolean))].sort((a,b) => a-b);
-
-  const subBannerHtml = `
-    <div class="admin-sub-banner">
-      <h3>⏱️ Time Submissions</h3>
-      <p>View, edit, and manage all lap time submissions</p>
-    </div>
-  `;
-
-  const filterHtml = `
-    <div class="admin-filters">
-      <select id="adminFilterDriver" class="admin-filter-select" onchange="filterAdminLaps()">
-        <option value="">All Drivers</option>
-        ${drivers.map(d => `<option value="${d}" ${currentAdminFilters.driver === d ? 'selected' : ''}>${d}</option>`).join('')}
-      </select>
-      <select id="adminFilterSeason" class="admin-filter-select" onchange="filterAdminLaps()">
-        <option value="">All Seasons</option>
-        ${seasons.map(s => `<option value="${s}" ${String(currentAdminFilters.season) === String(s) ? 'selected' : ''}>Season ${s}</option>`).join('')}
-      </select>
-      <select id="adminFilterRound" class="admin-filter-select" onchange="filterAdminLaps()">
-        <option value="">All Rounds</option>
-        ${rounds.map(r => `<option value="${r}" ${String(currentAdminFilters.round) === String(r) ? 'selected' : ''}>Round ${r}</option>`).join('')}
-      </select>
-      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear Filters</button>
-    </div>
-  `;
-
-  lapsData.sort((a, b) => {
-    const timeA = new Date(a.Timestamp).getTime();
-    const timeB = new Date(b.Timestamp).getTime();
-    return timeB - timeA;
-  });
-
-  const tableHtml = `
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Timestamp</th>
-          <th>Driver</th>
-          <th>Season</th>
-          <th>Round</th>
-          <th>Sector 1</th>
-          <th>Sector 2</th>
-          <th>Sector 3</th>
-          <th onclick="sortAdminByTotalTime()" style="cursor:pointer;" title="Click to sort">
-            Total Time <span id="sortIndicator">⇅</span>
-          </th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="adminLapsTableBody">
-        ${lapsData.map(lap => createAdminLapRow(lap)).join('')}
-      </tbody>
-    </table>
-  `;
-
-  return subBannerHtml + filterHtml + tableHtml;
-}
-
-function generateTracksConfigContent(tracksData) {
-  const subBannerHtml = `
-    <div class="admin-sub-banner">
-      <h3>🏁 Tracks Configuration</h3>
-      <p>Manage track layouts and images</p>
-    </div>
-  `;
-
-  const searchHtml = `
-    <div class="admin-search-bar">
-      <input type="text" 
-             id="trackSearchInput" 
-             placeholder="🔍 Search tracks..." 
-             class="admin-search-input"
-             oninput="filterTracksTable()" />
-    </div>
-  `;
-
-  const addNewHtml = `
-    <div class="admin-add-new">
-      <h4>➕ Add New Track</h4>
-      <div class="admin-form-inline">
-        <input type="text" id="newTrackCombo" placeholder="Track & Layout (e.g., Silverstone - GP)" class="admin-input" />
-        <input type="text" id="newTrackImageUrl" placeholder="Image URL" class="admin-input" />
-        <button onclick="addNewTrack()" class="admin-btn-save">Add Track</button>
-      </div>
-    </div>
-  `;
-
-  const tableHtml = `
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Track & Layout</th>
-          <th>Image URL</th>
-          <th>Preview</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tracksTableBody">
-        ${tracksData.map((track, idx) => `
-          <tr data-track-name="${(track.Track_Combos || '').toLowerCase()}">
-            <td data-label="Track & Layout">${track.Track_Combos || ''}</td>
-            <td data-label="Image URL">
-              <input type="text" 
-                     id="trackUrl-${idx}" 
-                     value="${track.Track_Image_URL || ''}" 
-                     class="admin-input-inline" 
-                     style="width: 100%; max-width: 400px;" />
-            </td>
-            <td data-label="Preview">
-              ${track.Track_Image_URL ? `<img src="${track.Track_Image_URL}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'">` : 'No image'}
-            </td>
-            <td data-label="Actions">
-              <button onclick="updateTrack(${idx})" class="admin-btn-edit">💾 Save</button>
-              <button onclick="deleteTrack(${idx})" class="admin-btn-delete">🗑️ Delete</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  return subBannerHtml + searchHtml + addNewHtml + tableHtml;
-}
-
-function generateCarsConfigContent(carsData) {
-  const subBannerHtml = `
-    <div class="admin-sub-banner">
-      <h3>🏎️ Cars Configuration</h3>
-      <p>Manage car names and images</p>
-    </div>
-  `;
-
-  const searchHtml = `
-    <div class="admin-search-bar">
-      <input type="text" 
-             id="carSearchInput" 
-             placeholder="🔍 Search cars..." 
-             class="admin-search-input"
-             oninput="filterCarsTable()" />
-    </div>
-  `;
-
-  const addNewHtml = `
-    <div class="admin-add-new">
-      <h4>➕ Add New Car</h4>
-      <div class="admin-form-inline">
-        <input type="text" id="newCarName" placeholder="Car Name (e.g., Formula Pro Gen 2)" class="admin-input" />
-        <input type="text" id="newCarImageUrl" placeholder="Image URL" class="admin-input" />
-        <button onclick="addNewCar()" class="admin-btn-save">Add Car</button>
-      </div>
-    </div>
-  `;
-
-  const tableHtml = `
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Car Name</th>
-          <th>Image URL</th>
-          <th>Preview</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="carsTableBody">
-        ${carsData.map((car, idx) => `
-          <tr data-car-name="${(car.Car_Name || '').toLowerCase()}">
-            <td data-label="Car Name">${car.Car_Name || ''}</td>
-            <td data-label="Image URL">
-              <input type="text" 
-                     id="carUrl-${idx}" 
-                     value="${car.Car_Image_URL || ''}" 
-                     class="admin-input-inline" 
-                     style="width: 100%; max-width: 400px;" />
-            </td>
-            <td data-label="Preview">
-              ${car.Car_Image_URL ? `<img src="${car.Car_Image_URL}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'">` : 'No image'}
-            </td>
-            <td data-label="Actions">
-              <button onclick="updateCar(${idx})" class="admin-btn-edit">💾 Save</button>
-              <button onclick="deleteCar(${idx})" class="admin-btn-delete">🗑️ Delete</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  return subBannerHtml + searchHtml + addNewHtml + tableHtml;
-}
-
-// Live filter function for tracks
-function filterTracksTable() {
-  const searchInput = document.getElementById('trackSearchInput');
-  if (!searchInput) return;
-
-  const searchTerm = searchInput.value.toLowerCase().trim();
-  const tbody = document.getElementById('tracksTableBody');
-  if (!tbody) return;
-
-  const rows = tbody.querySelectorAll('tr');
-  
-  rows.forEach(row => {
-    const trackName = row.getAttribute('data-track-name') || '';
-    
-    if (trackName.includes(searchTerm)) {
-      row.style.display = '';
-    } else {
-      row.style.display = 'none';
-    }
-  });
-}
-
-// Live filter function for cars
-function filterCarsTable() {
-  const searchInput = document.getElementById('carSearchInput');
-  if (!searchInput) return;
-
-  const searchTerm = searchInput.value.toLowerCase().trim();
-  const tbody = document.getElementById('carsTableBody');
-  if (!tbody) return;
-
-  const rows = tbody.querySelectorAll('tr');
-  
-  rows.forEach(row => {
-    const carName = row.getAttribute('data-car-name') || '';
-    
-    if (carName.includes(searchTerm)) {
-      row.style.display = '';
-    } else {
-      row.style.display = 'none';
-    }
-  });
-}
-
-
-// Track management functions
-async function addNewTrack() {
-  const combo = document.getElementById('newTrackCombo')?.value.trim();
-  const imageUrl = document.getElementById('newTrackImageUrl')?.value.trim();
-
-  if (!combo) {
-    alert('❌ Please enter a track & layout name');
-    return;
-  }
-
-  try {
-    const trackData = {
-      Track_Combos: combo,
-      Track_Image_URL: imageUrl
-    };
-
-    const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
-    await window.firebasePush(tracksRef, trackData);
-
-    alert('✅ Track added successfully!');
-    CACHE.tracksMap = null;
-    loadAdminTools();
-  } catch (err) {
-    console.error('addNewTrack error', err);
-    alert('❌ Error adding track: ' + err.message);
-  }
-}
-
-async function updateTrack(index) {
-  const track = window.adminTracksData[index];
-  if (!track) return;
-
-  const newImageUrl = document.getElementById(`trackUrl-${index}`)?.value.trim();
-
-  try {
-    const tracksSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks'));
-    const tracksObject = tracksSnapshot.val();
-    
-    if (tracksObject && typeof tracksObject === 'object') {
-      const keys = Object.keys(tracksObject);
-      const firebaseKey = keys[index];
-      
-      const trackRef = window.firebaseRef(window.firebaseDB, `Tracks/${firebaseKey}`);
-      await window.firebaseSet(trackRef, {
-        ...track,
-        Track_Image_URL: newImageUrl
-      });
-
-      alert('✅ Track updated successfully!');
-      CACHE.tracksMap = null;
-      loadAdminTools();
-    }
-  } catch (err) {
-    console.error('updateTrack error', err);
-    alert('❌ Error updating track: ' + err.message);
-  }
-}
-
-async function deleteTrack(index) {
-  const track = window.adminTracksData[index];
-  if (!track) return;
-
-  if (!confirm(`⚠️ Delete track "${track.Track_Combos}"?\n\nThis cannot be undone!`)) return;
-
-  try {
-    const tracksSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks'));
-    const tracksObject = tracksSnapshot.val();
-    
-    if (tracksObject && typeof tracksObject === 'object') {
-      const keys = Object.keys(tracksObject);
-      const firebaseKey = keys[index];
-      
-      const trackRef = window.firebaseRef(window.firebaseDB, `Tracks/${firebaseKey}`);
-      await window.firebaseSet(trackRef, null);
-
-      alert('✅ Track deleted successfully!');
-      CACHE.tracksMap = null;
-      loadAdminTools();
-    }
-  } catch (err) {
-    console.error('deleteTrack error', err);
-    alert('❌ Error deleting track: ' + err.message);
-  }
-}
-
-// Car management functions
-async function addNewCar() {
-  const carName = document.getElementById('newCarName')?.value.trim();
-  const imageUrl = document.getElementById('newCarImageUrl')?.value.trim();
-
-  if (!carName) {
-    alert('❌ Please enter a car name');
-    return;
-  }
-
-  try {
-    const carData = {
-      Car_Name: carName,
-      Car_Image_URL: imageUrl
-    };
-
-    const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
-    await window.firebasePush(carsRef, carData);
-
-    alert('✅ Car added successfully!');
-    CACHE.carsMap = null;
-    loadAdminTools();
-  } catch (err) {
-    console.error('addNewCar error', err);
-    alert('❌ Error adding car: ' + err.message);
-  }
-}
-
-async function updateCar(index) {
-  const car = window.adminCarsData[index];
-  if (!car) return;
-
-  const newImageUrl = document.getElementById(`carUrl-${index}`)?.value.trim();
-
-  try {
-    const carsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars'));
-    const carsObject = carsSnapshot.val();
-    
-    if (carsObject && typeof carsObject === 'object') {
-      const keys = Object.keys(carsObject);
-      const firebaseKey = keys[index];
-      
-      const carRef = window.firebaseRef(window.firebaseDB, `Cars/${firebaseKey}`);
-      await window.firebaseSet(carRef, {
-        ...car,
-        Car_Image_URL: newImageUrl
-      });
-
-      alert('✅ Car updated successfully!');
-      CACHE.carsMap = null;
-      loadAdminTools();
-    }
-  } catch (err) {
-    console.error('updateCar error', err);
-    alert('❌ Error updating car: ' + err.message);
-  }
-}
-
-async function deleteCar(index) {
-  const car = window.adminCarsData[index];
-  if (!car) return;
-
-  if (!confirm(`⚠️ Delete car "${car.Car_Name}"?\n\nThis cannot be undone!`)) return;
-
-  try {
-    const carsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars'));
-    const carsObject = carsSnapshot.val();
-    
-    if (carsObject && typeof carsObject === 'object') {
-      const keys = Object.keys(carsObject);
-      const firebaseKey = keys[index];
-      
-      const carRef = window.firebaseRef(window.firebaseDB, `Cars/${firebaseKey}`);
-      await window.firebaseSet(carRef, null);
-
-      alert('✅ Car deleted successfully!');
-      CACHE.carsMap = null;
-      loadAdminTools();
-    }
-  } catch (err) {
-    console.error('deleteCar error', err);
-    alert('❌ Error deleting car: ' + err.message);
-  }
-}
