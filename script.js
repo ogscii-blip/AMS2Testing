@@ -89,6 +89,7 @@ function encodeKey(name) {
    ----------------------------- */
 let ALLOWED_USERS = {};      // { username: { email, password } } - email may be empty in your config
 let DRIVER_PROFILES = {};    // { usernameKey: { name, surname, number, photoUrl, bio } }
+let DRIVER_PROFILE_INDICES = {}; // { usernameKey: arrayIndex } - for array-based storage
 let APPS_SCRIPT_URL = null;
 let currentUser = null;      // { name: username, email? }
 
@@ -132,7 +133,7 @@ async function loadConfig() {
 
     // Load driver profiles (object keyed by username if available)
     // We'll use onValue so profile edits are reflected live
-    const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
+    const profilesRef = window.firebaseRef(window.firebaseDB, 'Config/Driver_Profiles');
     window.firebaseOnValue(profilesRef, (snapshot) => {
       const raw = snapshot.val();
       if (!raw) {
@@ -142,18 +143,25 @@ async function loadConfig() {
       // If stored as array (legacy), convert to username-keyed map by using Name or Email fallback.
       if (Array.isArray(raw)) {
         const mapped = {};
-        raw.forEach(item => {
+        const indices = {};
+        raw.forEach((item, index) => {
           if (!item) return;
           const nameKey = item.Username || item.Name || (item.Email ? item.Email.split('@')[0] : null);
-          if (nameKey) mapped[encodeKey(nameKey)] = {
-            name: item.Name || '',
-            surname: item.Surname || '',
-            number: item.Number ? String(item.Number) : '',
-            photoUrl: item.Photo_URL || item.Photo_URL || '',
-            bio: item.Bio || ''
-          };
+          if (nameKey) {
+            const encodedKey = encodeKey(nameKey);
+            mapped[encodedKey] = {
+              name: item.Name || '',
+              surname: item.Surname || '',
+              number: item.Number ? String(item.Number) : '',
+              photoUrl: item.Photo_URL || item.Photo_URL || '',
+              bio: item.Bio || '',
+              email: item.Email || ''
+            };
+            indices[encodedKey] = index; // Store the array index
+          }
         });
         DRIVER_PROFILES = mapped;
+        DRIVER_PROFILE_INDICES = indices;
       } else {
         // Object keyed already: normalize photo and ensure fields exist
         const mapped = {};
@@ -164,10 +172,12 @@ async function loadConfig() {
             surname: item.Surname || '',
             number: item.Number ? String(item.Number) : '',
             photoUrl: item.Photo_URL || item.Photo || '',
-            bio: item.Bio || ''
+            bio: item.Bio || '',
+            email: item.Email || ''
           };
         });
         DRIVER_PROFILES = mapped;
+        DRIVER_PROFILE_INDICES = {}; // No indices needed for object storage
       }
       console.log('Driver profiles loaded:', Object.keys(DRIVER_PROFILES).length);
     });
@@ -2382,6 +2392,9 @@ async function loadProfile() {
     document.getElementById('photoPreviewImg').src = normalizePhotoUrl(profile.photoUrl);
     document.getElementById('photoPreview').style.display = 'block';
   }
+  
+  // Load email preferences
+  setTimeout(() => loadEmailPreferences(), 100);
 }
 
 document.getElementById('profileForm')?.addEventListener('submit', async function(e){
@@ -2393,20 +2406,53 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
     const profileData = {
       Name: document.getElementById('profileName').value.trim(),
       Surname: document.getElementById('profileSurname').value.trim(),
-      Number: document.getElementById('profileNumber').value,
+      Number: parseInt(document.getElementById('profileNumber').value),
       Photo_URL: document.getElementById('profilePhotoUrl').value.trim(),
       Bio: document.getElementById('profileBio').value.trim()
     };
+    
+    // Get email preferences
+    const emailPrefs = {
+      newRound: document.getElementById('email-newRound').checked,
+      fastestLap: document.getElementById('email-fastestLap').checked,
+      weeklyResults: document.getElementById('email-weeklyResults').checked
+    };
 
     const usernameKey = encodeKey(currentUser.name);
-    const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
-    await window.firebaseSet(profileRef, {
-      Name: profileData.Name,
-      Surname: profileData.Surname,
-      Number: profileData.Number,
-      Photo_URL: profileData.Photo_URL,
-      Bio: profileData.Bio
-    });
+    
+    // Check if profiles are stored as array (use index) or object (use key)
+    const arrayIndex = DRIVER_PROFILE_INDICES[usernameKey];
+    let profileRef;
+    
+    if (arrayIndex !== undefined) {
+      // Array-based storage - use the array index
+      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}`);
+      
+      // Get existing profile to preserve Email field
+      const existingSnapshot = await window.firebaseGet(profileRef);
+      const existingProfile = existingSnapshot.val() || {};
+      
+      await window.firebaseSet(profileRef, {
+        Name: profileData.Name,
+        Surname: profileData.Surname,
+        Number: profileData.Number,
+        Photo_URL: profileData.Photo_URL,
+        Bio: profileData.Bio,
+        Email: existingProfile.Email || '', // Preserve existing email
+        emailNotifications: emailPrefs
+      });
+    } else {
+      // Object-based storage - use the username key
+      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${usernameKey}`);
+      await window.firebaseSet(profileRef, {
+        Name: profileData.Name,
+        Surname: profileData.Surname,
+        Number: profileData.Number,
+        Photo_URL: profileData.Photo_URL,
+        Bio: profileData.Bio,
+        emailNotifications: emailPrefs
+      });
+    }
 
     DRIVER_PROFILES[usernameKey] = {
       name: profileData.Name,
@@ -2614,13 +2660,6 @@ function updateSubmitTabVisibility() {
       lapTimeFormContainer.style.display = 'block';
       // Setup dynamic total time preview
       setTimeout(() => setupTotalTimePreview(), 100);
-    }
-    // Show email preferences section
-    const emailPrefSection = document.getElementById('email-preferences-section');
-    if (emailPrefSection) {
-      emailPrefSection.style.display = 'block';
-      // Load preferences
-      setTimeout(() => loadEmailPreferences(), 200);
     }
   } else { 
     if (submitTab) submitTab.style.display = 'none'; 
@@ -3365,7 +3404,17 @@ async function loadEmailPreferences() {
   
   try {
     const profileKey = encodeKey(currentUser.name);
-    const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
+    const arrayIndex = DRIVER_PROFILE_INDICES[profileKey];
+    
+    let profileRef;
+    if (arrayIndex !== undefined) {
+      // Array-based storage
+      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}`);
+    } else {
+      // Object-based storage
+      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${profileKey}`);
+    }
+    
     const snapshot = await window.firebaseGet(profileRef);
     const profile = snapshot.val();
     
@@ -3396,7 +3445,16 @@ async function saveEmailPreferences() {
   const weeklyResults = document.getElementById('email-weeklyResults').checked;
   
   const profileKey = encodeKey(currentUser.name);
-  const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}/emailNotifications`);
+  const arrayIndex = DRIVER_PROFILE_INDICES[profileKey];
+  
+  let profileRef;
+  if (arrayIndex !== undefined) {
+    // Array-based storage
+    profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}/emailNotifications`);
+  } else {
+    // Object-based storage
+    profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${profileKey}/emailNotifications`);
+  }
   
   try {
     await window.firebaseSet(profileRef, {
