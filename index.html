@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMS2 Racing League</title>
-    <link rel="stylesheet" href="styles.css?v=3">    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://thebuttkicker.com/cdn/shop/products/automobilista-2-logo.png?v=1656519455">
+    <link rel="stylesheet" href="styles.css?v=2">
 </head>
-    
 <body>
     <div class="container">
         <header>
@@ -249,26 +246,6 @@
         <h2>🔧 Admin Tools</h2>
         <p style="margin-bottom: 20px; color: #666;">Manage and edit lap time submissions</p>
 
-        <!-- Manual Recalculation Section -->
-        <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #ffc107;">
-            <h3 style="color: #856404; margin-top: 0;">⚙️ Manual Recalculation</h3>
-            <p style="color: #856404; margin-bottom: 15px;">
-                Use this after manually editing or deleting lap times in Firebase.
-                This will recalculate all standings, positions, purple sectors, and points.
-            </p>
-            
-            <button 
-                id="manualRecalcButton" 
-                onclick="manualRecalculate()" 
-                style="background: #667eea; color: white; border: none; padding: 12px 24px; 
-                       border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: bold;">
-                🔄 Recalculate All Standings
-            </button>
-            
-            <div id="recalcStatus" style="display: none; margin-top: 15px; padding: 15px; 
-                 border-radius: 5px; text-align: center; font-weight: bold;"></div>
-        </div>
-
         <!-- Admin Tab -->
         <div id="admin-content">
             <div id="admin-lap-times-table">
@@ -333,6 +310,22 @@
                                 <input type="tel" id="sector3-sec" maxlength="2" placeholder="00" inputmode="numeric" class="time-input-split-field time-input-split-seconds">
                                 <span class="time-split-separator">,</span>
                                 <input type="tel" id="sector3-ms" maxlength="3" placeholder="000" inputmode="numeric" class="time-input-split-field time-input-split-milliseconds">
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Total Time Preview -->
+                        <div id="totalTimePreview" style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 10px;
+                            text-align: center;
+                            margin-bottom: 15px;
+                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                        ">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Total Lap Time</div>
+                            <div id="totalTimeDisplay" style="font-size: 2.5em; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 2px;">
+                                --:--.---
                             </div>
                         </div>
 
@@ -427,7 +420,6 @@
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getDatabase, ref, onValue, set, push, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 
     const firebaseConfig = {
         apiKey: "AIzaSyBSDmq3qjRU0kQR0k0pau3nOiFUa1j8Xpg",
@@ -441,11 +433,8 @@
 
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
-    const functions = getFunctions(app, 'europe-west1');
 
     window.firebaseDB = database;
-    window.firebaseFunctions = functions;
-    window.httpsCallable = httpsCallable;
     window.firebaseRef = ref;
     window.firebaseOnValue = onValue;
     window.firebaseSet = set;
