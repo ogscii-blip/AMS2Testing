@@ -129,6 +129,40 @@
                 <h3>🔒 Sign In Required</h3>
                 <p style="margin: 10px 0;">Please sign in to view and edit your profile.</p>
             </div>
+
+            <div id="email-settings" style="display: none;">
+                <h3>📧 Email Notification Preferences</h3>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <label style="display: block; margin: 15px 0;">
+                        <input type="checkbox" id="email-newRound" checked>
+                        <strong>🏁 New Round Announcements</strong>
+                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
+                            Get notified when a new round is set up
+                        </p>
+                    </label>
+                    
+                    <label style="display: block; margin: 15px 0;">
+                        <input type="checkbox" id="email-fastestLap" checked>
+                        <strong>⚡ New Fastest Lap Alerts</strong>
+                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
+                            Get notified when someone sets a new fastest lap
+                        </p>
+                    </label>
+                    
+                    <label style="display: block; margin: 15px 0;">
+                        <input type="checkbox" id="email-weeklyResults" checked>
+                        <strong>🏆 Weekly Results Summary</strong>
+                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
+                            Get weekly results every Monday morning at 8 AM CEST
+                        </p>
+                    </label>
+                    
+                    <button onclick="saveEmailPreferences()" class="refresh-btn" style="margin-top: 20px;">
+                        💾 Save Email Preferences
+                    </button>
+                    <div id="email-pref-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 5px;"></div>
+                </div>
+            </div>
             
             <div id="profileContent" style="display: none;">
                 <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; margin: 0 auto;">
