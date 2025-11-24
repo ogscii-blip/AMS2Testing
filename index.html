@@ -129,40 +129,6 @@
                 <h3>🔒 Sign In Required</h3>
                 <p style="margin: 10px 0;">Please sign in to view and edit your profile.</p>
             </div>
-
-            <div id="email-settings" style="display: none;">
-                <h3>📧 Email Notification Preferences</h3>
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <label style="display: block; margin: 15px 0;">
-                        <input type="checkbox" id="email-newRound" checked>
-                        <strong>🏁 New Round Announcements</strong>
-                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
-                            Get notified when a new round is set up
-                        </p>
-                    </label>
-                    
-                    <label style="display: block; margin: 15px 0;">
-                        <input type="checkbox" id="email-fastestLap" checked>
-                        <strong>⚡ New Fastest Lap Alerts</strong>
-                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
-                            Get notified when someone sets a new fastest lap
-                        </p>
-                    </label>
-                    
-                    <label style="display: block; margin: 15px 0;">
-                        <input type="checkbox" id="email-weeklyResults" checked>
-                        <strong>🏆 Weekly Results Summary</strong>
-                        <p style="margin: 5px 0 0 25px; color: #666; font-size: 0.9em;">
-                            Get weekly results every Monday morning at 8 AM CEST
-                        </p>
-                    </label>
-                    
-                    <button onclick="saveEmailPreferences()" class="refresh-btn" style="margin-top: 20px;">
-                        💾 Save Email Preferences
-                    </button>
-                    <div id="email-pref-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 5px;"></div>
-                </div>
-            </div>
             
             <div id="profileContent" style="display: none;">
                 <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; margin: 0 auto;">
@@ -274,6 +240,45 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Email Notification Preferences -->
+            <div id="email-preferences-section" style="border-top: 3px solid #667eea; padding-top: 30px; margin-top: 30px; display: none;">
+                <h3>📧 Email Notification Preferences</h3>
+                <p style="color: #666; margin-bottom: 20px;">Choose which email notifications you want to receive.</p>
+                
+                <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <label style="display: block; margin: 15px 0; cursor: pointer;">
+                            <input type="checkbox" id="email-newRound" checked style="margin-right: 10px; transform: scale(1.2);">
+                            <strong>🏁 New Round Announcements</strong>
+                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                Get notified when a new round is set up with track and car details
+                            </p>
+                        </label>
+                        
+                        <label style="display: block; margin: 15px 0; cursor: pointer;">
+                            <input type="checkbox" id="email-fastestLap" checked style="margin-right: 10px; transform: scale(1.2);">
+                            <strong>⚡ New Fastest Lap Alerts</strong>
+                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                Get notified when someone sets a new fastest lap record
+                            </p>
+                        </label>
+                        
+                        <label style="display: block; margin: 15px 0; cursor: pointer;">
+                            <input type="checkbox" id="email-weeklyResults" checked style="margin-right: 10px; transform: scale(1.2);">
+                            <strong>🏆 Weekly Results Summary</strong>
+                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                Get weekly results every Monday morning at 8 AM CEST
+                            </p>
+                        </label>
+                        
+                        <button onclick="saveEmailPreferences()" class="refresh-btn" style="margin-top: 20px; width: 100%;">
+                            💾 Save Email Preferences
+                        </button>
+                        <div id="email-pref-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="admin" class="tab-content">
@@ -282,6 +287,19 @@
 
         <!-- Admin Tab -->
         <div id="admin-content">
+            <!-- Manual Recalculate Section -->
+            <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+                <h3 style="margin-top: 0; color: #856404;">⚙️ Manual Recalculation</h3>
+                <p style="color: #856404; margin-bottom: 15px;">
+                    Use this button to manually recalculate all standings if you've edited or deleted lap times directly in Firebase Console.
+                    This will trigger the Cloud Function to recalculate Round_Data from Form_responses_1.
+                </p>
+                <button id="manualRecalcButton" onclick="manualRecalculate()" class="refresh-btn" style="width: 100%; max-width: 400px; padding: 15px; font-size: 1.1em;">
+                    🔄 Recalculate All Standings
+                </button>
+                <div id="recalcStatus" style="display: none; margin-top: 15px; padding: 15px; border-radius: 5px; font-weight: bold;"></div>
+            </div>
+
             <div id="admin-lap-times-table">
                 <p style="text-align:center;padding:40px;">Loading admin tools...</p>
             </div>
@@ -358,7 +376,16 @@
                             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
                         ">
                             <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Total Lap Time</div>
-                            <div id="totalTimeDisplay" style="font-size: 2.5em; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.5px; display: flex; justify-content: center; align-items: center; white-space: nowrap;">
+                            <div id="totalTimeDisplay" style="
+                                font-size: 2.5em; 
+                                font-weight: bold; 
+                                font-family: 'Courier New', monospace; 
+                                letter-spacing: 0.5px;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                white-space: nowrap;
+                            ">
                                 --:--.---
                             </div>
                         </div>
