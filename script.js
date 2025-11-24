@@ -133,7 +133,7 @@ async function loadConfig() {
 
     // Load driver profiles (object keyed by username if available)
     // We'll use onValue so profile edits are reflected live
-    const profilesRef = window.firebaseRef(window.firebaseDB, 'Config/Driver_Profiles');
+    const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
     window.firebaseOnValue(profilesRef, (snapshot) => {
       const raw = snapshot.val();
       if (!raw) {
@@ -2426,7 +2426,7 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
     
     if (arrayIndex !== undefined) {
       // Array-based storage - use the array index
-      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}`);
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}`);
       
       // Get existing profile to preserve Email field
       const existingSnapshot = await window.firebaseGet(profileRef);
@@ -2443,7 +2443,7 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       });
     } else {
       // Object-based storage - use the username key
-      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${usernameKey}`);
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
       await window.firebaseSet(profileRef, {
         Name: profileData.Name,
         Surname: profileData.Surname,
@@ -3409,10 +3409,10 @@ async function loadEmailPreferences() {
     let profileRef;
     if (arrayIndex !== undefined) {
       // Array-based storage
-      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}`);
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}`);
     } else {
       // Object-based storage
-      profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${profileKey}`);
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
     }
     
     const snapshot = await window.firebaseGet(profileRef);
@@ -3450,10 +3450,10 @@ async function saveEmailPreferences() {
   let profileRef;
   if (arrayIndex !== undefined) {
     // Array-based storage
-    profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${arrayIndex}/emailNotifications`);
+    profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}/emailNotifications`);
   } else {
     // Object-based storage
-    profileRef = window.firebaseRef(window.firebaseDB, `Config/Driver_Profiles/${profileKey}/emailNotifications`);
+    profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}/emailNotifications`);
   }
   
   try {
