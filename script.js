@@ -1807,14 +1807,7 @@ async function loadRoundSetup() {
 let ADMIN_USERNAME = null;
 
 function isAdmin() {
-  if (!currentUser || !ADMIN_USERNAME) return false;
-  
-  // Support wildcard: "*" means all users are admins
-  if (ADMIN_USERNAME === '*') return true;
-  
-  // Support comma-separated list: "Olaf,Alex,Ben"
-  const adminList = ADMIN_USERNAME.split(',').map(name => name.trim());
-  return adminList.includes(currentUser.name);
+  return currentUser && ADMIN_USERNAME && currentUser.name === ADMIN_USERNAME;
 }
 
 function updateAdminUsername(configMap) {
@@ -2610,7 +2603,11 @@ function updateSubmitTabVisibility() {
     if (submitTab) submitTab.style.display = ''; 
     if (setupTab) setupTab.style.display = ''; 
     if (authWarning) authWarning.style.display = 'none'; 
-    if (lapTimeFormContainer) lapTimeFormContainer.style.display = 'block'; 
+    if (lapTimeFormContainer) {
+      lapTimeFormContainer.style.display = 'block';
+      // Setup dynamic total time preview
+      setTimeout(() => setupTotalTimePreview(), 100);
+    }
   } else { 
     if (submitTab) submitTab.style.display = 'none'; 
     if (setupTab) setupTab.style.display = 'none'; 
@@ -3214,73 +3211,60 @@ async function deleteCar(index) {
 }
 
 // ============================================================================
-// ADMIN: Manual Recalculate Function
+// Dynamic Total Time Preview for Lap Time Submission
 // ============================================================================
-async function manualRecalculate() {
-    const recalcButton = document.getElementById('manualRecalcButton');
-    const statusDiv = document.getElementById('recalcStatus');
-    
-    try {
-        // Disable button and show loading
-        if (recalcButton) {
-            recalcButton.disabled = true;
-            recalcButton.textContent = '⏳ Recalculating...';
-        }
-        
-        if (statusDiv) {
-            statusDiv.style.display = 'block';
-            statusDiv.style.background = '#d1ecf1';
-            statusDiv.style.color = '#0c5460';
-            statusDiv.textContent = '⏳ Recalculating all standings...';
-        }
-        
-        console.log('🔧 Calling Cloud Function to recalculate standings...');
-        
-        // Call the Cloud Function
-        const recalculateStandings = window.httpsCallable(window.firebaseFunctions, 'recalculateStandings');
-        const result = await recalculateStandings();
-        
-        console.log('✅ Cloud Function response:', result.data);
-        
-        // Show success
-        if (statusDiv) {
-            statusDiv.style.background = '#d4edda';
-            statusDiv.style.color = '#155724';
-            statusDiv.textContent = '✅ ' + result.data.message;
-        }
-        
-        // Re-enable button
-        if (recalcButton) {
-            recalcButton.disabled = false;
-            recalcButton.textContent = '🔄 Recalculate All Standings';
-        }
-        
-        // Reload data after 2 seconds
-        setTimeout(() => {
-            if (statusDiv) statusDiv.style.display = 'none';
-            
-            // Refresh displays
-            if (typeof loadLeaderboard === 'function') loadLeaderboard();
-            if (typeof loadRoundData === 'function') loadRoundData();
-            if (typeof loadAdminData === 'function') loadAdminData();
-            
-            alert('✅ Standings recalculated! Data refreshed.');
-        }, 2000);
-        
-    } catch (error) {
-        console.error('❌ Error calling recalculate function:', error);
-        
-        if (statusDiv) {
-            statusDiv.style.background = '#f8d7da';
-            statusDiv.style.color = '#721c24';
-            statusDiv.textContent = '❌ Error: ' + error.message;
-        }
-        
-        if (recalcButton) {
-            recalcButton.disabled = false;
-            recalcButton.textContent = '🔄 Recalculate All Standings';
-        }
-        
-        alert('❌ Failed to recalculate: ' + error.message);
+function setupTotalTimePreview() {
+  const sector1Sec = document.getElementById('sector1-sec');
+  const sector1Ms = document.getElementById('sector1-ms');
+  const sector2Sec = document.getElementById('sector2-sec');
+  const sector2Ms = document.getElementById('sector2-ms');
+  const sector3Sec = document.getElementById('sector3-sec');
+  const sector3Ms = document.getElementById('sector3-ms');
+  const totalTimeDisplay = document.getElementById('totalTimeDisplay');
+
+  if (!totalTimeDisplay) return;
+
+  function updateTotalTime() {
+    // Get values (default to 0 if empty)
+    const s1Sec = parseInt(sector1Sec.value) || 0;
+    const s1Ms = parseInt(sector1Ms.value) || 0;
+    const s2Sec = parseInt(sector2Sec.value) || 0;
+    const s2Ms = parseInt(sector2Ms.value) || 0;
+    const s3Sec = parseInt(sector3Sec.value) || 0;
+    const s3Ms = parseInt(sector3Ms.value) || 0;
+
+    // Calculate total milliseconds
+    const totalMs = (s1Sec * 1000 + s1Ms) + (s2Sec * 1000 + s2Ms) + (s3Sec * 1000 + s3Ms);
+
+    // If all fields are empty, show placeholder
+    if (totalMs === 0) {
+      totalTimeDisplay.textContent = '--:--.---';
+      totalTimeDisplay.style.opacity = '0.5';
+      return;
     }
+
+    // Convert to minutes:seconds.milliseconds
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    const milliseconds = totalMs % 1000;
+
+    // Format as MM:SS.mmm
+    const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+    
+    totalTimeDisplay.textContent = formatted;
+    totalTimeDisplay.style.opacity = '1';
+  }
+
+  // Add input listeners to all sector fields
+  const allInputs = [sector1Sec, sector1Ms, sector2Sec, sector2Ms, sector3Sec, sector3Ms];
+  allInputs.forEach(input => {
+    if (input) {
+      input.addEventListener('input', updateTotalTime);
+      input.addEventListener('keyup', updateTotalTime);
+      input.addEventListener('change', updateTotalTime);
+    }
+  });
+
+  // Initialize with current values
+  updateTotalTime();
 }
