@@ -2615,6 +2615,13 @@ function updateSubmitTabVisibility() {
       // Setup dynamic total time preview
       setTimeout(() => setupTotalTimePreview(), 100);
     }
+    // Show email preferences section
+    const emailPrefSection = document.getElementById('email-preferences-section');
+    if (emailPrefSection) {
+      emailPrefSection.style.display = 'block';
+      // Load preferences
+      setTimeout(() => loadEmailPreferences(), 200);
+    }
   } else { 
     if (submitTab) submitTab.style.display = 'none'; 
     if (setupTab) setupTab.style.display = 'none'; 
@@ -3277,6 +3284,78 @@ function setupTotalTimePreview() {
 }
 
 // ============================================================================
+// Manual Recalculate Function for Admin Portal
+// ============================================================================
+async function manualRecalculate() {
+    const recalcButton = document.getElementById('manualRecalcButton');
+    const statusDiv = document.getElementById('recalcStatus');
+    
+    try {
+        // Disable button and show loading
+        if (recalcButton) {
+            recalcButton.disabled = true;
+            recalcButton.textContent = '⏳ Recalculating...';
+        }
+        
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#d1ecf1';
+            statusDiv.style.color = '#0c5460';
+            statusDiv.textContent = '⏳ Recalculating all standings...';
+        }
+        
+        console.log('🔧 Calling Cloud Function to recalculate standings...');
+        
+        // Call the Cloud Function
+        const recalculateStandings = window.httpsCallable(window.firebaseFunctions, 'recalculateStandings');
+        const result = await recalculateStandings();
+        
+        console.log('✅ Cloud Function response:', result.data);
+        
+        // Show success
+        if (statusDiv) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.color = '#155724';
+            statusDiv.textContent = '✅ ' + result.data.message;
+        }
+        
+        // Re-enable button
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        // Reload data after 2 seconds
+        setTimeout(() => {
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Refresh displays
+            if (typeof loadLeaderboard === 'function') loadLeaderboard();
+            if (typeof loadRoundData === 'function') loadRoundData();
+            if (typeof loadAdminData === 'function') loadAdminData();
+            
+            alert('✅ Standings recalculated! Data refreshed.');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('❌ Error calling recalculate function:', error);
+        
+        if (statusDiv) {
+            statusDiv.style.background = '#f8d7da';
+            statusDiv.style.color = '#721c24';
+            statusDiv.textContent = '❌ Error: ' + error.message;
+        }
+        
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        alert('❌ Failed to recalculate: ' + error.message);
+    }
+}
+
+// ============================================================================
 // Email Preferences Management
 // ============================================================================
 
@@ -3284,15 +3363,24 @@ function setupTotalTimePreview() {
 async function loadEmailPreferences() {
   if (!currentUser) return;
   
-  const profileKey = encodeKey(currentUser.name);
-  const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
-  const snapshot = await window.firebaseGet(profileRef);
-  const profile = snapshot.val();
-  
-  if (profile && profile.emailNotifications) {
-    document.getElementById('email-newRound').checked = profile.emailNotifications.newRound !== false;
-    document.getElementById('email-fastestLap').checked = profile.emailNotifications.fastestLap !== false;
-    document.getElementById('email-weeklyResults').checked = profile.emailNotifications.weeklyResults !== false;
+  try {
+    const profileKey = encodeKey(currentUser.name);
+    const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
+    const snapshot = await window.firebaseGet(profileRef);
+    const profile = snapshot.val();
+    
+    if (profile && profile.emailNotifications) {
+      document.getElementById('email-newRound').checked = profile.emailNotifications.newRound !== false;
+      document.getElementById('email-fastestLap').checked = profile.emailNotifications.fastestLap !== false;
+      document.getElementById('email-weeklyResults').checked = profile.emailNotifications.weeklyResults !== false;
+    } else {
+      // Default all to true
+      document.getElementById('email-newRound').checked = true;
+      document.getElementById('email-fastestLap').checked = true;
+      document.getElementById('email-weeklyResults').checked = true;
+    }
+  } catch (error) {
+    console.error('Error loading email preferences:', error);
   }
 }
 
@@ -3326,6 +3414,8 @@ async function saveEmailPreferences() {
     setTimeout(() => {
       message.style.display = 'none';
     }, 3000);
+    
+    console.log('Email preferences saved:', { newRound, fastestLap, weeklyResults });
     
   } catch (error) {
     console.error('Error saving email preferences:', error);
