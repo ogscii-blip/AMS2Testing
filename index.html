@@ -168,48 +168,39 @@
                             <small style="color: #666;">Tell us about yourself, your racing style, achievements, etc.</small>
                         </div>
 
+                        <!-- Email Notification Preferences -->
+                        <div style="border-top: 2px solid #667eea; padding-top: 25px; margin-top: 10px;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; color: #667eea;">📧 Email Notification Preferences</h3>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                                <label style="display: block; margin: 15px 0; cursor: pointer;">
+                                    <input type="checkbox" id="email-newRound" checked style="margin-right: 10px; transform: scale(1.2);">
+                                    <strong>🏁 New Round Announcements</strong>
+                                    <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                        Get notified when a new round is set up with track and car details
+                                    </p>
+                                </label>
+                                
+                                <label style="display: block; margin: 15px 0; cursor: pointer;">
+                                    <input type="checkbox" id="email-fastestLap" checked style="margin-right: 10px; transform: scale(1.2);">
+                                    <strong>⚡ New Fastest Lap Alerts</strong>
+                                    <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                        Get notified when someone sets a new fastest lap record
+                                    </p>
+                                </label>
+                                
+                                <label style="display: block; margin: 15px 0; cursor: pointer;">
+                                    <input type="checkbox" id="email-weeklyResults" checked style="margin-right: 10px; transform: scale(1.2);">
+                                    <strong>🏆 Weekly Results Summary</strong>
+                                    <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
+                                        Get weekly results every Monday morning at 8 AM CEST
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">💾 Save Profile</button>
                         <div id="profileMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
                     </form>
-                </div>
-            </div>
-
-            <!-- Email Notification Preferences -->
-            <div id="email-preferences-section" style="border-top: 3px solid #667eea; padding-top: 30px; margin-top: 30px; display: none;">
-                <h3>📧 Email Notification Preferences</h3>
-                <p style="color: #666; margin-bottom: 20px;">Choose which email notifications you want to receive.</p>
-                
-                <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                        <label style="display: block; margin: 15px 0; cursor: pointer;">
-                            <input type="checkbox" id="email-newRound" checked style="margin-right: 10px; transform: scale(1.2);">
-                            <strong>🏁 New Round Announcements</strong>
-                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
-                                Get notified when a new round is set up with track and car details
-                            </p>
-                        </label>
-                        
-                        <label style="display: block; margin: 15px 0; cursor: pointer;">
-                            <input type="checkbox" id="email-fastestLap" checked style="margin-right: 10px; transform: scale(1.2);">
-                            <strong>⚡ New Fastest Lap Alerts</strong>
-                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
-                                Get notified when someone sets a new fastest lap record
-                            </p>
-                        </label>
-                        
-                        <label style="display: block; margin: 15px 0; cursor: pointer;">
-                            <input type="checkbox" id="email-weeklyResults" checked style="margin-right: 10px; transform: scale(1.2);">
-                            <strong>🏆 Weekly Results Summary</strong>
-                            <p style="margin: 5px 0 0 30px; color: #666; font-size: 0.9em;">
-                                Get weekly results every Monday morning at 8 AM CEST
-                            </p>
-                        </label>
-                        
-                        <button onclick="saveEmailPreferences()" class="refresh-btn" style="margin-top: 20px; width: 100%;">
-                            💾 Save Email Preferences
-                        </button>
-                        <div id="email-pref-message" style="display: none; margin-top: 10px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
-                    </div>
                 </div>
             </div>
         </div>
