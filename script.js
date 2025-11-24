@@ -1807,7 +1807,14 @@ async function loadRoundSetup() {
 let ADMIN_USERNAME = null;
 
 function isAdmin() {
-  return currentUser && ADMIN_USERNAME && currentUser.name === ADMIN_USERNAME;
+  if (!currentUser || !ADMIN_USERNAME) return false;
+  
+  // Support wildcard: "*" means all users are admins
+  if (ADMIN_USERNAME === '*') return true;
+  
+  // Support comma-separated list: "Olaf,Alex,Ben"
+  const adminList = ADMIN_USERNAME.split(',').map(name => name.trim());
+  return adminList.includes(currentUser.name);
 }
 
 function updateAdminUsername(configMap) {
