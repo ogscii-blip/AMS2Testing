@@ -3275,3 +3275,64 @@ function setupTotalTimePreview() {
   // Initialize with current values
   updateTotalTime();
 }
+
+// ============================================================================
+// Email Preferences Management
+// ============================================================================
+
+// Load email preferences when user logs in
+async function loadEmailPreferences() {
+  if (!currentUser) return;
+  
+  const profileKey = encodeKey(currentUser.name);
+  const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
+  const snapshot = await window.firebaseGet(profileRef);
+  const profile = snapshot.val();
+  
+  if (profile && profile.emailNotifications) {
+    document.getElementById('email-newRound').checked = profile.emailNotifications.newRound !== false;
+    document.getElementById('email-fastestLap').checked = profile.emailNotifications.fastestLap !== false;
+    document.getElementById('email-weeklyResults').checked = profile.emailNotifications.weeklyResults !== false;
+  }
+}
+
+// Save email preferences
+async function saveEmailPreferences() {
+  if (!currentUser) {
+    alert('Please log in first');
+    return;
+  }
+  
+  const newRound = document.getElementById('email-newRound').checked;
+  const fastestLap = document.getElementById('email-fastestLap').checked;
+  const weeklyResults = document.getElementById('email-weeklyResults').checked;
+  
+  const profileKey = encodeKey(currentUser.name);
+  const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}/emailNotifications`);
+  
+  try {
+    await window.firebaseSet(profileRef, {
+      newRound: newRound,
+      fastestLap: fastestLap,
+      weeklyResults: weeklyResults
+    });
+    
+    const message = document.getElementById('email-pref-message');
+    message.style.display = 'block';
+    message.style.background = '#d4edda';
+    message.style.color = '#155724';
+    message.textContent = '✅ Email preferences saved successfully!';
+    
+    setTimeout(() => {
+      message.style.display = 'none';
+    }, 3000);
+    
+  } catch (error) {
+    console.error('Error saving email preferences:', error);
+    const message = document.getElementById('email-pref-message');
+    message.style.display = 'block';
+    message.style.background = '#f8d7da';
+    message.style.color = '#721c24';
+    message.textContent = '❌ Error saving preferences: ' + error.message;
+  }
+}
