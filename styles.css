@@ -2289,3 +2289,18 @@ header p {
     padding: 15px;
   }
 }
+
+.admin-stat-warning {
+  border-left: 4px solid #ffc107;
+  background: linear-gradient(135deg, #fff3cd 0%, #fffbeb 100%);
+}
+
+.admin-badge-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
