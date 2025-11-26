@@ -143,54 +143,38 @@ async function loadConfig() {
 
     // Load driver profiles (object keyed by username if available)
     // We'll use onValue so profile edits are reflected live
-    const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
-    window.firebaseOnValue(profilesRef, (snapshot) => {
-      const raw = snapshot.val();
-      if (!raw) {
-        DRIVER_PROFILES = {};
-        return;
-      }
-      // If stored as array (legacy), convert to username-keyed map by using Name or Email fallback.
-      if (Array.isArray(raw)) {
-        const mapped = {};
-        const indices = {};
-        raw.forEach((item, index) => {
-          if (!item) return;
-          const nameKey = item.Username || item.Name || (item.Email ? item.Email.split('@')[0] : null);
-          if (nameKey) {
-            const encodedKey = encodeKey(nameKey);
-            mapped[encodedKey] = {
-              name: item.Name || '',
-              surname: item.Surname || '',
-              number: item.Number ? String(item.Number) : '',
-              photoUrl: item.Photo_URL || item.Photo_URL || '',
-              bio: item.Bio || '',
-              email: item.Email || ''
+const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
+window.firebaseOnValue(profilesRef, (snapshot) => {
+    const profilesData = snapshot.val();
+    if (!profilesData) return;
+
+    DRIVER_PROFILES = {};
+    DRIVER_PROFILE_INDICES = {}; // Also track array indices
+    
+    profilesData.forEach((profile, index) => {
+        const email = profile['Email']?.trim();
+        if (email) {
+            const usernameKey = encodeKey(profile['Name']?.trim() || '');
+            
+            DRIVER_PROFILES[email] = {
+                name: profile['Name']?.trim() || '',
+                surname: profile['Surname']?.trim() || '',
+                number: profile['Number']?.toString() || '',
+                photoUrl: profile['Photo_URL']?.trim() || '',
+                bio: profile['Bio']?.trim() || '',
+                equipment: profile['equipment'] || {}  // ✅ INCLUDE EQUIPMENT
             };
-            indices[encodedKey] = index; // Store the array index
-          }
-        });
-        DRIVER_PROFILES = mapped;
-        DRIVER_PROFILE_INDICES = indices;
-      } else {
-        // Object keyed already: normalize photo and ensure fields exist
-        const mapped = {};
-        Object.entries(raw).forEach(([key, item]) => {
-          if (!item) return;
-          mapped[key] = {
-            name: item.Name || item.Username || '',
-            surname: item.Surname || '',
-            number: item.Number ? String(item.Number) : '',
-            photoUrl: item.Photo_URL || item.Photo || '',
-            bio: item.Bio || '',
-            email: item.Email || ''
-          };
-        });
-        DRIVER_PROFILES = mapped;
-        DRIVER_PROFILE_INDICES = {}; // No indices needed for object storage
-      }
-      console.log('Driver profiles loaded:', Object.keys(DRIVER_PROFILES).length);
+            
+            // Also store by username key for easy lookup
+            DRIVER_PROFILES[usernameKey] = DRIVER_PROFILES[email];
+            
+            // Track array index for saving
+            DRIVER_PROFILE_INDICES[usernameKey] = index;
+        }
     });
+
+    console.log('Driver profiles loaded from Firebase:', Object.keys(DRIVER_PROFILES).length);
+});
 
   } catch (err) {
     console.error('loadConfig error', err);
@@ -2621,7 +2605,9 @@ async function loadDriverStats() {
       
       const championshipPosition = champPos[driverName] || 'N/A';
 
-      const card = document.createElement('div'); card.className = 'driver-card'; card.setAttribute('data-driver', driverName);
+      const card = document.createElement('div'); 
+      card.className = 'driver-card'; 
+      card.setAttribute('data-driver', driverName);
       
       let desktopPhotoHtml = '';
       let mobilePhotoHtml = '';
@@ -2642,14 +2628,98 @@ async function loadDriverStats() {
       const trackCarRecordsHtml = trackCarRecordsArray.length ? trackCarRecordsArray.map(r=> `<div class="record-item"><span>${r.combo}</span><strong>${r.timeFormatted}</strong></div>`).join('') : '<p style="color:#999;text-align:center">No records yet</p>';
       const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op, false)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
 
+      // ============================================================================
+      // FLIP CARD STRUCTURE - FRONT AND BACK
+      // ============================================================================
       card.innerHTML = `
-        <div class="driver-header">${desktopPhotoHtml}<div class="driver-info"><h2>${formattedName}</h2><div class="driver-position">Championship Position: ${championshipPosition}</div></div></div>
-        <div class="driver-header-mobile">${mobilePhotoHtml}<div class="driver-name-mobile">${formattedShortName}</div><div class="driver-stats-compact"><div class="stat-compact-item"><span class="stat-compact-label">Championship Position:</span><span class="stat-compact-value">${championshipPosition}</span></div><div class="stat-compact-row"><div class="stat-compact-item"><span class="stat-compact-label">Total Points:</span><span class="stat-compact-value">${totalPoints}</span></div><div class="stat-compact-item"><span class="stat-compact-label">Races:</span><span class="stat-compact-value">${totalRounds}</span></div></div></div></div>
-        <div class="stats-grid-driver"><div class="stat-card-driver"><h3>Total Points</h3><p class="stat-value">${totalPoints}</p></div><div class="stat-card-driver"><h3>Wins</h3><p class="stat-value">${totalWins}</p></div><div class="stat-card-driver"><h3>Purple Sectors</h3><p class="stat-value">${totalPurpleSectors}</p></div><div class="stat-card-driver"><h3>Avg Position</h3><p class="stat-value">${avgPosition}</p></div></div>
-        ${profile && profile.bio ? `<p style="text-align:center;color:#666;margin:20px 0;font-style:italic;">"${profile.bio}"</p>` : ''}
-        <div class="driver-records-section"><h3 class="section-title">🏆 Lap Time Records</h3><div class="lap-records"><div class="personal-best"><strong style="color:#667eea;">Personal Best Lap:</strong><div style="font-size:1.5em;font-weight:bold;color:#2c3e50;margin:5px 0;">${personalBest ? formatTime(personalBest['Total_Lap_Time']) : 'N/A'}</div>${personalBest ? `<div style="font-size:0.9em;color:#666;">${personalBest['Track-Layout']}<br>${personalBest['Car_Name']}</div>` : ''}</div><div class="quick-stats"><div class="quick-stat-item"><strong style="color:#667eea;">Purple Sectors:</strong> ${totalPurpleSectors}</div><div class="quick-stat-item"><strong style="color:#667eea;">Favorite Track:</strong> ${favoriteTrack}</div><div class="quick-stat-item"><strong style="color:#667eea;">Favorite Car:</strong> ${favoriteCar}</div></div></div></div>
-        <div class="driver-records-section"><h3 class="section-title">📍 Track + Car Records</h3><div class="track-car-records">${trackCarRecordsHtml}</div></div>
-        <div class="driver-records-section"><h3 class="section-title">⚔️ Head-to-Head Record</h3><div class="h2h-grid">${h2hHtml}</div></div>
+        <div class="driver-card-inner">
+          <!-- ============ FRONT OF CARD ============ -->
+          <div class="driver-card-front">
+            <button class="flip-card-button" onclick="flipDriverCard(this)" title="View Equipment Setup">
+              🎮
+            </button>
+            
+            <div class="driver-header">${desktopPhotoHtml}<div class="driver-info"><h2>${formattedName}</h2><div class="driver-position">Championship Position: ${championshipPosition}</div></div></div>
+            <div class="driver-header-mobile">${mobilePhotoHtml}<div class="driver-name-mobile">${formattedShortName}</div><div class="driver-stats-compact"><div class="stat-compact-item"><span class="stat-compact-label">Championship Position:</span><span class="stat-compact-value">${championshipPosition}</span></div><div class="stat-compact-row"><div class="stat-compact-item"><span class="stat-compact-label">Total Points:</span><span class="stat-compact-value">${totalPoints}</span></div><div class="stat-compact-item"><span class="stat-compact-label">Races:</span><span class="stat-compact-value">${totalRounds}</span></div></div></div></div>
+            <div class="stats-grid-driver"><div class="stat-card-driver"><h3>Total Points</h3><p class="stat-value">${totalPoints}</p></div><div class="stat-card-driver"><h3>Wins</h3><p class="stat-value">${totalWins}</p></div><div class="stat-card-driver"><h3>Purple Sectors</h3><p class="stat-value">${totalPurpleSectors}</p></div><div class="stat-card-driver"><h3>Avg Position</h3><p class="stat-value">${avgPosition}</p></div></div>
+            ${profile && profile.bio ? `<p style="text-align:center;color:#666;margin:20px 0;font-style:italic;">"${profile.bio}"</p>` : ''}
+            <div class="driver-records-section"><h3 class="section-title">🏆 Lap Time Records</h3><div class="lap-records"><div class="personal-best"><strong style="color:#667eea;">Personal Best Lap:</strong><div style="font-size:1.5em;font-weight:bold;color:#2c3e50;margin:5px 0;">${personalBest ? formatTime(personalBest['Total_Lap_Time']) : 'N/A'}</div>${personalBest ? `<div style="font-size:0.9em;color:#666;">${personalBest['Track-Layout']}<br>${personalBest['Car_Name']}</div>` : ''}</div><div class="quick-stats"><div class="quick-stat-item"><strong style="color:#667eea;">Purple Sectors:</strong> ${totalPurpleSectors}</div><div class="quick-stat-item"><strong style="color:#667eea;">Favorite Track:</strong> ${favoriteTrack}</div><div class="quick-stat-item"><strong style="color:#667eea;">Favorite Car:</strong> ${favoriteCar}</div></div></div></div>
+            <div class="driver-records-section"><h3 class="section-title">📍 Track + Car Records</h3><div class="track-car-records">${trackCarRecordsHtml}</div></div>
+            <div class="driver-records-section"><h3 class="section-title">⚔️ Head-to-Head Record</h3><div class="h2h-grid">${h2hHtml}</div></div>
+          </div>
+          
+          <!-- ============ BACK OF CARD ============ -->
+          <div class="driver-card-back">
+            <button class="flip-card-button flip-back" onclick="flipDriverCard(this)" title="Back to Stats">
+              ↩
+            </button>
+            
+            <div class="equipment-back-header">
+              <h2>${formattedName}</h2>
+              <h3>🎮 Equipment Setup</h3>
+            </div>
+            
+            ${profile && profile.equipment && Object.values(profile.equipment).some(v => v) ? `
+              <div class="equipment-grid-back">
+                ${profile.equipment.wheel ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.wheelImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" alt="Wheel" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">🎯 Wheel</div>
+                    <div class="equipment-display-value">${profile.equipment.wheel}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.wheelbase ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.wheelbaseImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelbaseImage)}" alt="Wheelbase" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">⚙️ Wheelbase</div>
+                    <div class="equipment-display-value">${profile.equipment.wheelbase}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.pedals ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.pedalsImage ? `<img src="${normalizePhotoUrl(profile.equipment.pedalsImage)}" alt="Pedals" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">🦶 Pedals</div>
+                    <div class="equipment-display-value">${profile.equipment.pedals}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.shifter ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.shifterImage ? `<img src="${normalizePhotoUrl(profile.equipment.shifterImage)}" alt="Shifter" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">🔧 Shifter</div>
+                    <div class="equipment-display-value">${profile.equipment.shifter}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.cockpit ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.cockpitImage ? `<img src="${normalizePhotoUrl(profile.equipment.cockpitImage)}" alt="Cockpit" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">🪑 Cockpit</div>
+                    <div class="equipment-display-value">${profile.equipment.cockpit}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.seat ? `
+                  <div class="equipment-display-item-back">
+                    ${profile.equipment.seatImage ? `<img src="${normalizePhotoUrl(profile.equipment.seatImage)}" alt="Seat" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">💺 Seat</div>
+                    <div class="equipment-display-value">${profile.equipment.seat}</div>
+                  </div>
+                ` : ''}
+                ${profile.equipment.other ? `
+                  <div class="equipment-display-item-back full-width">
+                    ${profile.equipment.otherImage ? `<img src="${normalizePhotoUrl(profile.equipment.otherImage)}" alt="Other" onerror="this.style.display='none'">` : ''}
+                    <div class="equipment-display-label">🎧 Other</div>
+                    <div class="equipment-display-value">${profile.equipment.other}</div>
+                  </div>
+                ` : ''}
+              </div>
+            ` : `
+              <div class="equipment-empty-state">
+                <p style="font-size: 48px; margin: 20px 0;">🎮</p>
+                <p style="color: #999; font-size: 16px;">No equipment information available</p>
+                <p style="color: #ccc; font-size: 14px; margin-top: 10px;">Driver can add equipment details in their profile</p>
+              </div>
+            `}
+          </div>
+        </div>
       `;
 
       frag.appendChild(card);
@@ -2671,10 +2741,17 @@ async function loadDriverStats() {
 async function loadProfile() {
   const profileContent = document.getElementById('profileContent');
   const profileWarning = document.getElementById('profileAuthWarning');
-  if (!currentUser) { profileWarning.style.display = 'block'; profileContent.style.display = 'none'; return; }
-  profileWarning.style.display = 'none'; profileContent.style.display = 'block';
+  if (!currentUser) { 
+    profileWarning.style.display = 'block'; 
+    profileContent.style.display = 'none'; 
+    return; 
+  }
+  profileWarning.style.display = 'none'; 
+  profileContent.style.display = 'block';
 
   const profile = DRIVER_PROFILES[encodeKey(currentUser.name)] || {};
+  
+  // Load basic profile
   document.getElementById('profileName').value = profile.name || '';
   document.getElementById('profileSurname').value = profile.surname || '';
   document.getElementById('profileNumber').value = profile.number || '';
@@ -2686,6 +2763,32 @@ async function loadProfile() {
     document.getElementById('photoPreview').style.display = 'block';
   }
   
+  // Load equipment data (NEW)
+  const equipment = profile.equipment || {};
+  document.getElementById('equipWheel').value = equipment.wheel || '';
+  document.getElementById('equipWheelImage').value = equipment.wheelImage || '';
+  document.getElementById('equipWheelbase').value = equipment.wheelbase || '';
+  document.getElementById('equipWheelbaseImage').value = equipment.wheelbaseImage || '';
+  document.getElementById('equipPedals').value = equipment.pedals || '';
+  document.getElementById('equipPedalsImage').value = equipment.pedalsImage || '';
+  document.getElementById('equipShifter').value = equipment.shifter || '';
+  document.getElementById('equipShifterImage').value = equipment.shifterImage || '';
+  document.getElementById('equipCockpit').value = equipment.cockpit || '';
+  document.getElementById('equipCockpitImage').value = equipment.cockpitImage || '';
+  document.getElementById('equipSeat').value = equipment.seat || '';
+  document.getElementById('equipSeatImage').value = equipment.seatImage || '';
+  document.getElementById('equipOther').value = equipment.other || '';
+  document.getElementById('equipOtherImage').value = equipment.otherImage || '';
+  
+  // Show image previews if URLs exist (NEW)
+  if (equipment.wheelImage) showEquipmentPreview('wheel', equipment.wheelImage);
+  if (equipment.wheelbaseImage) showEquipmentPreview('wheelbase', equipment.wheelbaseImage);
+  if (equipment.pedalsImage) showEquipmentPreview('pedals', equipment.pedalsImage);
+  if (equipment.shifterImage) showEquipmentPreview('shifter', equipment.shifterImage);
+  if (equipment.cockpitImage) showEquipmentPreview('cockpit', equipment.cockpitImage);
+  if (equipment.seatImage) showEquipmentPreview('seat', equipment.seatImage);
+  if (equipment.otherImage) showEquipmentPreview('other', equipment.otherImage);
+  
   // Load email preferences
   setTimeout(() => loadEmailPreferences(), 100);
 }
@@ -2693,7 +2796,10 @@ async function loadProfile() {
 document.getElementById('profileForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
   if (!currentUser) { alert('Please sign in to update your profile'); return; }
-  const messageDiv = document.getElementById('profileMessage'); messageDiv.style.display = 'block'; messageDiv.textContent = '⏳ Saving profile...';
+  
+  const messageDiv = document.getElementById('profileMessage'); 
+  messageDiv.style.display = 'block'; 
+  messageDiv.textContent = '⏳ Saving profile...';
 
   try {
     const profileData = {
@@ -2701,7 +2807,24 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       Surname: document.getElementById('profileSurname').value.trim(),
       Number: parseInt(document.getElementById('profileNumber').value),
       Photo_URL: document.getElementById('profilePhotoUrl').value.trim(),
-      Bio: document.getElementById('profileBio').value.trim()
+      Bio: document.getElementById('profileBio').value.trim(),
+      // NEW: Equipment data
+      equipment: {
+        wheel: document.getElementById('equipWheel').value.trim(),
+        wheelImage: document.getElementById('equipWheelImage').value.trim(),
+        wheelbase: document.getElementById('equipWheelbase').value.trim(),
+        wheelbaseImage: document.getElementById('equipWheelbaseImage').value.trim(),
+        pedals: document.getElementById('equipPedals').value.trim(),
+        pedalsImage: document.getElementById('equipPedalsImage').value.trim(),
+        shifter: document.getElementById('equipShifter').value.trim(),
+        shifterImage: document.getElementById('equipShifterImage').value.trim(),
+        cockpit: document.getElementById('equipCockpit').value.trim(),
+        cockpitImage: document.getElementById('equipCockpitImage').value.trim(),
+        seat: document.getElementById('equipSeat').value.trim(),
+        seatImage: document.getElementById('equipSeatImage').value.trim(),
+        other: document.getElementById('equipOther').value.trim(),
+        otherImage: document.getElementById('equipOtherImage').value.trim()
+      }
     };
     
     // Get email preferences
@@ -2712,16 +2835,12 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
     };
 
     const usernameKey = encodeKey(currentUser.name);
-    
-    // Check if profiles are stored as array (use index) or object (use key)
     const arrayIndex = DRIVER_PROFILE_INDICES[usernameKey];
+    
     let profileRef;
     
     if (arrayIndex !== undefined) {
-      // Array-based storage - use the array index
       profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}`);
-      
-      // Get existing profile to preserve Email field
       const existingSnapshot = await window.firebaseGet(profileRef);
       const existingProfile = existingSnapshot.val() || {};
       
@@ -2731,11 +2850,11 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
         Number: profileData.Number,
         Photo_URL: profileData.Photo_URL,
         Bio: profileData.Bio,
-        Email: existingProfile.Email || '', // Preserve existing email
-        emailNotifications: emailPrefs
+        Email: existingProfile.Email || '',
+        emailNotifications: emailPrefs,
+        equipment: profileData.equipment // NEW
       });
     } else {
-      // Object-based storage - use the username key
       profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
       await window.firebaseSet(profileRef, {
         Name: profileData.Name,
@@ -2743,7 +2862,8 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
         Number: profileData.Number,
         Photo_URL: profileData.Photo_URL,
         Bio: profileData.Bio,
-        emailNotifications: emailPrefs
+        emailNotifications: emailPrefs,
+        equipment: profileData.equipment // NEW
       });
     }
 
@@ -2752,10 +2872,14 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       surname: profileData.Surname,
       number: String(profileData.Number),
       photoUrl: profileData.Photo_URL,
-      bio: profileData.Bio
+      bio: profileData.Bio,
+      equipment: profileData.equipment // NEW
     };
 
-    messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Profile saved!';
+    messageDiv.style.background='#d4edda'; 
+    messageDiv.style.color='#155724'; 
+    messageDiv.textContent='✅ Profile saved!';
+    
     setTimeout(() => {
       messageDiv.style.display = 'none';
       const profile = DRIVER_PROFILES[usernameKey];
@@ -2773,7 +2897,9 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
 
   } catch (err) {
     console.error('profile save error', err);
-    messageDiv.style.background='#f8d7da'; messageDiv.style.color='#721c24'; messageDiv.textContent='❌ ' + err.message;
+    messageDiv.style.background='#f8d7da'; 
+    messageDiv.style.color='#721c24'; 
+    messageDiv.textContent='❌ ' + err.message;
   }
 });
 
@@ -2789,6 +2915,16 @@ document.getElementById('photoFile')?.addEventListener('change', function(e) {
   };
   reader.readAsDataURL(file);
 });
+
+function showEquipmentPreview(equipmentType, imageUrl) {
+  const previewImg = document.getElementById(`equipPreview_${equipmentType}_img`);
+  const previewContainer = document.getElementById(`equipPreview_${equipmentType}`);
+  
+  if (previewImg && previewContainer && imageUrl) {
+    previewImg.src = normalizePhotoUrl(imageUrl);
+    previewContainer.style.display = 'block';
+  }
+}
 
 /* -----------------------------
    Lap Time Submission (with form reset!)
@@ -2885,6 +3021,15 @@ function getFormattedDriverName(driverLoginName, includeNumber = true) {
   }
   
   return driverLoginName;
+}
+
+// Add this function to script.js:
+
+function flipDriverCard(button) {
+  const card = button.closest('.driver-card');
+  if (card) {
+    card.classList.toggle('flipped');
+  }
 }
 
 function login() {
