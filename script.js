@@ -822,25 +822,25 @@ function drawTrack() {
   ctx.fillText('S1', (startX + sector1End) / 2, 15);
   ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
   ctx.fillText('S3', (sector2End + finishX) / 2, 15);
-  ctx.strokeStyle = '#2ecc71';
-ctx.lineWidth = 4;
-ctx.beginPath();
-ctx.moveTo(startX, 0);
-ctx.lineTo(startX, canvas.height);
-ctx.stroke();
-
-// START label - rotated 90deg clockwise, bigger, and centered to the LEFT of start line
-ctx.save();
-ctx.translate(startX - 15, canvas.height / 2); // Move 15px left of the line
-ctx.rotate(Math.PI / 2);
-ctx.fillStyle = '#2ecc71';
-ctx.font = 'bold 24px Arial';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('START', 0, 0);
-ctx.restore();
   
-  // DON'T PUT } HERE - THAT'S THE ERROR!
+  // START line
+  ctx.strokeStyle = '#2ecc71';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(startX, 0);
+  ctx.lineTo(startX, canvas.height);
+  ctx.stroke();
+
+  // START label - rotated 90deg clockwise, bigger, and centered to the LEFT of start line
+  ctx.save();
+  ctx.translate(startX - 15, canvas.height / 2);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#2ecc71';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('START', 0, 0);
+  ctx.restore();
   
   // Draw checkered flag at finish line
   drawCheckeredFlag(finishX);
@@ -855,7 +855,7 @@ ctx.restore();
   ctx.textBaseline = 'middle';
   ctx.fillText('FINISH', 0, 0);
   ctx.restore();
-} 
+}
 
 function drawCheckeredFlag(x) {
   const squareSize = 8;
