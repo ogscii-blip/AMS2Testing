@@ -1849,6 +1849,7 @@ function updateAdminTabVisibility() {
   }
 }
 
+/*
 async function loadAdminTools() {
   if (!isAdmin()) {
     document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
@@ -1883,6 +1884,7 @@ let currentAdminFilters = {
   season: '',
   round: ''
 };
+*/
 
 function displayAdminLapTimes(lapsData) {
   const container = document.getElementById('admin-lap-times-table');
@@ -2342,6 +2344,7 @@ async function toggleAllEmails() {
 // STEP 2: UPDATE YOUR displayAdminInterface() FUNCTION
 // Find this function and update it with the email toggle section
 // ============================================================================
+
 
 function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData) {
   const container = document.getElementById('admin-lap-times-table');
@@ -3144,6 +3147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add these global variables at the top with your other admin globals
 let currentAdminTab = 'time-submissions';
 
+/*
 async function loadAdminTools() {
   if (!isAdmin()) {
     document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
@@ -3190,7 +3194,9 @@ async function loadAdminTools() {
     console.error('loadAdminTools error', err);
   }
 }
+*/
 
+/*
 function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
@@ -3234,6 +3240,7 @@ const tabsHtml = `
     filterAdminLaps();
   }
 }
+*/
 
 function switchAdminTab(tabName) {
   currentAdminTab = tabName;
