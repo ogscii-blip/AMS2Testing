@@ -831,7 +831,7 @@ ctx.stroke();
 
 // START label - rotated 90deg clockwise, bigger, and centered (matching FINISH)
 ctx.save();
-ctx.translate(startX, canvas.height / 2);
+ctx.translate(startX -15, canvas.height / 2);
 ctx.rotate(Math.PI / 2);
 ctx.fillStyle = '#2ecc71';
 ctx.font = 'bold 24px Arial';
