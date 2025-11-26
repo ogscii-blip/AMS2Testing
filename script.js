@@ -101,6 +101,7 @@ let currentAdminFilters = {
 };
 
 let adminSortAscending = true;
+let currentAdminTab = 'time-submissions';
 
 /* -----------------------------
    Config & initial listeners
@@ -2033,7 +2034,7 @@ function clearAdminFilters() {
 
 
 // Add sorting functionality
-let adminSortAscending = true;
+//let adminSortAscending = true;
 
 function sortAdminByTotalTime() {
   const tbody = document.getElementById('adminLapsTableBody');
@@ -3154,7 +3155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Add these global variables at the top with your other admin globals
-let currentAdminTab = 'time-submissions';
+//let currentAdminTab = 'time-submissions';
 
 /*
 async function loadAdminTools() {
