@@ -3186,7 +3186,7 @@ async function loadAdminTools() {
   }
 }
 
-function displayAdminInterface(lapsData, tracksData, carsData) {
+function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData)) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
 
@@ -3207,13 +3207,15 @@ function displayAdminInterface(lapsData, tracksData, carsData) {
 
   let contentHtml = '';
 
-  if (currentAdminTab === 'time-submissions') {
-    contentHtml = generateTimeSubmissionsContent(lapsData);
-  } else if (currentAdminTab === 'tracks-config') {
-    contentHtml = generateTracksConfigContent(tracksData);
-  } else if (currentAdminTab === 'cars-config') {
-    contentHtml = generateCarsConfigContent(carsData);
-  }
+if (currentAdminTab === 'time-submissions') {
+  contentHtml = generateTimeSubmissionsContent(lapsData);
+} else if (currentAdminTab === 'tracks-config') {
+  contentHtml = generateTracksConfigContent(tracksData);
+} else if (currentAdminTab === 'cars-config') {
+  contentHtml = generateCarsConfigContent(carsData);
+} else if (currentAdminTab === 'email-logs') {
+  contentHtml = generateEmailLogsContent(emailLogsData);
+}
 
   container.innerHTML = tabsHtml + contentHtml;
 
