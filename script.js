@@ -93,6 +93,15 @@ let DRIVER_PROFILE_INDICES = {}; // { usernameKey: arrayIndex } - for array-base
 let APPS_SCRIPT_URL = null;
 let currentUser = null;      // { name: username, email? }
 
+// Admin filter state
+let currentAdminFilters = {
+  driver: '',
+  season: '',
+  round: ''
+};
+
+let adminSortAscending = true;
+
 /* -----------------------------
    Config & initial listeners
    ----------------------------- */
