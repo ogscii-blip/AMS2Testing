@@ -2177,6 +2177,371 @@ function closeAdminModal() {
   }
 }
 
+// Load individual email toggle states
+async function loadEmailToggleStates() {
+  if (!isAdmin()) return;
+  
+  try {
+    const configRef = window.firebaseRef(window.firebaseDB, 'Config');
+    const snapshot = await window.firebaseGet(configRef);
+    const config = snapshot.val();
+    
+    if (!config) return;
+    
+    // Set toggle states (default to true if not set)
+    const newRoundEnabled = config.email_newRound_enabled !== false;
+    const fastestLapEnabled = config.email_fastestLap_enabled !== false;
+    const weeklyResultsEnabled = config.email_weeklyResults_enabled !== false;
+    
+    const newRoundToggle = document.getElementById('emailToggle_newRound');
+    const fastestLapToggle = document.getElementById('emailToggle_fastestLap');
+    const weeklyResultsToggle = document.getElementById('emailToggle_weeklyResults');
+    const masterToggle = document.getElementById('emailToggleMaster');
+    
+    if (newRoundToggle) newRoundToggle.checked = newRoundEnabled;
+    if (fastestLapToggle) fastestLapToggle.checked = fastestLapEnabled;
+    if (weeklyResultsToggle) weeklyResultsToggle.checked = weeklyResultsEnabled;
+    
+    // Update master toggle based on individual states
+    const allEnabled = newRoundEnabled && fastestLapEnabled && weeklyResultsEnabled;
+    if (masterToggle) masterToggle.checked = allEnabled;
+    
+    updateEmailTypeStatus('newRound', newRoundEnabled);
+    updateEmailTypeStatus('fastestLap', fastestLapEnabled);
+    updateEmailTypeStatus('weeklyResults', weeklyResultsEnabled);
+    
+  } catch (error) {
+    console.error('Error loading email toggle states:', error);
+  }
+}
+
+// Toggle specific email type
+async function toggleEmailType(emailType) {
+  if (!isAdmin()) {
+    alert('❌ Only admins can change this setting');
+    return;
+  }
+  
+  const toggleSwitch = document.getElementById(`emailToggle_${emailType}`);
+  const enabled = toggleSwitch.checked;
+  
+  try {
+    const configRef = window.firebaseRef(window.firebaseDB, `Config/email_${emailType}_enabled`);
+    await window.firebaseSet(configRef, enabled);
+    
+    updateEmailTypeStatus(emailType, enabled);
+    
+    // Show confirmation
+    showEmailToggleMessage(emailType, enabled);
+    
+    console.log(`${emailType} notifications ${enabled ? 'ENABLED' : 'PAUSED'}`);
+    
+  } catch (error) {
+    console.error(`Error toggling ${emailType} notifications:`, error);
+    alert('❌ Error updating setting: ' + error.message);
+    
+    // Revert toggle on error
+    toggleSwitch.checked = !enabled;
+  }
+}
+
+// Update visual status for specific email type
+function updateEmailTypeStatus(emailType, enabled) {
+  const statusBadge = document.getElementById(`emailStatus_${emailType}`);
+  if (statusBadge) {
+    statusBadge.textContent = enabled ? 'ACTIVE' : 'PAUSED';
+    statusBadge.className = enabled ? 'admin-email-status-badge active' : 'admin-email-status-badge paused';
+  }
+}
+
+// Show toggle confirmation message
+function showEmailToggleMessage(emailType, enabled) {
+  const statusDiv = document.getElementById('emailToggleGlobalStatus');
+  if (!statusDiv) return;
+  
+  const typeNames = {
+    newRound: 'New Round',
+    fastestLap: 'Fastest Lap',
+    weeklyResults: 'Weekly Results'
+  };
+  
+  statusDiv.style.display = 'block';
+  statusDiv.style.background = enabled ? '#d4edda' : '#fff3cd';
+  statusDiv.style.color = enabled ? '#155724' : '#856404';
+  statusDiv.textContent = enabled 
+    ? `✅ ${typeNames[emailType]} notifications are now ENABLED` 
+    : `⏸️ ${typeNames[emailType]} notifications are now PAUSED`;
+  
+  setTimeout(() => {
+    statusDiv.style.display = 'none';
+  }, 3000);
+}
+
+// Master toggle - enables/disables all email types at once
+async function toggleAllEmails() {
+  if (!isAdmin()) {
+    alert('❌ Only admins can change this setting');
+    return;
+  }
+  
+  const masterToggle = document.getElementById('emailToggleMaster');
+  const enabled = masterToggle.checked;
+  
+  try {
+    const configRef = window.firebaseRef(window.firebaseDB, 'Config');
+    
+    // Get current config
+    const snapshot = await window.firebaseGet(configRef);
+    const currentConfig = snapshot.val() || {};
+    
+    // Update email toggles while preserving other config
+    await window.firebaseSet(configRef, {
+      ...currentConfig,
+      email_newRound_enabled: enabled,
+      email_fastestLap_enabled: enabled,
+      email_weeklyResults_enabled: enabled
+    });
+    
+    // Update all individual toggles
+    const newRoundToggle = document.getElementById('emailToggle_newRound');
+    const fastestLapToggle = document.getElementById('emailToggle_fastestLap');
+    const weeklyResultsToggle = document.getElementById('emailToggle_weeklyResults');
+    
+    if (newRoundToggle) newRoundToggle.checked = enabled;
+    if (fastestLapToggle) fastestLapToggle.checked = enabled;
+    if (weeklyResultsToggle) weeklyResultsToggle.checked = enabled;
+    
+    updateEmailTypeStatus('newRound', enabled);
+    updateEmailTypeStatus('fastestLap', enabled);
+    updateEmailTypeStatus('weeklyResults', enabled);
+    
+    const statusDiv = document.getElementById('emailToggleGlobalStatus');
+    if (statusDiv) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = enabled ? '#d4edda' : '#fff3cd';
+      statusDiv.style.color = enabled ? '#155724' : '#856404';
+      statusDiv.textContent = enabled 
+        ? '✅ ALL email notifications are now ENABLED' 
+        : '⏸️ ALL email notifications are now PAUSED';
+      
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 3000);
+    }
+    
+    console.log(`All email notifications ${enabled ? 'ENABLED' : 'PAUSED'}`);
+    
+  } catch (error) {
+    console.error('Error toggling all email notifications:', error);
+    alert('❌ Error updating settings: ' + error.message);
+    masterToggle.checked = !enabled;
+  }
+}
+
+// ============================================================================
+// STEP 2: UPDATE YOUR displayAdminInterface() FUNCTION
+// Find this function and update it with the email toggle section
+// ============================================================================
+
+function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData) {
+  const container = document.getElementById('admin-lap-times-table');
+  if (!container) return;
+
+  // Admin tabs navigation
+  const tabsHtml = `
+    <div class="admin-tabs">
+      <button class="admin-tab-button ${currentAdminTab === 'time-submissions' ? 'active' : ''}" onclick="switchAdminTab('time-submissions')">
+        ⏱️ Time Submissions
+      </button>
+      <button class="admin-tab-button ${currentAdminTab === 'tracks-config' ? 'active' : ''}" onclick="switchAdminTab('tracks-config')">
+        🏁 Tracks Config
+      </button>
+      <button class="admin-tab-button ${currentAdminTab === 'cars-config' ? 'active' : ''}" onclick="switchAdminTab('cars-config')">
+        🏎️ Cars Config
+      </button>
+      <button class="admin-tab-button ${currentAdminTab === 'email-logs' ? 'active' : ''}" onclick="switchAdminTab('email-logs')">
+        📧 Email Logs
+      </button>
+    </div>
+  `;
+
+  // EMAIL TOGGLE SECTION (appears above all tabs)
+  const emailToggleHtml = `
+    <div class="admin-email-toggle-section">
+      <div class="admin-email-toggle-card">
+        <div class="admin-email-toggle-header">
+          <h3>📧 Email Notifications Control</h3>
+        </div>
+        <div class="admin-email-toggle-body">
+          <p class="admin-email-description">Control email notifications by type. Individual user preferences will be preserved when notifications are re-enabled.</p>
+          
+          <!-- Master Toggle -->
+          <div class="admin-email-master-toggle">
+            <div class="admin-email-toggle-row master">
+              <div class="admin-email-toggle-info">
+                <span class="admin-email-toggle-icon">🎛️</span>
+                <div class="admin-email-toggle-text">
+                  <strong>Master Control</strong>
+                  <span class="admin-email-toggle-desc">Enable/disable all email types at once</span>
+                </div>
+              </div>
+              <label class="admin-toggle-switch">
+                <input type="checkbox" id="emailToggleMaster" onchange="toggleAllEmails()" checked>
+                <span class="admin-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="admin-email-divider"></div>
+
+          <!-- Individual Email Type Toggles -->
+          <div class="admin-email-types-grid">
+            
+            <!-- New Round Notifications -->
+            <div class="admin-email-type-card">
+              <div class="admin-email-type-header">
+                <span class="admin-email-type-icon">🏁</span>
+                <div class="admin-email-type-title">
+                  <h4>New Round</h4>
+                  <span class="admin-email-status-badge active" id="emailStatus_newRound">ACTIVE</span>
+                </div>
+              </div>
+              <p class="admin-email-type-desc">Sent when a new round is configured and ready</p>
+              <div class="admin-email-toggle-row">
+                <span class="admin-email-toggle-label">Enable Notifications</span>
+                <label class="admin-toggle-switch">
+                  <input type="checkbox" id="emailToggle_newRound" onchange="toggleEmailType('newRound')" checked>
+                  <span class="admin-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Fastest Lap Notifications -->
+            <div class="admin-email-type-card">
+              <div class="admin-email-type-header">
+                <span class="admin-email-type-icon">⚡</span>
+                <div class="admin-email-type-title">
+                  <h4>Fastest Lap</h4>
+                  <span class="admin-email-status-badge active" id="emailStatus_fastestLap">ACTIVE</span>
+                </div>
+              </div>
+              <p class="admin-email-type-desc">Sent when a new fastest lap is recorded</p>
+              <div class="admin-email-toggle-row">
+                <span class="admin-email-toggle-label">Enable Notifications</span>
+                <label class="admin-toggle-switch">
+                  <input type="checkbox" id="emailToggle_fastestLap" onchange="toggleEmailType('fastestLap')" checked>
+                  <span class="admin-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Weekly Results Notifications -->
+            <div class="admin-email-type-card">
+              <div class="admin-email-type-header">
+                <span class="admin-email-type-icon">🏆</span>
+                <div class="admin-email-type-title">
+                  <h4>Weekly Results</h4>
+                  <span class="admin-email-status-badge active" id="emailStatus_weeklyResults">ACTIVE</span>
+                </div>
+              </div>
+              <p class="admin-email-type-desc">Sent every Monday with round results</p>
+              <div class="admin-email-toggle-row">
+                <span class="admin-email-toggle-label">Enable Notifications</span>
+                <label class="admin-toggle-switch">
+                  <input type="checkbox" id="emailToggle_weeklyResults" onchange="toggleEmailType('weeklyResults')" checked>
+                  <span class="admin-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="emailToggleGlobalStatus" class="admin-status-message" style="display: none;"></div>
+          
+        </div>
+      </div>
+    </div>
+  `;
+
+  let contentHtml = '';
+
+  if (currentAdminTab === 'time-submissions') {
+    contentHtml = generateTimeSubmissionsContent(lapsData);
+  } else if (currentAdminTab === 'tracks-config') {
+    contentHtml = generateTracksConfigContent(tracksData);
+  } else if (currentAdminTab === 'cars-config') {
+    contentHtml = generateCarsConfigContent(carsData);
+  } else if (currentAdminTab === 'email-logs') {
+    contentHtml = generateEmailLogsContent(emailLogsData);
+  }
+
+  container.innerHTML = emailToggleHtml + tabsHtml + contentHtml;
+
+  window.adminLapsData = lapsData;
+  
+  // Load email toggle states
+  setTimeout(() => loadEmailToggleStates(), 100);
+  
+  // Reapply filters if on time submissions tab
+  if (currentAdminTab === 'time-submissions' && (currentAdminFilters.driver || currentAdminFilters.season || currentAdminFilters.round)) {
+    filterAdminLaps();
+  }
+}
+
+// ============================================================================
+// STEP 3: MAKE SURE YOUR loadAdminTools() LOADS EMAIL LOGS
+// Update this section if it's not already loading email logs
+// ============================================================================
+
+async function loadAdminTools() {
+  if (!isAdmin()) {
+    document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
+    return;
+  }
+
+  try {
+    const [lapsSnapshot, tracksSnapshot, carsSnapshot, emailLogsSnapshot] = await Promise.all([
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1')),
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars')),
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Email_Logs'))
+    ]);
+    
+    const lapsData = toArray(lapsSnapshot.val());
+    const tracksData = toArray(tracksSnapshot.val());
+    const carsData = toArray(carsSnapshot.val());
+    
+    const lapsWithKeys = [];
+    const lapsObject = lapsSnapshot.val();
+    if (lapsObject && typeof lapsObject === 'object') {
+      Object.keys(lapsObject).forEach(key => {
+        if (lapsObject[key]) {
+          lapsWithKeys.push({ ...lapsObject[key], _firebaseKey: key });
+        }
+      });
+    }
+
+    // Process email logs
+    const emailLogsData = [];
+    const emailLogsObject = emailLogsSnapshot.val();
+    if (emailLogsObject && typeof emailLogsObject === 'object') {
+      Object.entries(emailLogsObject).forEach(([key, value]) => {
+        emailLogsData.push({ id: key, ...value });
+      });
+    }
+
+    // Store tracks and cars data globally
+    window.adminTracksData = tracksData;
+    window.adminCarsData = carsData;
+
+    displayAdminInterface(lapsWithKeys, tracksData, carsData, emailLogsData);
+
+  } catch (err) {
+    console.error('loadAdminTools error', err);
+  }
+}
+
+
 function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   const container = document.getElementById('round-cards-grid');
   container.innerHTML = '';
