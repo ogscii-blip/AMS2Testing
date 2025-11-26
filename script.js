@@ -823,15 +823,22 @@ function drawTrack() {
   ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
   ctx.fillText('S3', (sector2End + finishX) / 2, 15);
   ctx.strokeStyle = '#2ecc71';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(startX, 0);
-  ctx.lineTo(startX, canvas.height);
-  ctx.stroke();
-  ctx.fillStyle = '#2ecc71';
-  ctx.font = 'bold 14px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('START', startX, canvas.height - 10);
+ctx.lineWidth = 4;
+ctx.beginPath();
+ctx.moveTo(startX, 0);
+ctx.lineTo(startX, canvas.height);
+ctx.stroke();
+
+// START label - rotated 90deg clockwise, bigger, and centered (matching FINISH)
+ctx.save();
+ctx.translate(startX, canvas.height / 2);
+ctx.rotate(Math.PI / 2);
+ctx.fillStyle = '#2ecc71';
+ctx.font = 'bold 24px Arial';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText('START', 0, 0);
+ctx.restore();
   
   // DON'T PUT } HERE - THAT'S THE ERROR!
   
