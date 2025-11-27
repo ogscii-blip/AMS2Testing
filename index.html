@@ -352,12 +352,22 @@
                             </select>
                         </div>
 
+															<div id="trackPreviewContainer" class="setup-preview-container" style="display: none;">
+															    <img id="trackPreviewImg" class="setup-preview-img" alt="Track Preview">
+															    <p id="trackPreviewLabel" class="setup-preview-label"></p>
+															</div>
+
                         <div>
                             <label for="carName" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Car:</label>
                             <select id="carName" name="carName" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
                                 <option value="">Loading cars...</option>
                             </select>
                         </div>
+
+															<div id="carPreviewContainer" class="setup-preview-container" style="display: none;">
+															    <img id="carPreviewImg" class="setup-preview-img" alt="Car Preview">
+															    <p id="carPreviewLabel" class="setup-preview-label"></p>
+															</div>
                         
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">✅ Submit Round Setup</button>
                         <div id="setupMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
