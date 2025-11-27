@@ -1,4 +1,3 @@
-
 /* ========================================
    AMS2 Racing League - Styles
    ======================================== */
@@ -920,7 +919,7 @@ header p {
     }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 480px) and (orientation: portrait) {
     .race-canvas {
         height: 200px;
     }
@@ -2325,7 +2324,6 @@ header p {
   .admin-email-type-card {
     padding: 15px;
   }
-}
 
 .admin-stat-warning {
   border-left: 4px solid #ffc107;
@@ -3649,4 +3647,77 @@ header p {
 #admin-lap-times-table::-webkit-scrollbar-thumb:hover {
     background: #5568d3;
 }
-
+/* ============================================================================
+   LANDSCAPE MOBILE OPTIMIZATION - Admin Tables Only!
+   Applied to fix card layout issue in landscape orientation
+   ============================================================================ */
+@media screen and (max-width: 896px) and (orientation: landscape) {
+    /* Admin tables in landscape - keep as proper tables */
+    .admin-table thead {
+        display: table-header-group !important;
+    }
+    
+    .admin-table tbody tr {
+        display: table-row !important;
+        margin-bottom: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    .admin-table tbody td {
+        display: table-cell !important;
+        padding: 8px 5px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+        font-size: 10px !important;
+        vertical-align: middle !important;
+    }
+    
+    .admin-table thead th {
+        padding: 10px 5px !important;
+        font-size: 9px !important;
+        white-space: nowrap;
+    }
+    
+    .admin-table tbody td::before {
+        display: none !important;
+    }
+    
+    .admin-table tbody td:last-child {
+        display: table-cell !important;
+        white-space: nowrap;
+    }
+    
+    /* Compact buttons for landscape */
+    .admin-btn-edit,
+    .admin-btn-delete {
+        padding: 4px 8px !important;
+        font-size: 9px !important;
+        margin: 0 2px !important;
+        display: inline-block !important;
+    }
+    
+    /* Optimize admin tab content in landscape */
+    #admin .tab-content {
+        padding: 10px !important;
+    }
+    
+    /* Make admin filters more compact */
+    .admin-filters {
+        padding: 10px !important;
+        gap: 8px !important;
+    }
+    
+    .admin-filter-select,
+    .admin-search-input {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+    
+    .admin-filter-btn {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+    }
+}
