@@ -1005,20 +1005,6 @@ header p {
     box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
 }
 
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.admin-table thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
 .admin-table th {
     padding: 15px;
     text-align: left;
@@ -1270,10 +1256,6 @@ header p {
 }
 
 @media screen and (max-width: 480px) {
-    .admin-table thead {
-        display: none;
-    }
-
     .admin-table,
     .admin-table tbody,
     .admin-table tr {
@@ -2268,6 +2250,59 @@ header p {
 /* Mobile Responsive */
 @media (max-width: 768px) and (orientation: portrait),
           (max-width: 667px) {
+
+   /* Hide table header on mobile */
+   .admin-table thead {
+        display: none;
+   }
+
+       /* Convert table to card layout */
+    .admin-table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 15px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .admin-table tbody td {
+        display: block;
+        text-align: left;
+        padding: 8px 0;
+        border: none;
+        font-size: 14px;
+    }
+    
+    .admin-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #667eea;
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .admin-table tbody td:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .admin-btn-edit,
+    .admin-btn-delete,
+    .admin-btn-save,
+    .admin-btn-cancel {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+    }
+}
+             
   .admin-email-types-grid {
     grid-template-columns: 1fr;
   }
@@ -2800,6 +2835,7 @@ header p {
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 13px; /* ✅ Slightly smaller for better fit */
 }
 
 .admin-table thead {
@@ -2808,16 +2844,18 @@ header p {
 }
 
 .admin-table thead th {
-    padding: 15px;
+    padding: 12px 10px; /* ✅ Reduced padding */
     text-align: left;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 12px; /* ✅ Smaller headers */
+    white-space: nowrap; /* ✅ Prevent wrapping */
 }
 
 .admin-table tbody td {
-    padding: 12px 15px;
+    padding: 10px 10px; /* ✅ Reduced padding */
     border-bottom: 1px solid #f0f0f0;
-    font-size: 13px;
+    font-size: 12px; /* ✅ Smaller text */
+    vertical-align: middle;
 }
 
 .admin-table tbody tr:hover {
@@ -3462,17 +3500,128 @@ header p {
     }
 }
 
-@media (min-width: 668px) and (orientation: landscape) {
-    .admin-table thead {
-        display: table-header-group !important;
-    }
-    .admin-table tbody tr {
-        display: table-row !important;
-    }
+@media (min-width: 668px) and (orientation: landscape),
+       (min-width: 1024px) {
+    
+    /* Compact column widths for better fit */
+    .admin-table thead th,
     .admin-table tbody td {
-        display: table-cell !important;
+        padding: 10px 8px; /* ✅ Even more compact */
     }
-    .admin-table tbody td::before {
-        display: none !important;
+    
+    /* Timestamp column - narrower */
+    .admin-table thead th:nth-child(1),
+    .admin-table tbody td:nth-child(1) {
+        width: 14%; /* Timestamp */
+        font-size: 11px;
+    }
+    
+    /* Driver column */
+    .admin-table thead th:nth-child(2),
+    .admin-table tbody td:nth-child(2) {
+        width: 12%; /* Driver */
+    }
+    
+    /* Season column - narrow */
+    .admin-table thead th:nth-child(3),
+    .admin-table tbody td:nth-child(3) {
+        width: 8%; /* Season */
+        text-align: center;
+    }
+    
+    /* Round column - narrow */
+    .admin-table thead th:nth-child(4),
+    .admin-table tbody td:nth-child(4) {
+        width: 8%; /* Round */
+        text-align: center;
+    }
+    
+    /* Sector columns - compact */
+    .admin-table thead th:nth-child(5),
+    .admin-table tbody td:nth-child(5),
+    .admin-table thead th:nth-child(6),
+    .admin-table tbody td:nth-child(6),
+    .admin-table thead th:nth-child(7),
+    .admin-table tbody td:nth-child(7) {
+        width: 10%; /* Sectors */
+        text-align: center;
+        font-family: 'Courier New', monospace; /* ✅ Monospace for times */
+    }
+    
+    /* Total Time column */
+    .admin-table thead th:nth-child(8),
+    .admin-table tbody td:nth-child(8) {
+        width: 11%; /* Total Time */
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+    }
+    
+    /* Actions column - flexible width */
+    .admin-table thead th:nth-child(9),
+    .admin-table tbody td:nth-child(9),
+    .admin-table thead th:last-child,
+    .admin-table tbody td:last-child {
+        width: 19%; /* Actions */
+        text-align: center;
+        white-space: nowrap;
+    }
+    
+    /* Compact buttons in actions column */
+    .admin-table .admin-btn-edit,
+    .admin-table .admin-btn-delete {
+        padding: 6px 12px !important; /* ✅ Smaller buttons */
+        font-size: 11px !important; /* ✅ Smaller text */
+        margin: 0 3px !important;
     }
 }
+
+@media (min-width: 668px) and (orientation: landscape) {
+    
+    /* Timestamp - show only date/time, truncate if needed */
+    .admin-table tbody td:nth-child(1) {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Driver name - truncate long names */
+    .admin-table tbody td:nth-child(2) {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 668px) and (max-width: 900px) and (orientation: landscape) {
+    
+    /* Use emoji-only buttons on very narrow landscape */
+    .admin-btn-edit {
+        padding: 6px 10px !important;
+    }
+    
+    .admin-btn-delete {
+        padding: 6px 10px !important;
+    }
+    
+    /* Optional: Hide text, show only emoji */
+   
+    .admin-btn-edit::after {
+        content: '✏️';
+    }
+    .admin-btn-delete::after {
+        content: '🗑️';
+    }
+    .admin-btn-edit,
+    .admin-btn-delete {
+        font-size: 0;
+    }
+    .admin-btn-edit::after,
+    .admin-btn-delete::after {
+        font-size: 14px;
+    }
+    
+}
+
