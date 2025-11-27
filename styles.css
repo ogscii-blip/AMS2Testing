@@ -2257,28 +2257,7 @@ header p {
    }
 
        /* Convert table to card layout */
-    .admin-table tbody tr {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px 12px;
-        margin-bottom: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 12px;
-        background: white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    .admin-table tbody td {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-        padding: 0;
-        border: none;
-        font-size: 13px;
-        min-height: 36px;
-    }
-    
+       
     .admin-table tbody td::before {
         content: attr(data-label);
         font-weight: 700;
@@ -2289,29 +2268,13 @@ header p {
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
-    /* Make total time and actions span full width */
-    .admin-table tbody td:nth-last-child(2),
-    .admin-table tbody td:last-child {
-        grid-column: 1 / -1;
-    }
-    
-    .admin-table tbody td:last-child {
-        display: flex;
-        flex-direction: row;
-        gap: 8px;
-        margin-top: 6px;
-    }
-    
+            
     .admin-btn-edit,
-    .admin-btn-delete,
-    .admin-btn-save,
-    .admin-btn-cancel {
-        flex: 1;
-        padding: 10px 8px;
-        font-size: 13px;
+    .admin-btn-delete {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
     }
-}
              
   .admin-email-types-grid {
     grid-template-columns: 1fr;
@@ -2898,17 +2861,7 @@ header p {
         border: none;
     }
     
-    /* Add labels on mobile using data-label attribute */
-    .admin-table tbody td::before {
-        content: attr(data-label);
-        font-weight: 700;
-        color: #667eea;
-        display: block;
-        margin-bottom: 5px;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+
     
     /* Stack buttons vertically on mobile */
     .admin-table tbody td:last-child {
