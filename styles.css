@@ -3462,3 +3462,17 @@ header p {
     }
 }
 
+@media (min-width: 668px) and (orientation: landscape) {
+    .admin-table thead {
+        display: table-header-group !important;
+    }
+    .admin-table tbody tr {
+        display: table-row !important;
+    }
+    .admin-table tbody td {
+        display: table-cell !important;
+    }
+    .admin-table tbody td::before {
+        display: none !important;
+    }
+}
