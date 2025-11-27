@@ -2257,21 +2257,25 @@ header p {
 
        /* Convert table to card layout */
     .admin-table tbody tr {
-        display: block;
-        margin-bottom: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+        margin-bottom: 12px;
         border: 2px solid #e0e0e0;
         border-radius: 10px;
-        padding: 15px;
+        padding: 12px;
         background: white;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
     .admin-table tbody td {
-        display: block;
+        display: flex;
+        flex-direction: column;
         text-align: left;
-        padding: 8px 0;
+        padding: 0;
         border: none;
-        font-size: 14px;
+        font-size: 13px;
+        min-height: 36px;
     }
     
     .admin-table tbody td::before {
@@ -2279,26 +2283,32 @@ header p {
         font-weight: 700;
         color: #667eea;
         display: block;
-        margin-bottom: 5px;
-        font-size: 12px;
+        margin-bottom: 3px;
+        font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     
+    /* Make total time and actions span full width */
+    .admin-table tbody td:nth-last-child(2),
+    .admin-table tbody td:last-child {
+        grid-column: 1 / -1;
+    }
+    
     .admin-table tbody td:last-child {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 8px;
-        margin-top: 10px;
+        margin-top: 6px;
     }
     
     .admin-btn-edit,
     .admin-btn-delete,
     .admin-btn-save,
     .admin-btn-cancel {
-        width: 100%;
-        padding: 12px;
-        font-size: 14px;
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 13px;
     }
 }
              
