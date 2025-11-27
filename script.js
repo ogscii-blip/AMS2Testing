@@ -1783,6 +1783,8 @@ document.getElementById('roundSetupForm')?.addEventListener('submit', async func
   }
 });
 
+
+
 async function loadRoundSetup() {
   try {
     const [setupSnap, roundSnap] = await Promise.all([
@@ -4191,3 +4193,64 @@ async function saveEmailPreferences() {
     message.textContent = '❌ Error saving preferences: ' + error.message;
   }
 }
+// Track preview function
+function updateTrackPreview(trackCombo) {
+  const previewContainer = document.getElementById('trackPreviewContainer');
+  const previewImg = document.getElementById('trackPreviewImg');
+  const previewLabel = document.getElementById('trackPreviewLabel');
+  
+  if (!previewContainer || !previewImg || !previewLabel) return;
+  
+  if (trackCombo && CACHE.tracksMap && CACHE.tracksMap[trackCombo]) {
+    const imageUrl = CACHE.tracksMap[trackCombo];
+    previewImg.src = imageUrl;
+    previewLabel.textContent = trackCombo;
+    previewContainer.style.display = 'block';
+    
+    previewImg.onerror = function() {
+      previewImg.src = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
+    };
+  } else {
+    previewContainer.style.display = 'none';
+  }
+}
+
+// Car preview function
+function updateCarPreview(carName) {
+  const previewContainer = document.getElementById('carPreviewContainer');
+  const previewImg = document.getElementById('carPreviewImg');
+  const previewLabel = document.getElementById('carPreviewLabel');
+  
+  if (!previewContainer || !previewImg || !previewLabel) return;
+  
+  if (carName && CACHE.carsMap && CACHE.carsMap[carName]) {
+    const imageUrl = CACHE.carsMap[carName];
+    previewImg.src = imageUrl;
+    previewLabel.textContent = carName;
+    previewContainer.style.display = 'block';
+    
+    previewImg.onerror = function() {
+      previewImg.src = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
+    };
+  } else {
+    previewContainer.style.display = 'none';
+  }
+}
+
+// Setup event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  const trackDropdown = document.getElementById('trackLayout');
+  const carDropdown = document.getElementById('carName');
+  
+  if (trackDropdown) {
+    trackDropdown.addEventListener('change', function() {
+      updateTrackPreview(this.value);
+    });
+  }
+  
+  if (carDropdown) {
+    carDropdown.addEventListener('change', function() {
+      updateCarPreview(this.value);
+    });
+  }
+});
