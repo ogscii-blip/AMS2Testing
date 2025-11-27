@@ -2266,7 +2266,8 @@ header p {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait),
+          (max-width: 667px) {
   .admin-email-types-grid {
     grid-template-columns: 1fr;
   }
