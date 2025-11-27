@@ -3344,3 +3344,120 @@ header p {
     }
 }
 
+@media (min-width: 768px) and (orientation: landscape) {
+    
+    /* Restore table header */
+    .admin-table thead {
+        display: table-header-group !important;
+    }
+    
+    /* Restore table rows */
+    .admin-table tbody tr {
+        display: table-row !important;
+        margin-bottom: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    /* Restore table cells */
+    .admin-table tbody td {
+        display: table-cell !important;
+        padding: 12px 15px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+        text-align: left !important;
+    }
+    
+    /* Hide mobile labels */
+    .admin-table tbody td::before {
+        display: none !important;
+    }
+    
+    /* Restore inline buttons in last column */
+    .admin-table tbody td:last-child {
+        display: table-cell !important;
+        flex-direction: row !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Button sizing back to desktop */
+    .admin-btn-edit,
+    .admin-btn-delete,
+    .admin-btn-save,
+    .admin-btn-cancel {
+        width: auto !important;
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        display: inline-block !important;
+        margin-right: 5px;
+    }
+    
+    /* Restore tab layout */
+    .admin-tabs {
+        overflow-x: visible !important;
+        flex-wrap: wrap !important;
+    }
+    
+    /* Restore filter row layout */
+    .admin-filters {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .admin-filter-select,
+    .admin-search-input {
+        width: auto !important;
+        flex: 1 !important;
+        min-width: 150px !important;
+    }
+    
+    .admin-filter-btn {
+        width: auto !important;
+    }
+}
+
+/* Also apply to large screens regardless of orientation */
+@media (min-width: 1024px) {
+    
+    /* Same styles as above */
+    .admin-table thead {
+        display: table-header-group !important;
+    }
+    
+    .admin-table tbody tr {
+        display: table-row !important;
+        margin-bottom: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    .admin-table tbody td {
+        display: table-cell !important;
+        padding: 12px 15px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+    }
+    
+    .admin-table tbody td::before {
+        display: none !important;
+    }
+    
+    .admin-table tbody td:last-child {
+        display: table-cell !important;
+    }
+    
+    .admin-btn-edit,
+    .admin-btn-delete,
+    .admin-btn-save,
+    .admin-btn-cancel {
+        width: auto !important;
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        display: inline-block !important;
+    }
+}
+
