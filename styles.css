@@ -3624,4 +3624,29 @@ header p {
     }
     
 }
+#admin-lap-times-table {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+}
+
+/* Add subtle scrollbar styling */
+#admin-lap-times-table::-webkit-scrollbar {
+    height: 8px;
+}
+
+#admin-lap-times-table::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#admin-lap-times-table::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 10px;
+}
+
+#admin-lap-times-table::-webkit-scrollbar-thumb:hover {
+    background: #5568d3;
+}
 
