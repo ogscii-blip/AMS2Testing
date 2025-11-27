@@ -2654,12 +2654,14 @@ header p {
 .setup-preview-img {
     width: 100%;
     max-width: 450px;
-    height: 220px;
-    object-fit: cover;
+    height: auto;              /* ✅ Let height adjust */
+    max-height: 250px;         /* ✅ Set maximum height */
+    object-fit: contain;       /* ✅ Show full image */
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     margin-bottom: 12px;
     transition: transform 0.3s ease;
+    background: #f8f9fa;       /* ✅ Light background */
 }
 
 .setup-preview-img:hover {
