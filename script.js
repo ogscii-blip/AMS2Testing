@@ -2350,7 +2350,7 @@ function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData) {
   const tabsHtml = `
     <div class="admin-tabs">
       <button class="admin-tab-button ${currentAdminTab === 'time-submissions' ? 'active' : ''}" onclick="switchAdminTab('time-submissions')">
-        ⏱️ Time Submissions
+        ⏱️ Time Entries
       </button>
       <button class="admin-tab-button ${currentAdminTab === 'tracks-config' ? 'active' : ''}" onclick="switchAdminTab('tracks-config')">
         🏁 Tracks Config
