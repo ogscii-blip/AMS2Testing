@@ -4421,16 +4421,6 @@ function populateRoundTable() {
 }
 
        // Sort table by column
-function sortRoundTable(columnIndex) {
-    const table = document.getElementById('roundTableBody');
-    const rows = Array.from(table.querySelectorAll('tr'));
-    
-    // Toggle sort direction
-    if (!window.roundTableSortDir) window.roundTableSortDir = {};
-    const currentDir = window.roundTableSortDir[columnIndex] || 'asc';
-    const newDir = currentDir === 'asc' ? 'desc' : 'asc';
-    window.roundTableSortDir[columnIndex] = newDir;
-
    function sortRoundTable(columnIndex) {
     const table = document.getElementById('roundTableBody');
     const rows = Array.from(table.querySelectorAll('tr'));
