@@ -2450,6 +2450,12 @@ async function loadAdminTools() {
 
 
 function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
+      // ✅ ADD THIS AT THE START
+    currentRoundSetupData = setupData;
+    currentRoundData = roundData;
+    currentTracksMap = tracksMap;
+    currentCarsMap = carsMap;
+   
   const container = document.getElementById('round-cards-grid');
   container.innerHTML = '';
 
@@ -2512,9 +2518,9 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
 
   container.appendChild(frag);
 
-if (currentRoundView === 'table') {
-    populateRoundTable(setupData, roundData, tracksMap, carsMap);
-  }
+    if (currentRoundView === 'table') {
+        populateRoundTable(setupData, roundData, tracksMap, carsMap);
+    }
 }
 
 /* Driver Stats section continues in next file due to length... */
@@ -4261,8 +4267,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Global variable to track current view
 let currentRoundView = 'cards';
+let currentRoundSetupData = [];
+let currentRoundData = [];
+let currentTracksMap = {};
+let currentCarsMap = {};
 
-function switchRoundView(view) {
+/*function switchRoundView(view) {
     const cardsView = document.getElementById('round-cards-grid');
     const tableView = document.getElementById('roundTableView');
     const cardsBtn = document.getElementById('cardsViewBtn');
@@ -4296,108 +4306,139 @@ function switchRoundView(view) {
         populateRoundTable();
     }
 }
+*/
 
-function populateRoundTable() {
+function switchRoundView(view) {
+    const cardsView = document.getElementById('round-cards-grid');
+    const tableView = document.getElementById('roundTableView');
+    const cardsBtn = document.getElementById('cardsViewBtn');
+    const tableBtn = document.getElementById('tableViewBtn');
+    
+    if (!cardsView || !tableView || !cardsBtn || !tableBtn) {
+        console.error('Round view elements not found');
+        return;
+    }
+    
+    if (view === 'cards') {
+        cardsView.classList.remove('hidden');
+        tableView.classList.remove('active');
+        cardsBtn.classList.add('active');
+        tableBtn.classList.remove('active');
+        currentRoundView = 'cards';
+    } else {
+        cardsView.classList.add('hidden');
+        tableView.classList.add('active');
+        cardsBtn.classList.remove('active');
+        tableBtn.classList.add('active');
+        currentRoundView = 'table';
+        
+        // ✅ USE STORED DATA
+        populateRoundTable(currentRoundSetupData, currentRoundData, currentTracksMap, currentCarsMap);
+    }
+}
+
+function populateRoundTable(setupData, roundData, tracksMap, carsMap) {
     const tbody = document.getElementById('roundTableBody');
-    tbody.innerHTML = ''; // Clear existing rows
+    if (!tbody) return;
     
-    // Get filtered rounds (use your existing filtering logic)
-    const filteredRounds = getFilteredRounds(); // Your existing function
+    tbody.innerHTML = '';
     
-    filteredRounds.forEach(round => {
+    // If no data provided, we can't populate
+    if (!setupData || setupData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px;">No rounds configured</td></tr>';
+        return;
+    }
+    
+    setupData.forEach(setup => {
         const row = document.createElement('tr');
         
-        // Round number
-        const roundCell = document.createElement('td');
-        roundCell.textContent = `Round ${round.roundNumber}`;
-        row.appendChild(roundCell);
+        // Get track and car info
+        const trackInfo = tracksMap[setup.trackId] || {};
+        const carInfo = carsMap[setup.carId] || {};
         
-        // Season
-        const seasonCell = document.createElement('td');
-        seasonCell.innerHTML = `<span class="table-season-badge">Season ${round.season}</span>`;
-        row.appendChild(seasonCell);
+        // Get best times for this round
+        const roundTimes = roundData.filter(r => 
+            r.season === setup.season && r.round === setup.round
+        );
         
-        // Track preview
-        const trackCell = document.createElement('td');
-        trackCell.className = 'table-preview-cell';
-        if (round.trackImage) {
-            trackCell.innerHTML = `
-                <img src="${round.trackImage}" alt="${round.trackName}" class="table-preview-img">
-                <span class="table-preview-label">${round.trackName}</span>
-            `;
-        } else {
-            trackCell.textContent = round.trackName;
-        }
-        row.appendChild(trackCell);
+        // Find best lap time and sector times
+        let bestLapTime = null;
+        let bestS1 = null;
+        let bestS2 = null;
+        let bestS3 = null;
+        let fastestDriver = '';
         
-        // Car preview
-        const carCell = document.createElement('td');
-        carCell.className = 'table-preview-cell';
-        if (round.carImage) {
-            carCell.innerHTML = `
-                <img src="${round.carImage}" alt="${round.carName}" class="table-preview-img">
-                <span class="table-preview-label">${round.carName}</span>
-            `;
-        } else {
-            carCell.textContent = round.carName;
-        }
-        row.appendChild(carCell);
+        roundTimes.forEach(rt => {
+            const lapTime = parseTimeToSeconds(rt.totalTime);
+            if (!bestLapTime || lapTime < parseTimeToSeconds(bestLapTime)) {
+                bestLapTime = rt.totalTime;
+                fastestDriver = rt.driverName;
+            }
+            
+            if (rt.sector1) {
+                const s1Time = parseTimeToSeconds(rt.sector1);
+                if (!bestS1 || s1Time < parseTimeToSeconds(bestS1)) {
+                    bestS1 = rt.sector1;
+                }
+            }
+            
+            if (rt.sector2) {
+                const s2Time = parseTimeToSeconds(rt.sector2);
+                if (!bestS2 || s2Time < parseTimeToSeconds(bestS2)) {
+                    bestS2 = rt.sector2;
+                }
+            }
+            
+            if (rt.sector3) {
+                const s3Time = parseTimeToSeconds(rt.sector3);
+                if (!bestS3 || s3Time < parseTimeToSeconds(bestS3)) {
+                    bestS3 = rt.sector3;
+                }
+            }
+        });
         
-        // Best overall time
-        const overallCell = document.createElement('td');
-        if (round.bestOverallTime) {
-            overallCell.innerHTML = `
-                <div class="table-best-times">
-                    <div class="table-time-row fastest">
-                        <span class="table-time-value">${round.bestOverallTime}</span>
-                        <span class="table-time-driver">${round.bestOverallDriver}</span>
+        row.innerHTML = `
+            <td>Round ${setup.round}</td>
+            <td><span class="table-season-badge">Season ${setup.season}</span></td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${trackInfo.previewImg ? 
+                        `<img src="${trackInfo.previewImg}" alt="${trackInfo.name}" class="table-preview-img">` : 
+                        ''}
+                    <div>
+                        <div style="font-weight: 600;">${trackInfo.name || 'Unknown Track'}</div>
+                        <div style="font-size: 0.85em; color: #666;">${trackInfo.layout || ''}</div>
                     </div>
                 </div>
-            `;
-        } else {
-            overallCell.innerHTML = '<span style="color: #999;">No times yet</span>';
-        }
-        row.appendChild(overallCell);
-        
-        // Best sector times
-        const sectorsCell = document.createElement('td');
-        const sectorsHTML = [];
-        
-        if (round.bestSector1) {
-            sectorsHTML.push(`
-                <div class="table-time-row">
-                    <span class="table-time-label">S1:</span>
-                    <span class="table-time-value">${round.bestSector1}</span>
-                    <span class="table-time-driver">${round.bestSector1Driver}</span>
+            </td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${carInfo.previewImg ? 
+                        `<img src="${carInfo.previewImg}" alt="${carInfo.name}" class="table-preview-img">` : 
+                        ''}
+                    <div style="font-weight: 600;">${carInfo.name || 'Unknown Car'}</div>
                 </div>
-            `);
-        }
-        
-        if (round.bestSector2) {
-            sectorsHTML.push(`
-                <div class="table-time-row">
-                    <span class="table-time-label">S2:</span>
-                    <span class="table-time-value">${round.bestSector2}</span>
-                    <span class="table-time-driver">${round.bestSector2Driver}</span>
+            </td>
+            <td>
+                <div class="table-best-times">
+                    ${bestLapTime ? 
+                        `<div class="table-time-row fastest">
+                            <span>🏆 ${bestLapTime}</span>
+                            <span>${fastestDriver}</span>
+                        </div>` : 
+                        '<div style="color: #999;">No times yet</div>'}
                 </div>
-            `);
-        }
-        
-        if (round.bestSector3) {
-            sectorsHTML.push(`
-                <div class="table-time-row">
-                    <span class="table-time-label">S3:</span>
-                    <span class="table-time-value">${round.bestSector3}</span>
-                    <span class="table-time-driver">${round.bestSector3Driver}</span>
+            </td>
+            <td>
+                <div class="table-best-times">
+                    ${bestS1 ? `<div class="table-time-row"><span>S1:</span><span>${bestS1}</span></div>` : ''}
+                    ${bestS2 ? `<div class="table-time-row"><span>S2:</span><span>${bestS2}</span></div>` : ''}
+                    ${bestS3 ? `<div class="table-time-row"><span>S3:</span><span>${bestS3}</span></div>` : ''}
+                    ${!bestS1 && !bestS2 && !bestS3 ? '<div style="color: #999;">No times yet</div>' : ''}
                 </div>
-            `);
-        }
+            </td>
+        `;
         
-        sectorsCell.innerHTML = sectorsHTML.length > 0 
-            ? `<div class="table-best-times">${sectorsHTML.join('')}</div>` 
-            : '<span style="color: #999;">No sector times</span>';
-        
-        row.appendChild(sectorsCell);
         tbody.appendChild(row);
     });
 }
