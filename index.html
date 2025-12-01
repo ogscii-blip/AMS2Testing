@@ -325,14 +325,14 @@
 
 				<!-- Table view (hidden by default) -->
 				<div class="round-setup-table-view" id="roundTableView">
-				    <table class="round-setup-table" id="roundSetupTable">
+				    <table class="round-setup-table">
 				        <thead>
 				            <tr>
-				                <th>Round</th>
-				                <th>Season</th>
-				                <th>Track</th>
-				                <th>Car</th>
-				                <th>Best Overall Time</th>
+				                <th onclick="sortRoundTable(0)" style="cursor: pointer;">Round ↕</th>
+				                <th onclick="sortRoundTable(1)" style="cursor: pointer;">Season ↕</th>
+				                <th onclick="sortRoundTable(2)" style="cursor: pointer;">Track ↕</th>
+				                <th onclick="sortRoundTable(3)" style="cursor: pointer;">Car ↕</th>
+				                <th onclick="sortRoundTable(4)" style="cursor: pointer;">Best Time ↕</th>
 				                <th>Best Sector Times</th>
 				            </tr>
 				        </thead>
