@@ -4430,6 +4430,26 @@ function sortRoundTable(columnIndex) {
     const currentDir = window.roundTableSortDir[columnIndex] || 'asc';
     const newDir = currentDir === 'asc' ? 'desc' : 'asc';
     window.roundTableSortDir[columnIndex] = newDir;
+
+   function sortRoundTable(columnIndex) {
+    const table = document.getElementById('roundTableBody');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (!window.roundTableSortDir) window.roundTableSortDir = {};
+    const currentDir = window.roundTableSortDir[columnIndex] || 'asc';
+    const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+    window.roundTableSortDir[columnIndex] = newDir;
+    
+    // Update visual indicators
+    document.querySelectorAll('.sort-indicator').forEach(ind => {
+        ind.className = 'sort-indicator';
+    });
+    const header = document.getElementById(`header-${columnIndex}`);
+    if (header) {
+        const indicator = header.querySelector('.sort-indicator');
+        if (indicator) indicator.className = `sort-indicator ${newDir}`;
+    }
     
     rows.sort((a, b) => {
         let aVal = a.cells[columnIndex].textContent.trim();
