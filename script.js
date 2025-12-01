@@ -4419,3 +4419,61 @@ function populateRoundTable() {
     a.download = 'rounds-data.csv';
     a.click();
 }
+
+       // Sort table by column
+function sortRoundTable(columnIndex) {
+    const table = document.getElementById('roundTableBody');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    
+    // Toggle sort direction
+    if (!window.roundTableSortDir) window.roundTableSortDir = {};
+    const currentDir = window.roundTableSortDir[columnIndex] || 'asc';
+    const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+    window.roundTableSortDir[columnIndex] = newDir;
+    
+    rows.sort((a, b) => {
+        let aVal = a.cells[columnIndex].textContent.trim();
+        let bVal = b.cells[columnIndex].textContent.trim();
+        
+        // Extract numbers for Round, Season, and Time columns
+        if (columnIndex === 0) { // Round
+            aVal = parseInt(aVal.replace('Round ', ''));
+            bVal = parseInt(bVal.replace('Round ', ''));
+        } else if (columnIndex === 1) { // Season
+            aVal = parseInt(aVal.replace('Season ', ''));
+            bVal = parseInt(bVal.replace('Season ', ''));
+        } else if (columnIndex === 4) { // Best Time
+            // Convert time format "01:34,786" to comparable number
+            if (aVal === 'No times yet') aVal = 999999;
+            else aVal = parseTimeToSeconds(aVal);
+            
+            if (bVal === 'No times yet') bVal = 999999;
+            else bVal = parseTimeToSeconds(bVal);
+        }
+        
+        // Compare
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return newDir === 'asc' ? aVal - bVal : bVal - aVal;
+        } else {
+            return newDir === 'asc' 
+                ? aVal.localeCompare(bVal) 
+                : bVal.localeCompare(aVal);
+        }
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => table.appendChild(row));
+}
+
+// Helper to convert time string to seconds for sorting
+function parseTimeToSeconds(timeStr) {
+    // Format: "01:34,786" or "00:33,006"
+    const match = timeStr.match(/(\d+):(\d+),(\d+)/);
+    if (!match) return 999999;
+    
+    const minutes = parseInt(match[1]);
+    const seconds = parseInt(match[2]);
+    const millis = parseInt(match[3]);
+    
+    return minutes * 60 + seconds + (millis / 1000);
+}
