@@ -313,6 +313,15 @@
                         <option value="">All Seasons</option>
                     </select>
                 </div>
+
+				<div class="round-view-toggle">
+				    <button class="view-toggle-btn active" id="cardsViewBtn" onclick="switchRoundView('cards')">
+				        <span>🎴</span> Cards View
+				    </button>
+				    <button class="view-toggle-btn" id="tableViewBtn" onclick="switchRoundView('table')">
+				        <span>📊</span> Table View
+				    </button>
+				</div>
                 
                 <div id="setup-cards-loading" class="loading">Loading round configurations...</div>
                 <div id="setup-cards-content" style="display: none;">
