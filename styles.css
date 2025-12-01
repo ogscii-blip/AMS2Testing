@@ -2257,24 +2257,53 @@ header p {
    }
 
        /* Convert table to card layout */
-       
+    .admin-table tbody tr {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px 15px;
+        margin-bottom: 15px;
+        border: 2px solid #667eea;
+        border-radius: 10px;
+        padding: 15px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .admin-table tbody td {
+        display: contents;
+    }
+    
     .admin-table tbody td::before {
         content: attr(data-label);
         font-weight: 700;
         color: #667eea;
-        display: block;
-        margin-bottom: 3px;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: 14px;
+        text-align: left;
     }
-            
+    
+    /* Total Time and Actions span full width */
+    .admin-table tbody td:nth-last-child(2)::before,
+    .admin-table tbody td:nth-last-child(2) {
+        grid-column: 1;
+    }
+    
+    .admin-table tbody td:last-child {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    
     .admin-btn-edit,
-    .admin-btn-delete {
-        display: block;
+    .admin-btn-delete,
+    .admin-btn-save,
+    .admin-btn-cancel {
         width: 100%;
-        margin: 5px 0;
+        padding: 12px;
+        font-size: 14px;
     }
+}
              
   .admin-email-types-grid {
     grid-template-columns: 1fr;
@@ -2861,7 +2890,17 @@ header p {
         border: none;
     }
     
-
+    /* Add labels on mobile using data-label attribute */
+    .admin-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #667eea;
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
     
     /* Stack buttons vertically on mobile */
     .admin-table tbody td:last-child {
@@ -3685,3 +3724,191 @@ header p {
         font-size: 12px !important;
     }
 }
+
+/* ============================================================================
+   ROUND SETUP - TABLE VIEW TOGGLE (Desktop Only)
+   ============================================================================ */
+
+/* View Toggle Button */
+.round-view-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.view-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #333;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.view-toggle-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+}
+
+/* Round Setup Table View */
+.round-setup-table-view {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+.round-setup-table-view.active {
+    display: block;
+}
+
+.round-setup-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.round-setup-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.round-setup-table th {
+    padding: 15px 10px;
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.95em;
+    white-space: nowrap;
+}
+
+.round-setup-table td {
+    padding: 15px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.round-setup-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.round-setup-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Round number column */
+.round-setup-table td:first-child {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #667eea;
+}
+
+/* Track/Car preview images in table */
+.table-preview-img {
+    width: 80px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 5px;
+    background: #f8f9fa;
+    padding: 3px;
+    display: block;
+}
+
+.table-preview-cell {
+    text-align: center;
+}
+
+.table-preview-label {
+    font-size: 0.75em;
+    color: #666;
+    margin-top: 3px;
+    display: block;
+    font-weight: 600;
+}
+
+/* Best times in table - compact format */
+.table-best-times {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.table-time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+}
+
+.table-time-label {
+    color: #666;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.table-time-value {
+    color: #2c3e50;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.table-time-driver {
+    color: #667eea;
+    font-size: 0.85em;
+    margin-left: 5px;
+}
+
+.table-time-row.fastest {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.table-time-row.fastest .table-time-value {
+    color: #ffd700;
+}
+
+/* Season badge in table */
+.table-season-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    display: inline-block;
+}
+
+/* Hide cards when table is active */
+.round-cards-grid.hidden {
+    display: none;
+}
+
+/* Mobile - hide toggle button and force cards view */
+@media screen and (max-width: 768px) {
+    .round-view-toggle {
+        display: none;
+    }
+    
+    .round-setup-table-view {
+        display: none !important;
+    }
+    
+    .round-cards-grid.hidden {
+        display: grid !important;
+    }
+}
+
