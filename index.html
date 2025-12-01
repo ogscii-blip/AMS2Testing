@@ -353,6 +353,46 @@
 				</div>
                 
                 <div id="setup-cards-loading" class="loading">Loading round configurations...</div>
+
+<!-- View Toggle Buttons (Desktop only) -->
+<div class="round-view-toggle">
+    <button class="view-toggle-btn active" id="cardsViewBtn" onclick="switchRoundView('cards')">
+        <span>🎴</span> Cards View
+    </button>
+    <button class="view-toggle-btn" id="tableViewBtn" onclick="switchRoundView('table')">
+        <span>📊</span> Table View
+    </button>
+</div>
+
+<!-- Table View Container -->
+<div class="round-setup-table-view" id="roundTableView">
+    <table class="round-setup-table">
+        <thead>
+            <tr>
+                <th onclick="sortRoundTable(0)" style="cursor: pointer;" id="header-0">
+                    Round <span class="sort-indicator"></span>
+                </th>
+                <th onclick="sortRoundTable(1)" style="cursor: pointer;" id="header-1">
+                    Season <span class="sort-indicator"></span>
+                </th>
+                <th onclick="sortRoundTable(2)" style="cursor: pointer;" id="header-2">
+                    Track <span class="sort-indicator"></span>
+                </th>
+                <th onclick="sortRoundTable(3)" style="cursor: pointer;" id="header-3">
+                    Car <span class="sort-indicator"></span>
+                </th>
+                <th onclick="sortRoundTable(4)" style="cursor: pointer;" id="header-4">
+                    Best Time <span class="sort-indicator"></span>
+                </th>
+                <th>Best Sector Times</th>
+            </tr>
+        </thead>
+        <tbody id="roundTableBody">
+            <!-- Populated by JavaScript -->
+        </tbody>
+    </table>
+</div>
+				
                 <div id="setup-cards-content" style="display: none;">
                     <div id="round-cards-grid" class="round-cards-grid"></div>
                 </div>
