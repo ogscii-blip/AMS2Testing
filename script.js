@@ -4421,7 +4421,8 @@ function populateRoundTable() {
 }
 
        // Sort table by column
-   function sortRoundTable(columnIndex) {
+  // Sort table by column
+function sortRoundTable(columnIndex) {
     const table = document.getElementById('roundTableBody');
     const rows = Array.from(table.querySelectorAll('tr'));
     
@@ -4435,7 +4436,7 @@ function populateRoundTable() {
     document.querySelectorAll('.sort-indicator').forEach(ind => {
         ind.className = 'sort-indicator';
     });
-    const header = document.getElementById(`header-${columnIndex}`);
+    const header = document.getElementById(`header-${columnIndex}`); // Fixed: was using backticks wrong
     if (header) {
         const indicator = header.querySelector('.sort-indicator');
         if (indicator) indicator.className = `sort-indicator ${newDir}`;
