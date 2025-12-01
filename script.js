@@ -4283,6 +4283,8 @@ function switchRoundView(view) {
         
         // Populate table with current filtered rounds
         populateRoundTable();
+    }
+}
 
 function populateRoundTable() {
     const tbody = document.getElementById('roundTableBody');
@@ -4389,7 +4391,7 @@ function populateRoundTable() {
     });
 }
 
-       function sortTable(columnIndex) {
+function sortTable(columnIndex) {
     const table = document.getElementById('roundSetupTable');
     const rows = Array.from(table.querySelectorAll('tbody tr'));
     
@@ -4401,10 +4403,9 @@ function populateRoundTable() {
     
     const tbody = table.querySelector('tbody');
     rows.forEach(row => tbody.appendChild(row));
-
 }
 
-       function exportRoundsToCSV() {
+function exportRoundsToCSV() {
     const rounds = getFilteredRounds();
     let csv = 'Round,Season,Track,Car,Best Time,Driver\n';
     
@@ -4420,8 +4421,7 @@ function populateRoundTable() {
     a.click();
 }
 
-       // Sort table by column
-  // Sort table by column
+// Sort table by column
 function sortRoundTable(columnIndex) {
     const table = document.getElementById('roundTableBody');
     const rows = Array.from(table.querySelectorAll('tr'));
@@ -4436,7 +4436,7 @@ function sortRoundTable(columnIndex) {
     document.querySelectorAll('.sort-indicator').forEach(ind => {
         ind.className = 'sort-indicator';
     });
-    const header = document.getElementById(`header-${columnIndex}`); // Fixed: was using backticks wrong
+    const header = document.getElementById(`header-${columnIndex}`);
     if (header) {
         const indicator = header.querySelector('.sort-indicator');
         if (indicator) indicator.className = `sort-indicator ${newDir}`;
