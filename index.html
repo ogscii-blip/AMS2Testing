@@ -327,15 +327,25 @@
 				<div class="round-setup-table-view" id="roundTableView">
 				    <table class="round-setup-table">
 				        <thead>
-				            <tr>
-				                <th onclick="sortRoundTable(0)" style="cursor: pointer;">Round ↕</th>
-				                <th onclick="sortRoundTable(1)" style="cursor: pointer;">Season ↕</th>
-				                <th onclick="sortRoundTable(2)" style="cursor: pointer;">Track ↕</th>
-				                <th onclick="sortRoundTable(3)" style="cursor: pointer;">Car ↕</th>
-				                <th onclick="sortRoundTable(4)" style="cursor: pointer;">Best Time ↕</th>
-				                <th>Best Sector Times</th>
-				            </tr>
-				        </thead>
+						    <tr>
+						        <th onclick="sortRoundTable(0)" style="cursor: pointer;" id="header-0">
+						            Round <span class="sort-indicator"></span>
+						        </th>
+						        <th onclick="sortRoundTable(1)" style="cursor: pointer;" id="header-1">
+						            Season <span class="sort-indicator"></span>
+						        </th>
+						        <th onclick="sortRoundTable(2)" style="cursor: pointer;" id="header-2">
+						            Track <span class="sort-indicator"></span>
+						        </th>
+						        <th onclick="sortRoundTable(3)" style="cursor: pointer;" id="header-3">
+						            Car <span class="sort-indicator"></span>
+						        </th>
+						        <th onclick="sortRoundTable(4)" style="cursor: pointer;" id="header-4">
+						            Best Time <span class="sort-indicator"></span>
+						        </th>
+						        <th>Best Sector Times</th>
+						    </tr>
+						</thead>
 				        <tbody id="roundTableBody">
 				            <!-- Populated by JavaScript -->
 				        </tbody>
