@@ -2511,6 +2511,10 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   });
 
   container.appendChild(frag);
+
+if (currentRoundView === 'table') {
+    populateRoundTable(setupData, roundData, tracksMap, carsMap);
+  }
 }
 
 /* Driver Stats section continues in next file due to length... */
@@ -4254,3 +4258,166 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Global variable to track current view
+let currentRoundView = 'cards';
+
+function switchRoundView(view) {
+    const cardsView = document.getElementById('roundCardsGrid');
+    const tableView = document.getElementById('roundTableView');
+    const cardsBtn = document.getElementById('cardsViewBtn');
+    const tableBtn = document.getElementById('tableViewBtn');
+    
+    if (view === 'cards') {
+        cardsView.classList.remove('hidden');
+        tableView.classList.remove('active');
+        cardsBtn.classList.add('active');
+        tableBtn.classList.remove('active');
+        currentRoundView = 'cards';
+    } else {
+        cardsView.classList.add('hidden');
+        tableView.classList.add('active');
+        cardsBtn.classList.remove('active');
+        tableBtn.classList.add('active');
+        currentRoundView = 'table';
+        
+        // Populate table with current filtered rounds
+        populateRoundTable();
+
+function populateRoundTable() {
+    const tbody = document.getElementById('roundTableBody');
+    tbody.innerHTML = ''; // Clear existing rows
+    
+    // Get filtered rounds (use your existing filtering logic)
+    const filteredRounds = getFilteredRounds(); // Your existing function
+    
+    filteredRounds.forEach(round => {
+        const row = document.createElement('tr');
+        
+        // Round number
+        const roundCell = document.createElement('td');
+        roundCell.textContent = `Round ${round.roundNumber}`;
+        row.appendChild(roundCell);
+        
+        // Season
+        const seasonCell = document.createElement('td');
+        seasonCell.innerHTML = `<span class="table-season-badge">Season ${round.season}</span>`;
+        row.appendChild(seasonCell);
+        
+        // Track preview
+        const trackCell = document.createElement('td');
+        trackCell.className = 'table-preview-cell';
+        if (round.trackImage) {
+            trackCell.innerHTML = `
+                <img src="${round.trackImage}" alt="${round.trackName}" class="table-preview-img">
+                <span class="table-preview-label">${round.trackName}</span>
+            `;
+        } else {
+            trackCell.textContent = round.trackName;
+        }
+        row.appendChild(trackCell);
+        
+        // Car preview
+        const carCell = document.createElement('td');
+        carCell.className = 'table-preview-cell';
+        if (round.carImage) {
+            carCell.innerHTML = `
+                <img src="${round.carImage}" alt="${round.carName}" class="table-preview-img">
+                <span class="table-preview-label">${round.carName}</span>
+            `;
+        } else {
+            carCell.textContent = round.carName;
+        }
+        row.appendChild(carCell);
+        
+        // Best overall time
+        const overallCell = document.createElement('td');
+        if (round.bestOverallTime) {
+            overallCell.innerHTML = `
+                <div class="table-best-times">
+                    <div class="table-time-row fastest">
+                        <span class="table-time-value">${round.bestOverallTime}</span>
+                        <span class="table-time-driver">${round.bestOverallDriver}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            overallCell.innerHTML = '<span style="color: #999;">No times yet</span>';
+        }
+        row.appendChild(overallCell);
+        
+        // Best sector times
+        const sectorsCell = document.createElement('td');
+        const sectorsHTML = [];
+        
+        if (round.bestSector1) {
+            sectorsHTML.push(`
+                <div class="table-time-row">
+                    <span class="table-time-label">S1:</span>
+                    <span class="table-time-value">${round.bestSector1}</span>
+                    <span class="table-time-driver">${round.bestSector1Driver}</span>
+                </div>
+            `);
+        }
+        
+        if (round.bestSector2) {
+            sectorsHTML.push(`
+                <div class="table-time-row">
+                    <span class="table-time-label">S2:</span>
+                    <span class="table-time-value">${round.bestSector2}</span>
+                    <span class="table-time-driver">${round.bestSector2Driver}</span>
+                </div>
+            `);
+        }
+        
+        if (round.bestSector3) {
+            sectorsHTML.push(`
+                <div class="table-time-row">
+                    <span class="table-time-label">S3:</span>
+                    <span class="table-time-value">${round.bestSector3}</span>
+                    <span class="table-time-driver">${round.bestSector3Driver}</span>
+                </div>
+            `);
+        }
+        
+        sectorsCell.innerHTML = sectorsHTML.length > 0 
+            ? `<div class="table-best-times">${sectorsHTML.join('')}</div>` 
+            : '<span style="color: #999;">No sector times</span>';
+        
+        row.appendChild(sectorsCell);
+        tbody.appendChild(row);
+    });
+}
+
+       function sortTable(columnIndex) {
+    const table = document.getElementById('roundSetupTable');
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    
+    rows.sort((a, b) => {
+        const aVal = a.cells[columnIndex].textContent;
+        const bVal = b.cells[columnIndex].textContent;
+        return aVal.localeCompare(bVal);
+    });
+    
+    const tbody = table.querySelector('tbody');
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Add onclick to headers
+<th onclick="sortTable(0)">Round ↕</th>
+
+       function exportRoundsToCSV() {
+    const rounds = getFilteredRounds();
+    let csv = 'Round,Season,Track,Car,Best Time,Driver\n';
+    
+    rounds.forEach(r => {
+        csv += `${r.roundNumber},${r.season},${r.trackName},${r.carName},${r.bestOverallTime},${r.bestOverallDriver}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rounds-data.csv';
+    a.click();
+}
