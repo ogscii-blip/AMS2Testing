@@ -3912,3 +3912,17 @@ header p {
     }
 }
 
+.sort-indicator {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sort-indicator.asc::after {
+    content: ' ▲';
+    color: white;
+}
+
+.sort-indicator.desc::after {
+    content: ' ▼';
+    color: white;
+}
