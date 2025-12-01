@@ -4263,10 +4263,21 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentRoundView = 'cards';
 
 function switchRoundView(view) {
-    const cardsView = document.getElementById('roundCardsGrid');
+    const cardsView = document.getElementById('round-cards-grid');
     const tableView = document.getElementById('roundTableView');
     const cardsBtn = document.getElementById('cardsViewBtn');
     const tableBtn = document.getElementById('tableViewBtn');
+    
+    // Safety checks - if elements don't exist, exit early
+    if (!cardsView || !tableView || !cardsBtn || !tableBtn) {
+        console.error('Round view elements not found:', {
+            cardsView: !!cardsView,
+            tableView: !!tableView,
+            cardsBtn: !!cardsBtn,
+            tableBtn: !!tableBtn
+        });
+        return;
+    }
     
     if (view === 'cards') {
         cardsView.classList.remove('hidden');
