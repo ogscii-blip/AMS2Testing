@@ -4402,8 +4402,6 @@ function populateRoundTable() {
     const tbody = table.querySelector('tbody');
     rows.forEach(row => tbody.appendChild(row));
 
-          // Add onclick to headers
-<th onclick="sortTable(0)">Round ↕</th>
 }
 
        function exportRoundsToCSV() {
