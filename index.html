@@ -322,6 +322,25 @@
 				        <span>📊</span> Table View
 				    </button>
 				</div>
+
+				<!-- Table view (hidden by default) -->
+				<div class="round-setup-table-view" id="roundTableView">
+				    <table class="round-setup-table" id="roundSetupTable">
+				        <thead>
+				            <tr>
+				                <th>Round</th>
+				                <th>Season</th>
+				                <th>Track</th>
+				                <th>Car</th>
+				                <th>Best Overall Time</th>
+				                <th>Best Sector Times</th>
+				            </tr>
+				        </thead>
+				        <tbody id="roundTableBody">
+				            <!-- Populated by JavaScript -->
+				        </tbody>
+				    </table>
+				</div>
                 
                 <div id="setup-cards-loading" class="loading">Loading round configurations...</div>
                 <div id="setup-cards-content" style="display: none;">
