@@ -4254,3 +4254,85 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+/* ========================================
+   MOBILE ADMIN TABS SCROLL INDICATORS
+   Add this to your script.js file
+   ======================================== */
+
+// Admin tabs scroll indicators and smooth scrolling
+function initAdminTabsScrolling() {
+  const adminTabs = document.querySelector('.admin-tabs');
+  
+  if (!adminTabs) return;
+  
+  // Function to update scroll indicator classes
+  function updateScrollIndicators() {
+    const isScrollable = adminTabs.scrollWidth > adminTabs.clientWidth;
+    const isScrolledLeft = adminTabs.scrollLeft > 10;
+    const isScrolledToEnd = adminTabs.scrollLeft >= (adminTabs.scrollWidth - adminTabs.clientWidth - 10);
+    
+    adminTabs.classList.toggle('scrolled-left', isScrolledLeft);
+    adminTabs.classList.toggle('scrolled-end', isScrolledToEnd);
+    adminTabs.classList.toggle('scrollable-right', isScrollable && !isScrolledToEnd);
+  }
+  
+  // Add event listeners
+  adminTabs.addEventListener('scroll', updateScrollIndicators);
+  window.addEventListener('resize', updateScrollIndicators);
+  
+  // Initial check
+  updateScrollIndicators();
+  
+  // Auto-scroll active tab into view
+  const activeTab = adminTabs.querySelector('.admin-tab-button.active');
+  if (activeTab) {
+    setTimeout(() => {
+      activeTab.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest', 
+        inline: 'center' 
+      });
+    }, 100);
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAdminTabsScrolling);
+} else {
+  initAdminTabsScrolling();
+}
+
+// Re-initialize when switching to admin tab
+function switchAdminTab(tabName) {
+  currentAdminTab = tabName;
+  loadAdminTools();
+  
+  // Re-initialize scroll indicators after content loads
+  setTimeout(initAdminTabsScrolling, 100);
+}
+
+/* ========================================
+   ALTERNATIVE: ADD TO EXISTING CODE
+   ======================================== 
+
+If you already have a switchAdminTab function, just add this line at the end:
+
+function switchAdminTab(tabName) {
+  currentAdminTab = tabName;
+  loadAdminTools();
+  // Add this line:
+  setTimeout(initAdminTabsScrolling, 100);
+}
+
+And add this to your existing DOMContentLoaded or initialization:
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Your existing code...
+  
+  // Add this:
+  initAdminTabsScrolling();
+});
+
+========================================= */
