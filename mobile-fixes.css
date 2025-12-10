@@ -128,28 +128,39 @@
    PREVENT HORIZONTAL PAGE OVERFLOW
    ======================================== */
 
-/* Ensure body and html don't scroll horizontally */
-html, body {
-  overflow-x: hidden;
-  max-width: 100vw;
+/* Ensure body and html don't scroll horizontally on MOBILE ONLY */
+@media screen and (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Ensure container respects viewport on mobile */
+  .container {
+    overflow-x: hidden;
+  }
+  
+  /* Ensure tab content doesn't cause overflow on mobile */
+  .tab-content {
+    overflow-x: hidden;
+  }
+  
+  /* Ensure admin content doesn't cause overflow on mobile */
+  #admin-content {
+    overflow-x: hidden;
+  }
 }
 
-/* Ensure container respects viewport */
-.container {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Ensure tab content doesn't cause overflow */
-.tab-content {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Ensure admin content doesn't cause overflow */
-#admin-content {
-  max-width: 100%;
-  overflow-x: hidden;
+/* Desktop - maintain max-width and centering */
+@media screen and (min-width: 769px) {
+  html, body {
+    overflow-x: auto; /* Allow normal scrolling on desktop */
+  }
+  
+  .container {
+    max-width: 1200px; /* Maintain original max-width */
+    margin: 0 auto; /* Keep centered */
+  }
 }
 
 /* ========================================
