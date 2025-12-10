@@ -1,0 +1,247 @@
+/* ========================================
+   MOBILE FIXES FOR AMS2 RACING LEAGUE
+   Add this to your styles.css or create a new file
+   ======================================== */
+
+/* ========================================
+   FIX: Admin Tabs Horizontal Scrolling
+   ======================================== */
+
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0;
+  /* Enable horizontal scrolling */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin;
+  scrollbar-color: #667eea #f0f0f0;
+}
+
+/* Custom scrollbar for webkit browsers (Chrome, Safari, Edge) */
+.admin-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.admin-tabs::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.admin-tabs::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 3px;
+}
+
+.admin-tabs::-webkit-scrollbar-thumb:hover {
+  background: #5568d3;
+}
+
+.admin-tab-button {
+  background: transparent;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1em;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  bottom: -2px;
+  /* Prevent text wrapping */
+  white-space: nowrap;
+  /* Prevent buttons from shrinking */
+  flex-shrink: 0;
+  /* Minimum width for better touch targets */
+  min-width: fit-content;
+}
+
+.admin-tab-button:hover {
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.admin-tab-button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+/* ========================================
+   MOBILE SPECIFIC IMPROVEMENTS
+   ======================================== */
+
+@media screen and (max-width: 768px) {
+  /* Admin tabs - better spacing on mobile */
+  .admin-tabs {
+    gap: 5px;
+    padding: 0 10px;
+    margin-left: -10px;
+    margin-right: -10px;
+    width: calc(100% + 20px);
+  }
+  
+  .admin-tab-button {
+    padding: 10px 16px;
+    font-size: 0.9em;
+  }
+  
+  /* Add scroll indicator hint */
+  .admin-tabs::after {
+    content: '→';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(to right, transparent, #fff 20%);
+    padding: 10px 15px 10px 30px;
+    color: #667eea;
+    font-size: 1.2em;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  
+  /* Hide scroll indicator when scrolled to end */
+  .admin-tabs.scrolled-end::after {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .admin-tabs {
+    padding: 0 5px;
+    margin-left: -5px;
+    margin-right: -5px;
+    width: calc(100% + 10px);
+  }
+  
+  .admin-tab-button {
+    padding: 8px 12px;
+    font-size: 0.85em;
+  }
+}
+
+/* ========================================
+   PREVENT HORIZONTAL PAGE OVERFLOW
+   ======================================== */
+
+/* Ensure body and html don't scroll horizontally */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure container respects viewport */
+.container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure tab content doesn't cause overflow */
+.tab-content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Ensure admin content doesn't cause overflow */
+#admin-content {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ========================================
+   ADDITIONAL MOBILE ADMIN FIXES
+   ======================================== */
+
+@media screen and (max-width: 768px) {
+  /* Make admin filters stack better on mobile */
+  .admin-filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-filter-select {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  /* Better admin table scrolling */
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  
+  /* Admin sub-banner text wrapping */
+  .admin-sub-banner {
+    padding: 15px 10px;
+  }
+  
+  .admin-sub-banner h3 {
+    font-size: 1.1em;
+  }
+  
+  .admin-sub-banner p {
+    font-size: 0.9em;
+  }
+}
+
+/* ========================================
+   VISUAL FEEDBACK FOR SCROLLABLE AREAS
+   ======================================== */
+
+/* Add subtle shadow to indicate scrollable content */
+.admin-tabs {
+  position: relative;
+}
+
+/* Left shadow when scrolled */
+.admin-tabs.scrolled-left::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Right shadow when scrollable */
+.admin-tabs.scrollable-right::after {
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.05) 50%, #fff 100%);
+}
+
+/* ========================================
+   OPTIONAL: ADD THIS JAVASCRIPT
+   ======================================== 
+
+Add this to your script.js to enable scroll indicators:
+
+// Admin tabs scroll indicators
+document.addEventListener('DOMContentLoaded', function() {
+  const adminTabs = document.querySelector('.admin-tabs');
+  
+  if (adminTabs) {
+    function updateScrollIndicators() {
+      const isScrollable = adminTabs.scrollWidth > adminTabs.clientWidth;
+      const isScrolledLeft = adminTabs.scrollLeft > 10;
+      const isScrolledToEnd = adminTabs.scrollLeft >= (adminTabs.scrollWidth - adminTabs.clientWidth - 10);
+      
+      adminTabs.classList.toggle('scrolled-left', isScrolledLeft);
+      adminTabs.classList.toggle('scrolled-end', isScrolledToEnd);
+      adminTabs.classList.toggle('scrollable-right', isScrollable && !isScrolledToEnd);
+    }
+    
+    adminTabs.addEventListener('scroll', updateScrollIndicators);
+    window.addEventListener('resize', updateScrollIndicators);
+    updateScrollIndicators();
+  }
+});
+
+========================================= */
