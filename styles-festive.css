@@ -130,42 +130,8 @@
 }
 
 /* ========================================
-   FESTIVE HEADER STYLING
+   FESTIVE HEADER STYLING (SUBTLE)
    ======================================== */
-
-header {
-    position: relative;
-    background: linear-gradient(135deg, 
-        #0f2027 0%, 
-        #203a43 25%, 
-        #2c5364 50%, 
-        #1a4d2e 75%, 
-        #165a3c 100%) !important;
-    border: 3px solid #ffd700;
-    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.3),
-                inset 0 0 30px rgba(255, 255, 255, 0.1);
-}
-
-header::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    background: linear-gradient(45deg, 
-        #ff0000, #00ff00, #ffd700, #00ff00, #ff0000);
-    background-size: 400% 400%;
-    border-radius: 10px;
-    z-index: -1;
-    animation: festiveGlow 3s ease infinite;
-    opacity: 0.7;
-}
-
-@keyframes festiveGlow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
 
 /* Christmas decorations in header */
 header h1::before {
@@ -183,32 +149,9 @@ header h1::after {
     50% { transform: scale(1.2); opacity: 0.8; }
 }
 
-/* Festive subtitle styling */
-header p {
-    text-shadow: 0 0 10px #ffd700,
-                 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
-}
-
 /* ========================================
-   FESTIVE TAB BUTTONS
+   FESTIVE TAB BUTTONS (SUBTLE)
    ======================================== */
-
-.tabs {
-    background: linear-gradient(135deg, 
-        rgba(15, 32, 39, 0.9) 0%, 
-        rgba(26, 77, 46, 0.9) 100%) !important;
-    border: 2px solid #ffd700;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.2);
-}
-
-.tab-button {
-    position: relative;
-    background: linear-gradient(135deg, 
-        rgba(220, 20, 60, 0.3) 0%, 
-        rgba(34, 139, 34, 0.3) 100%) !important;
-    border: 2px solid rgba(255, 215, 0, 0.4) !important;
-    transition: all 0.3s ease;
-}
 
 .tab-button::before {
     content: '❄️';
@@ -220,47 +163,13 @@ header p {
     transition: opacity 0.3s ease;
 }
 
-.tab-button:hover {
-    background: linear-gradient(135deg, 
-        rgba(220, 20, 60, 0.5) 0%, 
-        rgba(34, 139, 34, 0.5) 100%) !important;
-    border-color: #ffd700 !important;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-}
-
 .tab-button:hover::before {
-    opacity: 1;
-}
-
-.tab-button.active {
-    background: linear-gradient(135deg, 
-        #dc143c 0%, 
-        #228b22 50%, 
-        #ffd700 100%) !important;
-    border-color: #ffffff !important;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
-    animation: festiveShine 2s ease-in-out infinite;
-}
-
-@keyframes festiveShine {
-    0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
-    50% { box-shadow: 0 0 40px rgba(255, 255, 255, 1); }
+    opacity: 0.5;
 }
 
 /* ========================================
-   FESTIVE STAT CARDS
+   FESTIVE STAT CARDS (SUBTLE)
    ======================================== */
-
-.stat-card {
-    background: linear-gradient(135deg, 
-        #dc143c 0%, 
-        #228b22 50%, 
-        #ffd700 100%) !important;
-    border: 2px solid #ffffff;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
-    position: relative;
-    overflow: hidden;
-}
 
 .stat-card::before {
     content: '✨';
@@ -277,75 +186,24 @@ header p {
 }
 
 /* ========================================
-   FESTIVE POSITION STYLING
+   FESTIVE POSITION STYLING (REMOVED)
    ======================================== */
 
-.position-1 {
-    background: linear-gradient(135deg, 
-        #ffd700 0%, 
-        #ffed4e 50%, 
-        #ff0000 100%) !important;
-    border-left: 5px solid #228b22 !important;
-}
-
-.position-2 {
-    background: linear-gradient(135deg, 
-        #c0c0c0 0%, 
-        #e8e8e8 50%, 
-        #dc143c 100%) !important;
-    border-left: 5px solid #ffd700 !important;
-}
-
-.position-3 {
-    background: linear-gradient(135deg, 
-        #cd7f32 0%, 
-        #e5a76a 50%, 
-        #228b22 100%) !important;
-    border-left: 5px solid #dc143c !important;
-}
+/* Keeping original position styling */
 
 /* ========================================
-   FESTIVE BUTTONS
+   FESTIVE BUTTONS (SUBTLE)
    ======================================== */
-
-.refresh-btn {
-    background: linear-gradient(135deg, 
-        #dc143c 0%, 
-        #228b22 100%) !important;
-    border: 2px solid #ffd700 !important;
-    box-shadow: 0 5px 15px rgba(220, 20, 60, 0.4);
-    position: relative;
-}
 
 .refresh-btn::before {
-    content: '🎁';
-    margin-right: 8px;
-}
-
-.refresh-btn:hover {
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
-    transform: scale(1.08) !important;
+    content: '🎁 ';
 }
 
 /* ========================================
-   FESTIVE ROUND HEADERS
+   FESTIVE ROUND HEADERS (REMOVED)
    ======================================== */
 
-.round-header {
-    background: linear-gradient(135deg, 
-        #dc143c 0%, 
-        #228b22 50%, 
-        #1e5631 100%) !important;
-    border-top: 3px solid #ffd700;
-    border-bottom: 3px solid #ffd700;
-}
-
-.round-header:hover {
-    background: linear-gradient(135deg, 
-        #ff1744 0%, 
-        #2e7d32 50%, 
-        #165a3c 100%) !important;
-}
+/* Keeping original round header styling */
 
 /* ========================================
    CHRISTMAS EMOJI DECORATIONS
@@ -375,15 +233,8 @@ header p {
 }
 
 /* ========================================
-   FESTIVE DRIVER CARDS
+   FESTIVE DRIVER CARDS (SUBTLE)
    ======================================== */
-
-.driver-card {
-    border: 3px solid #ffd700 !important;
-    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3) !important;
-    position: relative;
-    overflow: visible;
-}
 
 .driver-card::before {
     content: '🎅';
@@ -400,9 +251,7 @@ header p {
     50% { transform: translateY(-10px); }
 }
 
-.driver-header {
-    border-bottom: 3px solid #dc143c !important;
-}
+/* Keeping original driver header styling */
 
 /* ========================================
    MOBILE RESPONSIVE ADJUSTMENTS
@@ -447,13 +296,8 @@ header p {
 */
 
 /* ========================================
-   FESTIVE LOADING SCREEN
+   FESTIVE LOADING SCREEN (SUBTLE)
    ======================================== */
-
-.loading {
-    color: #ffd700 !important;
-    text-shadow: 0 0 10px #dc143c, 0 0 20px #228b22 !important;
-}
 
 .loading::before {
     content: '🎁 ';
@@ -467,47 +311,19 @@ header p {
 }
 
 /* ========================================
-   NEW YEAR COUNTDOWN BANNER (Optional)
-   ======================================== */
-
-.festive-banner {
-    background: linear-gradient(90deg, 
-        #dc143c 0%, 
-        #ffd700 25%, 
-        #228b22 50%, 
-        #ffd700 75%, 
-        #dc143c 100%);
-    background-size: 200% 100%;
-    animation: shimmer 3s linear infinite;
-    padding: 15px;
-    text-align: center;
-    font-weight: bold;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
-}
-
-@keyframes shimmer {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 0%; }
-}
-
-/* ========================================
-   MERRY CHRISTMAS MESSAGE
+   MERRY CHRISTMAS MESSAGE (SUBTLE)
    ======================================== */
 
 .christmas-message {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: linear-gradient(135deg, #dc143c 0%, #228b22 100%);
+    background: rgba(102, 126, 234, 0.95);
     color: white;
     padding: 15px 25px;
     border-radius: 50px;
     font-weight: bold;
-    box-shadow: 0 5px 20px rgba(220, 20, 60, 0.5);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
     z-index: 9998;
     animation: slideIn 1s ease, pulse 2s ease-in-out infinite 1s;
     cursor: pointer;
