@@ -88,26 +88,6 @@
     padding: 10px 16px;
     font-size: 0.9em;
   }
-  
-  /* Add scroll indicator hint */
-  .admin-tabs::after {
-    content: '→';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    background: linear-gradient(to right, transparent, #fff 20%);
-    padding: 10px 15px 10px 30px;
-    color: #667eea;
-    font-size: 1.2em;
-    pointer-events: none;
-    opacity: 0.7;
-  }
-  
-  /* Hide scroll indicator when scrolled to end */
-  .admin-tabs.scrolled-end::after {
-    display: none;
-  }
 }
 
 @media screen and (max-width: 480px) {
