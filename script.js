@@ -21,88 +21,17 @@
    - NEW: Smooth race animation with finish line carpets (gold/silver/bronze)
    - NEW: Admin Tools for lap time management (edit/delete)
    ========================================================= */
-/* -----------------------------
-   Performance Tracking
-   ----------------------------- */
-const PERFORMANCE_TRACKING = {
-  enabled: true,
-  
-  mark(name) {
-    if (this.enabled) performance.mark(name);
-  },
-  
-  measure(name, startMark, endMark) {
-    if (this.enabled) {
-      performance.measure(name, startMark, endMark);
-      const measure = performance.getEntriesByName(name)[0];
-      console.log(`⏱️ ${name}: ${measure.duration.toFixed(2)}ms`);
-      if (measure.duration > 1000) {
-        console.warn(`⚠️ Slow: ${name} took ${measure.duration.toFixed(0)}ms`);
-      }
-      return measure.duration;
-    }
-  }
-};
-
-/* -----------------------------
-   Improved Caching with TTL
-   ----------------------------- */
-const CACHE_V2 = {
-  tracks: { data: null, map: null, timestamp: null, ttl: 3600000 },
-  cars: { data: null, map: null, timestamp: null, ttl: 3600000 },
-  profiles: { data: null, timestamp: null, ttl: 300000 },
-  config: { data: null, timestamp: null, ttl: 600000 },
-  setup: { data: null, timestamp: null, ttl: 300000 },
-  roundData: { data: null, timestamp: null, ttl: 180000 }
-};
-
-function getCachedData(key) {
-  const cache = CACHE_V2[key];
-  if (!cache) return null;
-  
-  if (cache.data && cache.timestamp) {
-    const age = Date.now() - cache.timestamp;
-    if (age < cache.ttl) {
-      console.log(`✅ Cached ${key} (${Math.round(age/1000)}s old)`);
-      return cache.data;
-    }
-  }
-  return null;
-}
-
-function setCachedData(key, data) {
-  if (CACHE_V2[key]) {
-    CACHE_V2[key].data = data;
-    CACHE_V2[key].timestamp = Date.now();
-    console.log(`💾 Cached ${key}`);
-  }
-}
-
-function invalidateCache(key) {
-  if (key && CACHE_V2[key]) {
-    CACHE_V2[key].data = null;
-    CACHE_V2[key].timestamp = null;
-    CACHE_V2[key].map = null;
-    console.log(`🗑️ Cache cleared: ${key}`);
-  } else if (!key) {
-    Object.keys(CACHE_V2).forEach(k => {
-      CACHE_V2[k].data = null;
-      CACHE_V2[k].timestamp = null;
-    });
-    console.log('🗑️ All cache cleared');
-  }
-}
 
 /* -----------------------------
    Helpers & Cached State
    ----------------------------- */
-/*const CACHE = {
+const CACHE = {
   tracksMap: null,
   carsMap: null,
   setupArray: null,
   roundDataArray: null,
   leaderboardArray: null
-};*/
+};
 
 function toArray(obj) {
   if (!obj) return [];
@@ -1400,28 +1329,17 @@ function animate() {
    Core: Leaderboard (season-aware)
    ----------------------------- */
 async function loadLeaderboard() {
-  PERFORMANCE_TRACKING.mark('leaderboard-start');
-  
   try {
     const seasonSelect = document.getElementById('seasonSelect');
     const selectedSeason = seasonSelect?.value || '';
 
-    // Try cache first for Round_Data
-    let roundData = getCachedData('roundData');
+    const [roundDataSnapshot, rawLapsSnapshot] = await Promise.all([
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
+      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'))
+    ]);
     
-    if (!roundData) {
-      const roundDataSnapshot = await window.firebaseGet(
-        window.firebaseRef(window.firebaseDB, 'Round_Data')
-      );
-      roundData = toArray(roundDataSnapshot.val()).filter(r => r && r.Driver);
-      setCachedData('roundData', roundData);
-    }
-    
-    // Get raw laps for rounds completed calculation
-    const rawLapsSnapshot = await window.firebaseGet(
-      window.firebaseRef(window.firebaseDB, 'Form_responses_1')
-    );
-    const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver && r.Season && r.Round);
+    const roundData = toArray(roundDataSnapshot.val()).filter(r => r && r.Driver);
+    const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver);
 
     const filteredRoundData = selectedSeason 
       ? roundData.filter(r => String(r.Season) == String(selectedSeason))
@@ -1483,14 +1401,13 @@ async function loadLeaderboard() {
     createPointsProgressionGraph(filteredRoundData, selectedSeason);
 
     populateSeasonFilter();
-    
-    PERFORMANCE_TRACKING.mark('leaderboard-end');
-    PERFORMANCE_TRACKING.measure('loadLeaderboard', 'leaderboard-start', 'leaderboard-end');
 
   } catch (err) {
     console.error('loadLeaderboard error', err);
   }
 }
+
+
 
 function displayLeaderboard(data) {
   const tbody = document.getElementById('leaderboard-body');
@@ -1813,94 +1730,31 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
    Round Setup & Cards
    ----------------------------- */
 async function loadTracksAndCars() {
-  let tracksData = getCachedData('tracks');
-  let carsData = getCachedData('cars');
-  
-  if (!tracksData || !carsData) {
+  if (!CACHE.tracksMap || !CACHE.carsMap) {
     const [tracksSnap, carsSnap] = await Promise.all([
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars'))
     ]);
-    
-    tracksData = toArray(tracksSnap.val());
-    carsData = toArray(carsSnap.val());
-    
-    setCachedData('tracks', tracksData);
-    setCachedData('cars', carsData);
+    const tracks = toArray(tracksSnap.val());
+    const cars = toArray(carsSnap.val());
+    CACHE.tracksMap = {}; tracks.forEach(r=> { if (r && r['Track_Combos']) CACHE.tracksMap[r['Track_Combos'].trim()] = r['Track_Image_URL'] || ''; });
+    CACHE.carsMap = {}; cars.forEach(r=> { if (r && r['Car_Name']) CACHE.carsMap[r['Car_Name'].trim()] = r['Car_Image_URL'] || ''; });
   }
-  
-  // Build maps
-  if (!CACHE_V2.tracks.map) {
-    CACHE_V2.tracks.map = {};
-    tracksData.forEach(r => {
-      if (r && r['Track_Combos']) {
-        CACHE_V2.tracks.map[r['Track_Combos'].trim()] = r['Track_Image_URL'] || '';
-      }
-    });
-  }
-  
-  if (!CACHE_V2.cars.map) {
-    CACHE_V2.cars.map = {};
-    carsData.forEach(r => {
-      if (r && r['Car_Name']) {
-        CACHE_V2.cars.map[r['Car_Name'].trim()] = r['Car_Image_URL'] || '';
-      }
-    });
-  }
-  
-  // Keep old CACHE structure for compatibility
-  CACHE.tracksMap = CACHE_V2.tracks.map;
-  CACHE.carsMap = CACHE_V2.cars.map;
 
   const trackSelect = document.getElementById('trackLayout');
   const carSelect = document.getElementById('carName');
   if (trackSelect) {
     trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
     Object.keys(CACHE.tracksMap).sort().forEach(t => {
-      const opt = document.createElement('option'); 
-      opt.value = t; 
-      opt.textContent = t; 
-      trackSelect.appendChild(opt);
+      const opt = document.createElement('option'); opt.value = t; opt.textContent = t; trackSelect.appendChild(opt);
     });
   }
   if (carSelect) {
     carSelect.innerHTML = '<option value="">-- Select Car --</option>';
     Object.keys(CACHE.carsMap).sort().forEach(c => {
-      const opt = document.createElement('option'); 
-      opt.value = c; 
-      opt.textContent = c; 
-      carSelect.appendChild(opt);
+      const opt = document.createElement('option'); opt.value = c; opt.textContent = c; carSelect.appendChild(opt);
     });
   }
-}
-
-function setupLazyLoading() {
-  if ('loading' in HTMLImageElement.prototype) {
-    // Browser supports native lazy loading - already handled by loading="lazy"
-    return;
-  }
-  
-  // Fallback for older browsers
-  const imageObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        const src = img.getAttribute('data-src');
-        
-        if (src) {
-          img.src = src;
-          img.removeAttribute('data-src');
-          observer.unobserve(img);
-        }
-      }
-    });
-  }, {
-    rootMargin: '50px'
-  });
-
-  document.querySelectorAll('img[data-src]').forEach(img => {
-    imageObserver.observe(img);
-  });
 }
 
 document.getElementById('roundSetupForm')?.addEventListener('submit', async function(e){
@@ -2759,24 +2613,6 @@ async function loadDriverStats() {
       
       let desktopPhotoHtml = '';
       let mobilePhotoHtml = '';
-
-      const photoHtml = profile && profile.photoUrl 
-        ? `<div class="driver-photo-container">
-            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
-                 alt="${formattedName}" 
-                 class="driver-photo">
-            <div class="driver-number-badge">${profile.number||'?'}</div>
-          </div>` 
-        : ''; 
-
-      const mobilePhotoHtml = profile && profile.photoUrl 
-        ? `<div class="driver-photo-container-mobile">
-            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
-                 alt="${formattedName}" 
-                 class="driver-photo-mobile">
-            <div class="driver-number-badge-mobile">${profile.number||'?'}</div>
-          </div>` 
-        : ''; 
       
       if (currentUser) {
         desktopPhotoHtml = profile && profile.photoUrl 
@@ -2790,26 +2626,6 @@ async function loadDriverStats() {
         desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
         mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
       }
-
-      const mobilePhotoHtml = profile && profile.photoUrl 
-        ? `<div class="driver-photo-container-mobile">
-            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
-                 alt="${formattedName}" 
-                 class="driver-photo-mobile"
-                 loading="lazy">
-            <div class="driver-number-badge-mobile">${profile.number||'?'}</div>
-          </div>` 
-        : ''; 
-
-      const photoHtml = profile && profile.photoUrl 
-        ? `<div class="driver-photo-container">
-            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
-                 alt="${formattedName}" 
-                 class="driver-photo"
-                 loading="lazy">
-            <div class="driver-number-badge">${profile.number||'?'}</div>
-          </div>` 
-        : ''; 
 
       const trackCarRecordsHtml = trackCarRecordsArray.length ? trackCarRecordsArray.map(r=> `<div class="record-item"><span>${r.combo}</span><strong>${r.timeFormatted}</strong></div>`).join('') : '<p style="color:#999;text-align:center">No records yet</p>';
       const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op, false)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
@@ -2847,37 +2663,12 @@ async function loadDriverStats() {
             
             ${profile && profile.equipment && Object.values(profile.equipment).some(v => v) ? `
               <div class="equipment-grid-back">
-
-                           ${profile.equipment.wheel ? `
-                             <div class="equipment-display-item-back">
-                               ${profile.equipment.wheelImage ? 
-                                 `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" 
-                                       alt="Wheel" 
-                                       onerror="this.style.display='none'">` : ''}
-                               <div class="equipment-display-label">🎯 Wheel</div>
-                               <div class="equipment-display-value">${profile.equipment.wheel}</div>
-                             </div>
-                           ` : ''}
-              
                 ${profile.equipment.wheel ? `
                   <div class="equipment-display-item-back">
                     ${profile.equipment.wheelImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" alt="Wheel" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🎯 Wheel</div>
                     <div class="equipment-display-value">${profile.equipment.wheel}</div>
                   </div>
-
-                           ${profile.equipment.wheel ? `
-                             <div class="equipment-display-item-back">
-                               ${profile.equipment.wheelImage ? 
-                                 `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" 
-                                       alt="Wheel" 
-                                       loading="lazy"
-                                       onerror="this.style.display='none'">` : ''}
-                               <div class="equipment-display-label">🎯 Wheel</div>
-                               <div class="equipment-display-value">${profile.equipment.wheel}</div>
-                             </div>
-                           ` : ''}
-                  
                 ` : ''}
                 ${profile.equipment.wheelbase ? `
                   <div class="equipment-display-item-back">
@@ -3385,7 +3176,6 @@ window.addEventListener('resize', handleResponsiveUI);
 document.addEventListener('DOMContentLoaded', function() {
   updateSubmitTabVisibility();
   handleResponsiveUI();
-  setupLazyLoading();
   
   const passwordInput = document.getElementById('passwordInput');
   const driverNameInput = document.getElementById('driverNameInput');
@@ -4031,8 +3821,6 @@ async function addNewTrack() {
     const tracksRef = window.firebaseRef(window.firebaseDB, 'Tracks');
     await window.firebasePush(tracksRef, trackData);
 
-    invalidateCache('tracks')
-
     alert('✅ Track added successfully!');
     CACHE.tracksMap = null;
     loadAdminTools();
@@ -4062,8 +3850,6 @@ async function updateTrack(index) {
         Track_Image_URL: newImageUrl
       });
 
-      invalidateCache('tracks');
-
       alert('✅ Track updated successfully!');
       CACHE.tracksMap = null;
       loadAdminTools();
@@ -4090,8 +3876,6 @@ async function deleteTrack(index) {
       
       const trackRef = window.firebaseRef(window.firebaseDB, `Tracks/${firebaseKey}`);
       await window.firebaseSet(trackRef, null);
-
-      invalidateCache('tracks');
 
       alert('✅ Track deleted successfully!');
       CACHE.tracksMap = null;
@@ -4122,8 +3906,6 @@ async function addNewCar() {
     const carsRef = window.firebaseRef(window.firebaseDB, 'Cars');
     await window.firebasePush(carsRef, carData);
 
-    invalidateCache('cars')
-
     alert('✅ Car added successfully!');
     CACHE.carsMap = null;
     loadAdminTools();
@@ -4153,8 +3935,6 @@ async function updateCar(index) {
         Car_Image_URL: newImageUrl
       });
 
-      invalidateCache('cars');
-       
       alert('✅ Car updated successfully!');
       CACHE.carsMap = null;
       loadAdminTools();
@@ -4181,8 +3961,6 @@ async function deleteCar(index) {
       
       const carRef = window.firebaseRef(window.firebaseDB, `Cars/${firebaseKey}`);
       await window.firebaseSet(carRef, null);
-
-      invalidateCache('cars');
 
       alert('✅ Car deleted successfully!');
       CACHE.carsMap = null;
