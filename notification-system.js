@@ -110,6 +110,11 @@ function checkForRoundResultUpdates(roundData) {
   
   const roundArray = toArray(roundData);
   
+  // ✅ ADD THIS SAFETY CHECK:
+  if (!USER_LAST_SEEN.roundResults) {
+    USER_LAST_SEEN.roundResults = {};
+  }
+  
   roundArray.forEach(result => {
     if (!result || !result.Season || !result.Round) return;
     
@@ -129,6 +134,14 @@ function checkForProfileUpdates(profilesData) {
   if (!currentUser || !profilesData) return;
   
   const profilesArray = toArray(profilesData);
+  
+  // ✅ ADD THESE SAFETY CHECKS:
+  if (!USER_LAST_SEEN.driverProfiles) {
+    USER_LAST_SEEN.driverProfiles = {};
+  }
+  if (!USER_LAST_SEEN.driverEquipment) {
+    USER_LAST_SEEN.driverEquipment = {};
+  }
   
   profilesArray.forEach(profile => {
     if (!profile || !profile.Name) return;
@@ -158,6 +171,11 @@ function checkForSetupUpdates(setupData) {
   if (!currentUser || !setupData) return;
   
   const setupArray = toArray(setupData);
+  
+  // ✅ ADD THIS SAFETY CHECK:
+  if (!USER_LAST_SEEN.setupRounds) {
+    USER_LAST_SEEN.setupRounds = {};
+  }
   
   setupArray.forEach(setup => {
     if (!setup || !setup.Season || !setup.Round_Number) return;
