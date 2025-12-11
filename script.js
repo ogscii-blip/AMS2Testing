@@ -2495,8 +2495,8 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     card.innerHTML = `
       <div class="round-card-header"><h3>Round ${setup.round}</h3><p class="season-number">${setup.season}</p></div>
       <div class="round-card-images">
-        <div class="round-card-image-container"><img src="${trackImage}" alt="${setup.trackLayout}" onerror="this.src='${fallbackTrackImage}'"><p>${setup.trackLayout}</p></div>
-        <div class="round-card-image-container"><img src="${carImage}" alt="${setup.car}" onerror="this.src='${fallbackCarImage}'"><p>${setup.car}</p></div>
+        <div class="round-card-image-container"><img src="${trackImage}" alt="${setup.trackLayout}" loading="lazy" onerror="this.src='${fallbackTrackImage}'"><p>${setup.trackLayout}</p></div>
+        <div class="round-card-image-container"><img src="${carImage}" alt="${setup.car}" loading="lazy" onerror="this.src='${fallbackCarImage}'"><p>${setup.car}</p></div>
       </div>
       <div class="round-card-body">
         ${bestRoundTime ? `<div class="best-time-section"><h4>🏆 This Round's Best</h4><div class="best-time-item gold"><div><div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div><div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div></div><div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div></div></div>` : `<div class="best-time-section"><p style="color:#999;">No lap times recorded yet</p></div>`}
@@ -2616,7 +2616,7 @@ async function loadDriverStats() {
       
       if (currentUser) {
         desktopPhotoHtml = profile && profile.photoUrl 
-          ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
+          ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo" loading="lazy"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
           : '';
         mobilePhotoHtml = profile && profile.photoUrl 
           ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` 
@@ -2665,49 +2665,49 @@ async function loadDriverStats() {
               <div class="equipment-grid-back">
                 ${profile.equipment.wheel ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.wheelImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" alt="Wheel" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.wheelImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" alt="Wheel" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🎯 Wheel</div>
                     <div class="equipment-display-value">${profile.equipment.wheel}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.wheelbase ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.wheelbaseImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelbaseImage)}" alt="Wheelbase" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.wheelbaseImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelbaseImage)}" alt="Wheelbase" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">⚙️ Wheelbase</div>
                     <div class="equipment-display-value">${profile.equipment.wheelbase}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.pedals ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.pedalsImage ? `<img src="${normalizePhotoUrl(profile.equipment.pedalsImage)}" alt="Pedals" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.pedalsImage ? `<img src="${normalizePhotoUrl(profile.equipment.pedalsImage)}" alt="Pedals" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🦶 Pedals</div>
                     <div class="equipment-display-value">${profile.equipment.pedals}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.shifter ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.shifterImage ? `<img src="${normalizePhotoUrl(profile.equipment.shifterImage)}" alt="Shifter" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.shifterImage ? `<img src="${normalizePhotoUrl(profile.equipment.shifterImage)}" alt="Shifter" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🔧 Shifter</div>
                     <div class="equipment-display-value">${profile.equipment.shifter}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.cockpit ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.cockpitImage ? `<img src="${normalizePhotoUrl(profile.equipment.cockpitImage)}" alt="Cockpit" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.cockpitImage ? `<img src="${normalizePhotoUrl(profile.equipment.cockpitImage)}" alt="Cockpit" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🪑 Cockpit</div>
                     <div class="equipment-display-value">${profile.equipment.cockpit}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.seat ? `
                   <div class="equipment-display-item-back">
-                    ${profile.equipment.seatImage ? `<img src="${normalizePhotoUrl(profile.equipment.seatImage)}" alt="Seat" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.seatImage ? `<img src="${normalizePhotoUrl(profile.equipment.seatImage)}" alt="Seat" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">💺 Seat</div>
                     <div class="equipment-display-value">${profile.equipment.seat}</div>
                   </div>
                 ` : ''}
                 ${profile.equipment.other ? `
                   <div class="equipment-display-item-back full-width">
-                    ${profile.equipment.otherImage ? `<img src="${normalizePhotoUrl(profile.equipment.otherImage)}" alt="Other" onerror="this.style.display='none'">` : ''}
+                    ${profile.equipment.otherImage ? `<img src="${normalizePhotoUrl(profile.equipment.otherImage)}" alt="Other" loading="lazy" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🎧 Other</div>
                     <div class="equipment-display-value">${profile.equipment.other}</div>
                   </div>
@@ -2761,7 +2761,9 @@ async function loadProfile() {
   document.getElementById('profileBio').value = profile.bio || '';
 
   if (profile.photoUrl) {
-    document.getElementById('photoPreviewImg').src = normalizePhotoUrl(profile.photoUrl);
+    const previewImg = document.getElementById('photoPreviewImg');
+    previewImg.src = normalizePhotoUrl(profile.photoUrl);
+    previewImg.setAttribute('loading', 'lazy');
     document.getElementById('photoPreview').style.display = 'block';
   }
   
@@ -2890,8 +2892,9 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       const numberBadge = document.getElementById('userNumberBadge');
       const iconFallback = document.getElementById('userIconFallback');
       if (profile && profile.photoUrl) {
-        photoElement.src = normalizePhotoUrl(profile.photoUrl);
-        numberBadge.textContent = profile.number || '?';
+      photoElement.src = normalizePhotoUrl(profile.photoUrl);
+      photoElement.setAttribute('loading', 'lazy');
+      numberBadge.textContent = profile.number || '?';
         photoContainer.style.display = 'block';
         iconFallback.style.display = 'none';
       }
@@ -2924,6 +2927,7 @@ function showEquipmentPreview(equipmentType, imageUrl) {
   
   if (previewImg && previewContainer && imageUrl) {
     previewImg.src = normalizePhotoUrl(imageUrl);
+    previewImg.setAttribute('loading', 'lazy');
     previewContainer.style.display = 'block';
   }
 }
@@ -4204,6 +4208,7 @@ function updateTrackPreview(trackCombo) {
   if (trackCombo && CACHE.tracksMap && CACHE.tracksMap[trackCombo]) {
     const imageUrl = CACHE.tracksMap[trackCombo];
     previewImg.src = imageUrl;
+    previewImg.setAttribute('loading', 'lazy');
     previewLabel.textContent = trackCombo;
     previewContainer.style.display = 'block';
     
@@ -4226,6 +4231,7 @@ function updateCarPreview(carName) {
   if (carName && CACHE.carsMap && CACHE.carsMap[carName]) {
     const imageUrl = CACHE.carsMap[carName];
     previewImg.src = imageUrl;
+    previewImg.setAttribute('loading', 'lazy');
     previewLabel.textContent = carName;
     previewContainer.style.display = 'block';
     
