@@ -3105,6 +3105,8 @@ function applyUserUI() {
   }
   updateSubmitTabVisibility();
   updateAdminTabVisibility();
+  injectNotificationCSS();
+  initializeNotificationSystem(); 
 }
 
 function updateSubmitTabVisibility() {
