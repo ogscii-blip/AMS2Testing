@@ -103,6 +103,23 @@ let currentAdminFilters = {
 let adminSortAscending = true;
 let currentAdminTab = 'time-submissions';
 
+// Notification system globals
+let USER_LAST_SEEN = {
+  leaderboard: null,
+  roundResults: {},
+  driverProfiles: {},
+  driverEquipment: {},
+  setupRounds: {}
+};
+
+let PENDING_UPDATES = {
+  leaderboard: false,
+  roundResults: new Set(),
+  driverProfiles: new Set(),
+  driverEquipment: new Set(),
+  setupRounds: new Set()
+};
+
 /* -----------------------------
    Config & initial listeners
    ----------------------------- */
