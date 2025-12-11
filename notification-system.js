@@ -1,32 +1,38 @@
 /* =========================================================
-   REAL-TIME NOTIFICATION SYSTEM FOR AMS2 RACING LEAGUE
-   Tracks updates and shows visual notifications for changes
+   NOTIFICATION SYSTEM - SAFE VERSION (No Function Wrapping)
+   Add this at the END of your existing script.js file
    ========================================================= */
 
-/* -----------------------------
-   PART 1: Data Structure & Firebase Setup
-   ----------------------------- */
+// ============================================================================
+// STEP 1: Add these global variables at the top of your script.js
+// ============================================================================
 
-// Store last seen timestamps for each user
+/*
+// Add these with your other global variables (near the top where you have CACHE, ALLOWED_USERS, etc.)
+
 let USER_LAST_SEEN = {
   leaderboard: null,
-  roundResults: {},      // { 'S3-R5': timestamp }
-  driverProfiles: {},    // { 'driverName': timestamp }
-  driverEquipment: {},   // { 'driverName': timestamp }
-  setupRounds: {}        // { 'S3-R5': timestamp }
+  roundResults: {},
+  driverProfiles: {},
+  driverEquipment: {},
+  setupRounds: {}
 };
 
-// Track what has updates (for notification badges)
 let PENDING_UPDATES = {
   leaderboard: false,
-  roundResults: new Set(),     // Set of round keys like 'S3-R5'
-  driverProfiles: new Set(),   // Set of driver names
-  driverEquipment: new Set(),  // Set of driver names
-  setupRounds: new Set()       // Set of round keys
+  roundResults: new Set(),
+  driverProfiles: new Set(),
+  driverEquipment: new Set(),
+  setupRounds: new Set()
 };
+*/
+
+// ============================================================================
+// STEP 2: Add these functions at the END of your script.js
+// ============================================================================
 
 /* -----------------------------
-   PART 2: Initialize Last Seen Tracking
+   Notification System Functions
    ----------------------------- */
 
 async function initializeNotificationSystem() {
@@ -34,7 +40,6 @@ async function initializeNotificationSystem() {
   
   console.log('🔔 Initializing notification system for', currentUser.name);
   
-  // Load user's last seen timestamps from Firebase
   const userKey = encodeKey(currentUser.name);
   const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}`);
   
@@ -44,9 +49,8 @@ async function initializeNotificationSystem() {
     
     if (savedLastSeen) {
       USER_LAST_SEEN = savedLastSeen;
-      console.log('✅ Loaded last seen data:', USER_LAST_SEEN);
+      console.log('✅ Loaded last seen data');
     } else {
-      // First time user - set current timestamp for everything
       USER_LAST_SEEN = {
         leaderboard: Date.now(),
         roundResults: {},
@@ -57,7 +61,6 @@ async function initializeNotificationSystem() {
       await saveLastSeenTimestamps();
     }
     
-    // Start listening for changes
     startListeningForUpdates();
     
   } catch (err) {
@@ -73,47 +76,34 @@ async function saveLastSeenTimestamps() {
   
   try {
     await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
-    console.log('💾 Saved last seen timestamps');
   } catch (err) {
     console.error('❌ Error saving last seen data:', err);
   }
 }
 
-/* -----------------------------
-   PART 3: Listen for Real-Time Updates
-   ----------------------------- */
-
 function startListeningForUpdates() {
   console.log('👂 Starting to listen for updates...');
   
-  // Listen to Round_Data changes
   const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
   window.firebaseOnValue(roundDataRef, (snapshot) => {
     checkForRoundResultUpdates(snapshot.val());
   });
   
-  // Listen to Driver_Profiles changes
   const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
   window.firebaseOnValue(profilesRef, (snapshot) => {
     checkForProfileUpdates(snapshot.val());
   });
   
-  // Listen to Round Setup changes
   const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
   window.firebaseOnValue(setupRef, (snapshot) => {
     checkForSetupUpdates(snapshot.val());
   });
   
-  // Listen to Leaderboard changes
   const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
   window.firebaseOnValue(leaderboardRef, (snapshot) => {
     checkForLeaderboardUpdates(snapshot.val());
   });
 }
-
-/* -----------------------------
-   PART 4: Check Functions (Detect What Changed)
-   ----------------------------- */
 
 function checkForRoundResultUpdates(roundData) {
   if (!currentUser || !roundData) return;
@@ -125,13 +115,10 @@ function checkForRoundResultUpdates(roundData) {
     
     const roundKey = `S${result.Season}-R${result.Round}`;
     const resultTimestamp = new Date(result.Last_Modified || result.Timestamp).getTime();
-    
-    // Check if this round has been updated since user last viewed it
     const lastSeen = USER_LAST_SEEN.roundResults[roundKey] || 0;
     
     if (resultTimestamp > lastSeen) {
       PENDING_UPDATES.roundResults.add(roundKey);
-      console.log(`🔔 New update detected in ${roundKey}`);
     }
   });
   
@@ -152,17 +139,14 @@ function checkForProfileUpdates(profilesData) {
     
     if (profileTimestamp > lastSeen) {
       PENDING_UPDATES.driverProfiles.add(driverName);
-      console.log(`🔔 Profile update detected for ${driverName}`);
     }
     
-    // Check equipment separately
     if (profile.equipment && profile.equipment_last_modified) {
       const equipTimestamp = new Date(profile.equipment_last_modified).getTime();
       const equipLastSeen = USER_LAST_SEEN.driverEquipment[driverName] || 0;
       
       if (equipTimestamp > equipLastSeen) {
         PENDING_UPDATES.driverEquipment.add(driverName);
-        console.log(`🔔 Equipment update detected for ${driverName}`);
       }
     }
   });
@@ -184,7 +168,6 @@ function checkForSetupUpdates(setupData) {
     
     if (setupTimestamp > lastSeen) {
       PENDING_UPDATES.setupRounds.add(roundKey);
-      console.log(`🔔 New round setup detected: ${roundKey}`);
     }
   });
   
@@ -194,7 +177,6 @@ function checkForSetupUpdates(setupData) {
 function checkForLeaderboardUpdates(leaderboardData) {
   if (!currentUser || !leaderboardData) return;
   
-  // Simple approach: if ANY leaderboard entry is newer than last seen
   const leaderboardArray = toArray(leaderboardData);
   const lastSeen = USER_LAST_SEEN.leaderboard || 0;
   
@@ -206,30 +188,21 @@ function checkForLeaderboardUpdates(leaderboardData) {
   
   if (hasUpdate) {
     PENDING_UPDATES.leaderboard = true;
-    console.log('🔔 Leaderboard update detected');
   }
   
   updateNotificationBadges();
 }
 
-/* -----------------------------
-   PART 5: Visual Notification System
-   ----------------------------- */
-
 function updateNotificationBadges() {
-  // Update Overall tab badge
   updateTabBadge('overall', PENDING_UPDATES.leaderboard);
   
-  // Update Round Results tab badge
   const hasRoundUpdates = PENDING_UPDATES.roundResults.size > 0;
   updateTabBadge('round', hasRoundUpdates);
   
-  // Update Drivers tab badge
   const hasDriverUpdates = PENDING_UPDATES.driverProfiles.size > 0 || 
                           PENDING_UPDATES.driverEquipment.size > 0;
   updateTabBadge('drivers', hasDriverUpdates);
   
-  // Update Setup tab badge
   const hasSetupUpdates = PENDING_UPDATES.setupRounds.size > 0;
   updateTabBadge('setup', hasSetupUpdates);
 }
@@ -238,27 +211,19 @@ function updateTabBadge(tabName, hasUpdate) {
   const tabButton = document.querySelector(`.tab-button[onclick*="${tabName}"]`);
   if (!tabButton) return;
   
-  // Remove existing badge
   const existingBadge = tabButton.querySelector('.notification-badge');
   if (existingBadge) existingBadge.remove();
   
   if (hasUpdate) {
-    // Add pulsating badge
     const badge = document.createElement('span');
     badge.className = 'notification-badge';
     badge.textContent = '●';
     tabButton.appendChild(badge);
-    
-    // Add pulsate class to tab
     tabButton.classList.add('has-notification');
   } else {
     tabButton.classList.remove('has-notification');
   }
 }
-
-/* -----------------------------
-   PART 6: Mark as Seen Functions
-   ----------------------------- */
 
 function markLeaderboardAsSeen() {
   USER_LAST_SEEN.leaderboard = Date.now();
@@ -272,8 +237,6 @@ function markRoundResultAsSeen(roundKey) {
   PENDING_UPDATES.roundResults.delete(roundKey);
   saveLastSeenTimestamps();
   updateNotificationBadges();
-  
-  // Highlight the round briefly
   highlightElement(`details-${roundKey}`);
 }
 
@@ -298,26 +261,18 @@ function markSetupRoundAsSeen(roundKey) {
   updateNotificationBadges();
 }
 
-/* -----------------------------
-   PART 7: Highlight Animations
-   ----------------------------- */
-
 function highlightElement(elementId, color = '#ffeb3b') {
   const element = document.getElementById(elementId);
   if (!element) return;
   
-  // Add highlight class
   element.classList.add('update-highlight');
   
-  // Apply color
   const originalBg = element.style.backgroundColor;
   element.style.backgroundColor = color;
   element.style.transition = 'background-color 0.5s ease';
   
-  // Scroll into view
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
   
-  // Remove after 2 seconds
   setTimeout(() => {
     element.style.backgroundColor = originalBg;
     setTimeout(() => {
@@ -333,10 +288,8 @@ function pulsateFlipButton(driverName) {
   const flipButton = driverCard.querySelector('.flip-card-button');
   if (!flipButton) return;
   
-  // Add pulsate class
   flipButton.classList.add('pulsate-notification');
   
-  // Add notification dot
   if (!flipButton.querySelector('.flip-notification-dot')) {
     const dot = document.createElement('span');
     dot.className = 'flip-notification-dot';
@@ -357,67 +310,13 @@ function removePulsateFlipButton(driverName) {
   if (dot) dot.remove();
 }
 
-/* -----------------------------
-   PART 8: Integration with Existing Functions
-   ----------------------------- */
-
-// Modify existing showTab function to mark as seen
-const originalShowTab = window.showTab || showTab;
-function showTab(tabName, sourceButton = null) {
-  // Call original function
-  originalShowTab(tabName, sourceButton);
-  
-  // Mark tab as seen
-  if (tabName === 'overall') {
-    setTimeout(() => markLeaderboardAsSeen(), 1000);
-  }
-  
-  // Update badges
-  updateNotificationBadges();
-}
-
-// Modify toggleRound to mark as seen
-const originalToggleRound = window.toggleRound || toggleRound;
-function toggleRound(key) {
-  originalToggleRound(key);
-  
-  const details = document.getElementById(`details-${key}`);
-  if (details && details.classList.contains('expanded')) {
-    // User opened the round - mark as seen
-    setTimeout(() => markRoundResultAsSeen(key), 500);
-  }
-}
-
-// Modify flipDriverCard to mark equipment as seen
-const originalFlipDriverCard = window.flipDriverCard || flipDriverCard;
-function flipDriverCard(button) {
-  originalFlipDriverCard(button);
-  
-  const card = button.closest('.driver-card');
-  if (card && card.classList.contains('flipped')) {
-    const driverName = card.getAttribute('data-driver');
-    if (driverName && PENDING_UPDATES.driverEquipment.has(driverName)) {
-      setTimeout(() => {
-        markDriverEquipmentAsSeen(driverName);
-        removePulsateFlipButton(driverName);
-      }, 500);
-    }
-  }
-}
-
-/* -----------------------------
-   PART 9: Apply Visual Indicators on Page Load
-   ----------------------------- */
-
 function applyNotificationIndicators() {
   if (!currentUser) return;
   
-  // Pulsate flip buttons for drivers with equipment updates
   PENDING_UPDATES.driverEquipment.forEach(driverName => {
     pulsateFlipButton(driverName);
   });
   
-  // Add glow to driver cards with profile updates
   PENDING_UPDATES.driverProfiles.forEach(driverName => {
     const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
     if (card) {
@@ -425,28 +324,29 @@ function applyNotificationIndicators() {
     }
   });
   
-  // Add indicators to round headers with updates
   PENDING_UPDATES.roundResults.forEach(roundKey => {
-    const header = document.querySelector(`#details-${roundKey}`)?.previousElementSibling;
+    const details = document.getElementById(`details-${roundKey}`);
+    if (!details) return;
+    
+    const header = details.previousElementSibling;
     if (header) {
       header.classList.add('round-updated');
       
-      // Add notification dot
       if (!header.querySelector('.round-notification-dot')) {
         const dot = document.createElement('span');
         dot.className = 'round-notification-dot';
         dot.textContent = '●';
-        header.querySelector('.round-info-column')?.appendChild(dot);
+        const infoColumn = header.querySelector('.round-info-column');
+        if (infoColumn) infoColumn.appendChild(dot);
       }
     }
   });
 }
 
-/* -----------------------------
-   PART 10: CSS for Animations (Add to styles.css)
-   ----------------------------- */
-
-const NOTIFICATION_CSS = `
+function injectNotificationCSS() {
+  if (document.getElementById('notification-styles')) return;
+  
+  const css = `
 /* Notification Badge on Tabs */
 .notification-badge {
   position: absolute;
@@ -466,23 +366,13 @@ const NOTIFICATION_CSS = `
 }
 
 @keyframes pulse-notification {
-  0%, 100% { 
-    transform: scale(1); 
-    opacity: 1; 
-  }
-  50% { 
-    transform: scale(1.3); 
-    opacity: 0.7; 
-  }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
 }
 
 @keyframes tab-pulse {
-  0%, 100% { 
-    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2); 
-  }
-  50% { 
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.6); 
-  }
+  0%, 100% { box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2); }
+  50% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.6); }
 }
 
 /* Flip Button Pulsate */
@@ -504,12 +394,8 @@ const NOTIFICATION_CSS = `
 }
 
 @keyframes flip-button-pulse {
-  0%, 100% { 
-    transform: scale(1); 
-  }
-  50% { 
-    transform: scale(1.1); 
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 /* Driver Card Profile Update Glow */
@@ -519,12 +405,8 @@ const NOTIFICATION_CSS = `
 }
 
 @keyframes card-glow {
-  0%, 100% { 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-  }
-  50% { 
-    box-shadow: 0 4px 30px rgba(102, 126, 234, 0.6); 
-  }
+  0%, 100% { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  50% { box-shadow: 0 4px 30px rgba(102, 126, 234, 0.6); }
 }
 
 /* Round Header Update Indicator */
@@ -543,12 +425,8 @@ const NOTIFICATION_CSS = `
 }
 
 @keyframes round-pulse {
-  0%, 100% { 
-    background: linear-gradient(135deg, #667eea10 0%, #764ba220 100%); 
-  }
-  50% { 
-    background: linear-gradient(135deg, #667eea20 0%, #764ba240 100%); 
-  }
+  0%, 100% { background: linear-gradient(135deg, #667eea10 0%, #764ba220 100%); }
+  50% { background: linear-gradient(135deg, #667eea20 0%, #764ba240 100%); }
 }
 
 /* Highlight Flash Animation */
@@ -557,15 +435,11 @@ const NOTIFICATION_CSS = `
 }
 
 @keyframes highlight-flash {
-  0%, 100% { 
-    background-color: transparent; 
-  }
-  50% { 
-    background-color: #ffeb3b; 
-  }
+  0%, 100% { background-color: transparent; }
+  50% { background-color: #ffeb3b; }
 }
 
-/* Mobile Responsive Adjustments */
+/* Mobile Responsive */
 @media (max-width: 768px) {
   .notification-badge {
     width: 8px;
@@ -580,59 +454,111 @@ const NOTIFICATION_CSS = `
   }
 }
 `;
-
-/* -----------------------------
-   PART 11: Initialization
-   ----------------------------- */
-
-// Call this after user logs in
-function initNotifications() {
-  if (!currentUser) return;
   
-  console.log('🔔 Setting up notification system...');
-  
-  // Add CSS
-  if (!document.getElementById('notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = NOTIFICATION_CSS;
-    document.head.appendChild(style);
-  }
-  
-  // Initialize system
-  initializeNotificationSystem();
+  const style = document.createElement('style');
+  style.id = 'notification-styles';
+  style.textContent = css;
+  document.head.appendChild(style);
 }
 
-// Add to your existing applyUserUI function
-const originalApplyUserUI = window.applyUserUI || applyUserUI;
-function applyUserUI() {
-  originalApplyUserUI();
-  
-  if (currentUser) {
-    initNotifications();
-  }
-}
-
-/* -----------------------------
-   USAGE EXAMPLES
-   ----------------------------- */
+// ============================================================================
+// STEP 3: Modify these EXISTING functions in your script.js
+// ============================================================================
 
 /*
-// When user views leaderboard
-loadLeaderboard(); // existing function
-setTimeout(() => markLeaderboardAsSeen(), 1000);
+// FIND your existing showTab function and ADD these lines:
 
-// When user opens a round
-toggleRound('S3-R5'); // existing function
-// Auto-marks as seen when expanded
+function showTab(tabName, sourceButton = null) {
+  // ... your existing code ...
+  
+  // ADD THESE LINES at the end:
+  if (currentUser) {
+    if (tabName === 'overall') {
+      setTimeout(() => markLeaderboardAsSeen(), 1000);
+    }
+    updateNotificationBadges();
+  }
+}
 
-// When user flips to equipment
-flipDriverCard(button); // existing function
-// Auto-marks equipment as seen when flipped
+// ----------------------------------------------------------------
 
-// Manual highlighting
-highlightElement('details-S3-R5', '#ffeb3b');
+// FIND your existing toggleRound function and ADD these lines:
 
-// Manual pulsate
-pulsateFlipButton('Olaf');
+function toggleRound(key) {
+  const details = document.getElementById(`details-${key}`);
+  const icon = document.getElementById(`toggle-${key}`);
+  if (!details) return;
+  details.classList.toggle('expanded');
+  if (icon) icon.classList.toggle('expanded');
+  
+  // ADD THESE LINES:
+  if (currentUser && details.classList.contains('expanded')) {
+    setTimeout(() => markRoundResultAsSeen(key), 500);
+  }
+}
+
+// ----------------------------------------------------------------
+
+// FIND your existing flipDriverCard function and ADD these lines:
+
+function flipDriverCard(button) {
+  const card = button.closest('.driver-card');
+  if (card) {
+    card.classList.toggle('flipped');
+    
+    // ADD THESE LINES:
+    if (currentUser && card.classList.contains('flipped')) {
+      const driverName = card.getAttribute('data-driver');
+      if (driverName && PENDING_UPDATES.driverEquipment.has(driverName)) {
+        setTimeout(() => {
+          markDriverEquipmentAsSeen(driverName);
+          removePulsateFlipButton(driverName);
+        }, 500);
+      }
+    }
+  }
+}
+
+// ----------------------------------------------------------------
+
+// FIND your existing applyUserUI function and ADD these lines:
+
+function applyUserUI() {
+  // ... your existing code ...
+  
+  // ADD THESE LINES at the end, inside the if(currentUser) block:
+  if (currentUser) {
+    // ... your existing code ...
+    
+    // ADD THESE:
+    injectNotificationCSS();
+    initializeNotificationSystem();
+  }
+}
+
+// ----------------------------------------------------------------
+
+// FIND your existing loadDriverStats function and ADD this line at the END:
+
+async function loadDriverStats() {
+  // ... your existing code ...
+  
+  // ADD THIS LINE at the very end:
+  if (currentUser) {
+    setTimeout(() => applyNotificationIndicators(), 500);
+  }
+}
+
+// ----------------------------------------------------------------
+
+// FIND your existing loadRoundData function and ADD this line at the END:
+
+async function loadRoundData() {
+  // ... your existing code ...
+  
+  // ADD THIS LINE at the very end:
+  if (currentUser) {
+    setTimeout(() => applyNotificationIndicators(), 500);
+  }
+}
 */
