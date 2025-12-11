@@ -2759,6 +2759,24 @@ async function loadDriverStats() {
       
       let desktopPhotoHtml = '';
       let mobilePhotoHtml = '';
+
+      const photoHtml = profile && profile.photoUrl 
+        ? `<div class="driver-photo-container">
+            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
+                 alt="${formattedName}" 
+                 class="driver-photo">
+            <div class="driver-number-badge">${profile.number||'?'}</div>
+          </div>` 
+        : ''; 
+
+      const mobilePhotoHtml = profile && profile.photoUrl 
+        ? `<div class="driver-photo-container-mobile">
+            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
+                 alt="${formattedName}" 
+                 class="driver-photo-mobile">
+            <div class="driver-number-badge-mobile">${profile.number||'?'}</div>
+          </div>` 
+        : ''; 
       
       if (currentUser) {
         desktopPhotoHtml = profile && profile.photoUrl 
@@ -2772,6 +2790,26 @@ async function loadDriverStats() {
         desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
         mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
       }
+
+      const mobilePhotoHtml = profile && profile.photoUrl 
+        ? `<div class="driver-photo-container-mobile">
+            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
+                 alt="${formattedName}" 
+                 class="driver-photo-mobile"
+                 loading="lazy">
+            <div class="driver-number-badge-mobile">${profile.number||'?'}</div>
+          </div>` 
+        : ''; 
+
+      const photoHtml = profile && profile.photoUrl 
+        ? `<div class="driver-photo-container">
+            <img src="${normalizePhotoUrl(profile.photoUrl)}" 
+                 alt="${formattedName}" 
+                 class="driver-photo"
+                 loading="lazy">
+            <div class="driver-number-badge">${profile.number||'?'}</div>
+          </div>` 
+        : ''; 
 
       const trackCarRecordsHtml = trackCarRecordsArray.length ? trackCarRecordsArray.map(r=> `<div class="record-item"><span>${r.combo}</span><strong>${r.timeFormatted}</strong></div>`).join('') : '<p style="color:#999;text-align:center">No records yet</p>';
       const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op, false)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
@@ -2809,12 +2847,37 @@ async function loadDriverStats() {
             
             ${profile && profile.equipment && Object.values(profile.equipment).some(v => v) ? `
               <div class="equipment-grid-back">
+
+                           ${profile.equipment.wheel ? `
+                             <div class="equipment-display-item-back">
+                               ${profile.equipment.wheelImage ? 
+                                 `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" 
+                                       alt="Wheel" 
+                                       onerror="this.style.display='none'">` : ''}
+                               <div class="equipment-display-label">🎯 Wheel</div>
+                               <div class="equipment-display-value">${profile.equipment.wheel}</div>
+                             </div>
+                           ` : ''}
+              
                 ${profile.equipment.wheel ? `
                   <div class="equipment-display-item-back">
                     ${profile.equipment.wheelImage ? `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" alt="Wheel" onerror="this.style.display='none'">` : ''}
                     <div class="equipment-display-label">🎯 Wheel</div>
                     <div class="equipment-display-value">${profile.equipment.wheel}</div>
                   </div>
+
+                           ${profile.equipment.wheel ? `
+                             <div class="equipment-display-item-back">
+                               ${profile.equipment.wheelImage ? 
+                                 `<img src="${normalizePhotoUrl(profile.equipment.wheelImage)}" 
+                                       alt="Wheel" 
+                                       loading="lazy"
+                                       onerror="this.style.display='none'">` : ''}
+                               <div class="equipment-display-label">🎯 Wheel</div>
+                               <div class="equipment-display-value">${profile.equipment.wheel}</div>
+                             </div>
+                           ` : ''}
+                  
                 ` : ''}
                 ${profile.equipment.wheelbase ? `
                   <div class="equipment-display-item-back">
