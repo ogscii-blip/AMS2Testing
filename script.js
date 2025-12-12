@@ -4703,6 +4703,8 @@ function startListeningForUpdates() {
 function checkForRoundResultUpdates(roundData) {
   if (!roundData || !currentUser) return;
   
+  console.log('🔍 Checking for round result updates...');
+  
   const dataArray = Array.isArray(roundData) ? roundData : Object.values(roundData);
   const roundInfo = {};
   
@@ -4726,26 +4728,35 @@ function checkForRoundResultUpdates(roundData) {
   const userKey = currentUser.name.replace(/\s+/g, '_');
   const userLastSeen = USER_LAST_SEEN.roundResults || {};
   
-  let hasNewData = false; // ADD THIS FLAG
+  let hasNewData = false;
+  
+  console.log('📊 Round info:', roundInfo);
+  console.log('👤 User last seen:', userLastSeen);
   
   Object.entries(roundInfo).forEach(([key, info]) => {
     const previousCount = userLastSeen[key + '_count'] || 0;
     const previousTimestamp = userLastSeen[key] || 0;
     
+    console.log(`   ${key}: current=${info.count}, saved=${previousCount}, timestamp=${info.mostRecent}, lastSeen=${previousTimestamp}`);
+    
     if (info.mostRecent > previousTimestamp && info.count > previousCount) {
-      console.log(`🆕 New lap in ${key}: ${info.count} laps (was ${previousCount})`);
+      console.log(`      ✅ NEW DATA DETECTED for ${key}`);
       PENDING_UPDATES.roundResults.add(key);
-      hasNewData = true; // SET FLAG
+      hasNewData = true;
+    } else {
+      console.log(`      ⏭️ No new data for ${key}`);
     }
     
-    USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
+    // DON'T UPDATE THE COUNT HERE - only update when user actually views the round
+    // USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
   });
   
-  // ADD THIS: Clear cache if new data detected
   if (hasNewData) {
     console.log('🗑️ Clearing round data cache due to new laps');
     CACHE.roundDataArray = null;
   }
+  
+  console.log('🔔 Final pending updates:', Array.from(PENDING_UPDATES.roundResults));
 }
 
 // Check for driver profile updates
