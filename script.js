@@ -4593,7 +4593,7 @@ function startListeningForUpdates() {
   const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
   window.firebaseOnValue(leaderboardRef, (snapshot) => {
     console.log('🏆 LEADERBOARD CHANGED!', new Date().toISOString());
-    checkForLeaderboardUpdates();
+    checkForLeaderboardUpdates(); // ← Changed: now calls async function with no parameters
     updateNotificationBadges();
   });
 }
