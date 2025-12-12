@@ -1767,6 +1767,7 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   document.getElementById('round-content').style.display = 'block';
 
    updateNotificationBadges();
+   applyRoundIndicators();
 }
 
 /* -----------------------------
