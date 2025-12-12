@@ -1799,6 +1799,10 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
       const formattedName = getFormattedDriverName(row.driver);
 
+      const driverDisplay = isNewLap 
+       ? `<span class="new-lap-indicator"></span>${formattedName}`
+       : formattedName;
+
       let gapHtml = '';
       if (row.position === 1) {
         gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Interval</span>';
@@ -1813,18 +1817,18 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       }
 
       tr.innerHTML = `
-        <td data-label="Driver"><strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer;color:#667eea">${formattedName}</strong></td>
-        <td data-label="Sector 1">${sector1Html}</td>
-        <td data-label="Sector 2">${sector2Html}</td>
-        <td data-label="Sector 3">${sector3Html}</td>
-        <td data-label="Total Time"><strong>${formatTime(row.totalTime)}</strong></td>
-        <td data-label="Gap">${gapHtml}</td>
-        <td data-label="Position">${row.position}</td>
-        <td data-label="Purple Sectors">${row.purpleSectors}</td>
-        <td data-label="Points"><strong>${row.points}</strong></td>
-      `;
-      tbody.appendChild(tr);
-    });
+    <td data-label="Driver"><strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer;color:#667eea">${driverDisplay}</strong></td>
+    <td data-label="Sector 1">${sector1Html}</td>
+    <td data-label="Sector 2">${sector2Html}</td>
+    <td data-label="Sector 3">${sector3Html}</td>
+    <td data-label="Total Time"><strong>${formatTime(row.totalTime)}</strong></td>
+    <td data-label="Gap">${gapHtml}</td>
+    <td data-label="Position">${row.position}</td>
+    <td data-label="Purple Sectors">${row.purpleSectors}</td>
+    <td data-label="Points"><strong>${row.points}</strong></td>
+  `;
+  tbody.appendChild(tr);
+});
 
     details.appendChild(table);
 
