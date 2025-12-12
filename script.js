@@ -4517,6 +4517,7 @@ function injectNotificationCSS() {
 }
 
 // Initialize notification system when user logs in
+// Initialize notification system when user logs in
 async function initializeNotificationSystem() {
   if (!currentUser) return;
   
@@ -4541,8 +4542,30 @@ async function initializeNotificationSystem() {
         setupRounds: {}
       };
       
+      // CHANGED: Initialize lap counts for all existing rounds
+      const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+      const roundSnapshot = await window.firebaseGet(roundDataRef);
+      const roundData = roundSnapshot.val();
+      
+      if (roundData) {
+        const dataArray = Object.values(roundData);
+        const roundCounts = {};
+        
+        dataArray.forEach(entry => {
+          if (entry && entry.Season && entry.Round) {
+            const key = `S${entry.Season}-R${entry.Round}`;
+            roundCounts[key] = (roundCounts[key] || 0) + 1;
+          }
+        });
+        
+        // Set initial counts
+        Object.entries(roundCounts).forEach(([key, count]) => {
+          USER_LAST_SEEN.roundResults[key + '_count'] = count;
+        });
+      }
+      
       await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
-      console.log('✨ Initialized new last seen timestamps');
+      console.log('✨ Initialized new last seen timestamps with lap counts');
     }
     
     // Ensure nested objects exist
@@ -4558,7 +4581,6 @@ async function initializeNotificationSystem() {
     console.error('❌ Error initializing notification system:', error);
   }
 }
-
 // Start Firebase listeners for real-time updates
 function startListeningForUpdates() {
   console.log('👂 Starting real-time listeners...');
