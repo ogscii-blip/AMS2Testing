@@ -4918,6 +4918,27 @@ function highlightElement(element) {
   }, 2000);
 }
 
+// Mark round setup as seen
+async function markSetupAsSeen() {
+  if (!currentUser) return;
+  
+  // Mark all currently pending setup rounds as seen
+  const now = Date.now();
+  
+  for (const roundKey of PENDING_UPDATES.setupRounds) {
+    USER_LAST_SEEN.setupRounds[roundKey] = now;
+  }
+  
+  PENDING_UPDATES.setupRounds.clear();
+  
+  const userKey = encodeKey(currentUser.name);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/setupRounds`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.setupRounds);
+  
+  updateNotificationBadges();
+  console.log('✅ Marked setup as seen');
+}
+
 /* ========================================
    END OF NOTIFICATION SYSTEM
    ======================================== */
