@@ -313,13 +313,11 @@ function showTab(tabName, sourceButton = null) {
   // Hide all tabs
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-
   const tabEl = document.getElementById(tabName);
   if (!tabEl) return;
   tabEl.classList.add('active');
-
   safeAddActiveButton(sourceButton || document.activeElement);
-
+  
   // Tab-specific loads
   if (tabName === 'overall') {
     loadLeaderboard();
@@ -335,14 +333,19 @@ function showTab(tabName, sourceButton = null) {
   } else if (tabName === 'admin') {
     loadAdminTools();
   }
-
+  
   // UPDATED: Mark tabs as seen
   if (currentUser) {
     if (tabName === 'overall') {
       setTimeout(() => markLeaderboardAsSeen(), 1000);
     } else if (tabName === 'setup') {
-      // NEW: Mark setup as seen
       setTimeout(() => markSetupAsSeen(), 1000);
+    } else if (tabName === 'round') {
+      // NEW: Apply round indicators when switching to Round Results tab
+      setTimeout(() => {
+        console.log('🎨 Round Results tab shown, applying indicators');
+        applyRoundIndicators();
+      }, 500); // Wait for loadRoundData() to finish rendering
     }
     updateNotificationBadges();
   }
