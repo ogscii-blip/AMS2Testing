@@ -1755,6 +1755,8 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
   document.getElementById('round-loading').style.display = 'none';
   document.getElementById('round-content').style.display = 'block';
+
+   updateNotificationBadges();
 }
 
 /* -----------------------------
@@ -2542,6 +2544,8 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   });
 
   container.appendChild(frag);
+
+   updateNotificationBadges();
 }
 
 /* Driver Stats section continues in next file due to length... */
