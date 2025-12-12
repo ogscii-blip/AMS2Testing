@@ -4886,6 +4886,7 @@ async function markLeaderboardAsSeen() {
 }
 
 // Mark round result as seen
+// Mark round result as seen
 async function markRoundResultAsSeen(roundKey) {
   if (!currentUser) return;
   
@@ -4893,8 +4894,8 @@ async function markRoundResultAsSeen(roundKey) {
   PENDING_UPDATES.roundResults.delete(roundKey);
   
   const userKey = encodeKey(currentUser.name);
-  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults/${roundKey}`);
-  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults[roundKey]);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
   
   // Remove visual indicator and add flash
   const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
