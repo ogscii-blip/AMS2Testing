@@ -5019,33 +5019,45 @@ function updateTabBadge(tabButton, hasUpdate) {
 }*/
 
 function applyRoundIndicators() {
-  console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
-   console.log('   DOM ready state:', document.readyState);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🎯 APPLY ROUND INDICATORS START');
+  console.log('   Pending updates:', Array.from(PENDING_UPDATES.roundResults));
+  console.log('   DOM ready state:', document.readyState);
+  console.log('   Timestamp:', new Date().toISOString());
   
   // Wait a moment for DOM to render
   setTimeout(() => {
+    console.log('   ⏰ Timeout fired, now applying indicators...');
+    
     // First remove all existing bubbles and indicators
-    document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
-    document.querySelectorAll('.round-header.has-update').forEach(header => {
+    const existingBubbles = document.querySelectorAll('.round-notification-bubble');
+    console.log('   🗑️ Removing', existingBubbles.length, 'existing bubbles');
+    existingBubbles.forEach(b => b.remove());
+    
+    const existingUpdates = document.querySelectorAll('.round-header.has-update');
+    console.log('   🗑️ Removing has-update class from', existingUpdates.length, 'headers');
+    existingUpdates.forEach(header => {
       header.classList.remove('has-update');
     });
     
     // Then add indicators and bubbles for pending updates
     PENDING_UPDATES.roundResults.forEach(roundKey => {
-      console.log(`🔍 Looking for round header with key: ${roundKey}`);
+      console.log(`   🔍 Processing ${roundKey}...`);
       
       // Find the details element first
       const details = document.getElementById(`details-${roundKey}`);
-      console.log(`   Found details:`, details);
+      console.log(`      Details element:`, details ? '✅ Found' : '❌ Not found');
       
       let header = null;
       
       if (details) {
         // Get the parent round-group, then find the round-header inside it
         const roundGroup = details.parentElement;
+        console.log(`      Round group:`, roundGroup ? '✅ Found' : '❌ Not found');
+        
         if (roundGroup && roundGroup.classList.contains('round-group')) {
           header = roundGroup.querySelector('.round-header');
-          console.log(`   Found header via round-group:`, header);
+          console.log(`      Round header:`, header ? '✅ Found' : '❌ Not found');
         }
       }
       
@@ -5060,12 +5072,15 @@ function applyRoundIndicators() {
         bubble.title = 'New lap times available';
         header.appendChild(bubble);
         
-        console.log(`   🔴 Added bubble to ${roundKey}`, bubble);
+        console.log(`      ✅ Successfully added bubble to ${roundKey}`);
       } else {
-        console.log(`   ❌ No header found for ${roundKey}`);
+        console.log(`      ❌ Failed to add bubble to ${roundKey} - header not found`);
       }
     });
-  }, 200); // Wait 200ms for DOM to be ready
+    
+    console.log('✅ APPLY ROUND INDICATORS COMPLETE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  }, 200);
 }
 
 // Apply indicators to driver cards
