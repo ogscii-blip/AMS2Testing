@@ -4732,6 +4732,21 @@ function updateTabBadge(tabButton, hasUpdate) {
 
 // Apply indicators to round headers
 function applyRoundIndicators() {
+  // First, remove all existing indicators
+  document.querySelectorAll('.round-header.has-update').forEach(header => {
+    const onclick = header.getAttribute('onclick');
+    if (onclick) {
+      const match = onclick.match(/toggleRound\('([^']+)'\)/);
+      if (match) {
+        const key = match[1];
+        if (!PENDING_UPDATES.roundResults.has(key)) {
+          header.classList.remove('has-update');
+        }
+      }
+    }
+  });
+  
+  // Then add indicators only for pending updates
   PENDING_UPDATES.roundResults.forEach(roundKey => {
     const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
     if (header && !header.classList.contains('has-update')) {
