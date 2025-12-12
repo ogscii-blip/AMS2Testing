@@ -4664,15 +4664,38 @@ function checkForSetupUpdates(setupData) {
 }
 
 // Check for leaderboard updates
-function checkForLeaderboardUpdates() {
+// Check for leaderboard updates
+async function checkForLeaderboardUpdates() {
   if (!currentUser) return;
   
-  const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
-  const now = Date.now();
-  
-  // Simple time-based check (leaderboard updates when Round_Data changes)
-  if (now - userLastSeen > 1000) {
-    PENDING_UPDATES.leaderboard = true;
+  try {
+    const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
+    const snapshot = await window.firebaseGet(leaderboardRef);
+    const leaderboardData = snapshot.val();
+    
+    if (!leaderboardData) return;
+    
+    // Get the most recent Last_Modified from any leaderboard entry
+    const dataArray = Object.values(leaderboardData);
+    let mostRecentUpdate = 0;
+    
+    dataArray.forEach(entry => {
+      if (entry.Last_Modified) {
+        const timestamp = new Date(entry.Last_Modified).getTime();
+        if (timestamp > mostRecentUpdate) {
+          mostRecentUpdate = timestamp;
+        }
+      }
+    });
+    
+    const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
+    
+    if (mostRecentUpdate > userLastSeen) {
+      console.log('🆕 Leaderboard has updates');
+      PENDING_UPDATES.leaderboard = true;
+    }
+  } catch (error) {
+    console.error('Error checking leaderboard updates:', error);
   }
 }
 
