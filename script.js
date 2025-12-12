@@ -4495,19 +4495,27 @@ function injectNotificationCSS() {
       pointer-events: none; /* Don't interfere with clicking the header */
     }
     
-    /* Visual indicator for rounds with updates */
+    /* Visual indicator for rounds with updates - ENHANCED */
     .round-header.has-update {
-      border-left: 4px solid #ff4444;
-      background: linear-gradient(to right, rgba(255,68,68,0.1), transparent);
+      border-left: 6px solid #ff4444 !important;
+      box-shadow: 
+        inset 4px 0 8px rgba(255, 68, 68, 0.3),
+        0 0 20px rgba(255, 68, 68, 0.2);
       animation: round-pulse 2s ease-in-out infinite;
     }
     
     @keyframes round-pulse {
       0%, 100% {
-        background: linear-gradient(to right, rgba(255,68,68,0.1), transparent);
+        border-left-color: #ff4444;
+        box-shadow: 
+          inset 4px 0 8px rgba(255, 68, 68, 0.3),
+          0 0 20px rgba(255, 68, 68, 0.2);
       }
       50% {
-        background: linear-gradient(to right, rgba(255,68,68,0.2), transparent);
+        border-left-color: #ff6666;
+        box-shadow: 
+          inset 6px 0 12px rgba(255, 68, 68, 0.4),
+          0 0 30px rgba(255, 68, 68, 0.4);
       }
     }
     
