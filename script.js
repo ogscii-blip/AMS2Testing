@@ -86,6 +86,100 @@ function encodeKey(name) {
 
 console.log('🚀 SCRIPT LOADED at', new Date().toISOString());
 
+async function initializeNotificationSystem() {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔔 INIT NOTIFICATION SYSTEM START');
+  console.log('   Current user:', currentUser);
+  console.log('   Timestamp:', new Date().toISOString());
+  
+  if (!currentUser) {
+    console.log('⚠️ No user logged in, aborting init');
+    return;
+  }
+  
+  console.log('🔔 Initializing notification system for', currentUser.name);
+  
+  try {
+    const userKey = encodeKey(currentUser.name);
+    const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}`);
+    const snapshot = await window.firebaseGet(lastSeenRef);
+    
+    if (snapshot.exists()) {
+      USER_LAST_SEEN = snapshot.val();
+      console.log('📥 Loaded last seen timestamps:', JSON.stringify(USER_LAST_SEEN, null, 2));
+    } else {
+      // Initialize with current time
+      const now = Date.now();
+      USER_LAST_SEEN = {
+        leaderboard: now,
+        roundResults: {},
+        driverProfiles: {},
+        driverEquipment: {},
+        setupRounds: {}
+      };
+      
+      // CHANGED: Initialize lap counts for all existing rounds
+      const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+      const roundSnapshot = await window.firebaseGet(roundDataRef);
+      const roundData = roundSnapshot.val();
+      
+      if (roundData) {
+        const dataArray = Object.values(roundData);
+        const roundCounts = {};
+        
+        dataArray.forEach(entry => {
+          if (entry && entry.Season && entry.Round) {
+            const key = `S${entry.Season}-R${entry.Round}`;
+            roundCounts[key] = (roundCounts[key] || 0) + 1;
+          }
+        });
+        
+        console.log('📊 Initial round counts:', roundCounts);
+        
+        // Set initial counts
+        Object.entries(roundCounts).forEach(([key, count]) => {
+          USER_LAST_SEEN.roundResults[key + '_count'] = count;
+        });
+      }
+      
+      await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
+      console.log('✨ Initialized new last seen timestamps with lap counts');
+    }
+    
+    // Ensure nested objects exist
+    if (!USER_LAST_SEEN.roundResults) USER_LAST_SEEN.roundResults = {};
+    if (!USER_LAST_SEEN.driverProfiles) USER_LAST_SEEN.driverProfiles = {};
+    if (!USER_LAST_SEEN.driverEquipment) USER_LAST_SEEN.driverEquipment = {};
+    if (!USER_LAST_SEEN.setupRounds) USER_LAST_SEEN.setupRounds = {};
+    
+    console.log('🔍 About to check for updates on page load...');
+    
+    // Check for pending updates on page load
+    const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+    const roundSnapshot = await window.firebaseGet(roundDataRef);
+    const roundData = roundSnapshot.val();
+    
+    if (roundData) {
+      console.log('🔍 Checking for updates on page load...');
+      checkForRoundResultUpdates(roundData);
+      console.log('🔔 Pending updates after page load check:', Array.from(PENDING_UPDATES.roundResults));
+      updateNotificationBadges();
+      console.log('🎯 About to call applyRoundIndicators from init...');
+      applyRoundIndicators();
+    }
+    
+    // Start listening for updates
+    startListeningForUpdates();
+    
+    console.log('✅ INIT NOTIFICATION SYSTEM COMPLETE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+  } catch (error) {
+    console.error('❌ Error initializing notification system:', error);
+    console.error('Stack trace:', error.stack);
+  }
+}
+
 /* -----------------------------
    Global app state
    ----------------------------- */
