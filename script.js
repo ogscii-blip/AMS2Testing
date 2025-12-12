@@ -4607,7 +4607,6 @@ function startListeningForUpdates() {
 
 // Check for round result updates
 // Check for round result updates
-// Check for round result updates
 function checkForRoundResultUpdates(roundData) {
   if (!currentUser) return;
   
@@ -4642,20 +4641,6 @@ function checkForRoundResultUpdates(roundData) {
       PENDING_UPDATES.roundResults.add(key);
     } else {
       // User has already seen the newest data in this round
-      PENDING_UPDATES.roundResults.delete(key);
-    }
-  });
-}
-  
-  // Check each round against user's last seen time
-  Object.entries(roundLastModified).forEach(([key, lastModified]) => {
-    const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
-    
-    if (lastModified > userLastSeen) {
-      console.log(`🆕 New update in ${key}:`, new Date(lastModified).toISOString());
-      PENDING_UPDATES.roundResults.add(key);
-    } else {
-      // Remove from pending if user has seen it
       PENDING_UPDATES.roundResults.delete(key);
     }
   });
