@@ -4972,21 +4972,32 @@ async function markLeaderboardAsSeen() {
 async function markRoundResultAsSeen(roundKey) {
   if (!currentUser) return;
   
-  const now = Date.now();
-  USER_LAST_SEEN.roundResults[roundKey] = now;
+  console.log(`👁️ Marking ${roundKey} as seen`);
+  
   PENDING_UPDATES.roundResults.delete(roundKey);
   
-  const userKey = encodeKey(currentUser.name);
+  const userKey = currentUser.name.replace(/\s+/g, '_');
+  const timestamp = Date.now();
+  USER_LAST_SEEN.roundResults[roundKey] = timestamp;
   
-  // Save both timestamp AND lap count to Firebase
+  // Get current lap count for this round
+  if (CACHE.roundDataArray) {
+    const roundLaps = CACHE.roundDataArray.filter(entry => 
+      `S${entry.Season}-R${entry.Round}` === roundKey
+    );
+    USER_LAST_SEEN.roundResults[roundKey + '_count'] = roundLaps.length;
+    console.log(`✅ Marked ${roundKey} as seen (${roundLaps.length} laps)`);
+  }
+  
   const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
   await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
   
-  // Remove visual indicator and add flash
+  // Remove the bubble from this specific round header
   const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
   if (header) {
     header.classList.remove('has-update');
-    highlightElement(header);
+    const bubble = header.querySelector('.round-notification-bubble');
+    if (bubble) bubble.remove();
   }
   
   updateNotificationBadges();
