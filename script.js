@@ -4887,6 +4887,7 @@ function updateTabBadge(tabButton, hasUpdate) {
 }*/
 
 function applyRoundIndicators() {
+    console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
   // First remove all existing bubbles and indicators
   document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
   document.querySelectorAll('.round-header.has-update').forEach(header => {
