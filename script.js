@@ -4607,12 +4607,13 @@ function startListeningForUpdates() {
 
 // Check for round result updates
 // Check for round result updates
+// Check for round result updates
 function checkForRoundResultUpdates(roundData) {
   if (!currentUser) return;
   
   const dataArray = Object.values(roundData || {});
   
-  // Group by round key and find the most recent Last_Modified for each round
+  // Group by round key and find the MOST RECENT Last_Modified for each round
   const roundLastModified = {};
   
   dataArray.forEach(entry => {
@@ -4622,11 +4623,29 @@ function checkForRoundResultUpdates(roundData) {
     const lastModified = entry.Last_Modified ? new Date(entry.Last_Modified).getTime() : null;
     
     if (lastModified) {
+      // Keep only the NEWEST timestamp for this round
       if (!roundLastModified[key] || lastModified > roundLastModified[key]) {
         roundLastModified[key] = lastModified;
       }
     }
   });
+  
+  // Now check each round - only flag as updated if the NEWEST entry is newer than last seen
+  Object.entries(roundLastModified).forEach(([key, mostRecentModified]) => {
+    const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
+    
+    if (mostRecentModified > userLastSeen) {
+      // This round has NEW data the user hasn't seen
+      if (!PENDING_UPDATES.roundResults.has(key)) {
+        console.log(`🆕 New update in ${key}:`, new Date(mostRecentModified).toISOString());
+      }
+      PENDING_UPDATES.roundResults.add(key);
+    } else {
+      // User has already seen the newest data in this round
+      PENDING_UPDATES.roundResults.delete(key);
+    }
+  });
+}
   
   // Check each round against user's last seen time
   Object.entries(roundLastModified).forEach(([key, lastModified]) => {
