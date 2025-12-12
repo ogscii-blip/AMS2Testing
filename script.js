@@ -3063,6 +3063,15 @@ function flipDriverCard(button) {
   if (card) {
     card.classList.toggle('flipped');
   }
+  if (currentUser && card.classList.contains('flipped')) {
+      const driverName = card.getAttribute('data-driver');
+      if (driverName && PENDING_UPDATES.driverEquipment.has(driverName)) {
+        setTimeout(() => {
+          markDriverEquipmentAsSeen(driverName);
+          removePulsateFlipButton(driverName);
+        }, 500);
+      }
+    }
 }
 
 function login() {
