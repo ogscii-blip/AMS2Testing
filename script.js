@@ -5183,13 +5183,18 @@ async function markLeaderboardAsSeen() {
 }
 
 // Mark round result as seen
-// Mark round result as seen
 async function markRoundResultAsSeen(roundKey) {
   if (!currentUser) return;
   
   console.log(`👁️ Marking ${roundKey} as seen`);
   
   PENDING_UPDATES.roundResults.delete(roundKey);
+  
+  // NEW: Clear new lap markers for this round
+  if (window._newLapsByRound && window._newLapsByRound[roundKey]) {
+    delete window._newLapsByRound[roundKey];
+    console.log(`🧹 Cleared new lap markers for ${roundKey}`);
+  }
   
   const userKey = currentUser.name.replace(/\s+/g, '_');
   const timestamp = Date.now();
@@ -5209,14 +5214,26 @@ async function markRoundResultAsSeen(roundKey) {
   
   // Remove the bubble from this specific round header
   const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
-  if (header) {
+  if (!header) {
+    const details = document.getElementById(`details-${roundKey}`);
+    if (details) {
+      const roundGroup = details.parentElement;
+      if (roundGroup) {
+        const foundHeader = roundGroup.querySelector('.round-header');
+        if (foundHeader) {
+          foundHeader.classList.remove('has-update');
+          const bubble = foundHeader.querySelector('.round-notification-bubble');
+          if (bubble) bubble.remove();
+        }
+      }
+    }
+  } else {
     header.classList.remove('has-update');
     const bubble = header.querySelector('.round-notification-bubble');
     if (bubble) bubble.remove();
   }
   
   updateNotificationBadges();
-  console.log(`✅ Marked ${roundKey} as seen (${USER_LAST_SEEN.roundResults[roundKey + '_count']} laps)`);
 }
 
 // Mark driver profile as seen
