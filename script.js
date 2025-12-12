@@ -4814,10 +4814,15 @@ function checkForRoundResultUpdates(roundData) {
   dataArray.forEach(entry => {
     const key = `S${entry.Season}-R${entry.Round}`;
     if (!roundInfo[key]) {
-      roundInfo[key] = { count: 0, mostRecent: 0, drivers: new Set() };
+      roundInfo[key] = { count: 0, mostRecent: 0, drivers: new Set(), laps: [] };
     }
     roundInfo[key].count++;
     roundInfo[key].drivers.add(entry.Driver);
+    roundInfo[key].laps.push({
+      driver: entry.Driver,
+      timestamp: entry.Last_Modified || entry.Timestamp,
+      totalTime: entry.Total_Lap_Time
+    });
     
     const timestamp = entry.Last_Modified || entry.Timestamp;
     if (timestamp) {
@@ -4842,13 +4847,12 @@ function checkForRoundResultUpdates(roundData) {
     
     console.log(`   ${key}: current=${info.count}, saved=${previousCount}, timestamp=${info.mostRecent}, lastSeen=${previousTimestamp}`);
     
-    // NEW: Reset saved count if current is lower (lap was deleted)
+    // Reset saved count if lap was deleted
     if (info.count < previousCount) {
       console.log(`      🗑️ Lap count decreased (deletion detected), resetting saved count`);
       USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
       USER_LAST_SEEN.roundResults[key] = info.mostRecent;
       
-      // Save to Firebase immediately
       const userKey = currentUser.name.replace(/\s+/g, '_');
       const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
       window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
@@ -4857,6 +4861,19 @@ function checkForRoundResultUpdates(roundData) {
     else if (info.count > previousCount) {
       console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
+      
+      // NEW: Store which laps are new (laps with timestamp > lastSeen)
+      const newLaps = info.laps.filter(lap => {
+        const lapTime = new Date(lap.timestamp).getTime();
+        return lapTime > previousTimestamp;
+      });
+      
+      // Store new lap info for highlighting
+      if (!window._newLapsByRound) window._newLapsByRound = {};
+      window._newLapsByRound[key] = newLaps;
+      
+      console.log(`      📍 New laps:`, newLaps);
+      
       hasNewData = true;
     } else {
       console.log(`      ⏭️ No new data for ${key}`);
