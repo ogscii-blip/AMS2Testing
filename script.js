@@ -4603,21 +4603,38 @@ function startListeningForUpdates() {
 }
 
 // Check for round result updates
+// Check for round result updates
 function checkForRoundResultUpdates(roundData) {
   if (!currentUser) return;
   
   const dataArray = Object.values(roundData || {});
+  
+  // Group by round key and find the most recent Last_Modified for each round
+  const roundLastModified = {};
   
   dataArray.forEach(entry => {
     if (!entry || !entry.Season || !entry.Round) return;
     
     const key = `S${entry.Season}-R${entry.Round}`;
     const lastModified = entry.Last_Modified ? new Date(entry.Last_Modified).getTime() : null;
+    
+    if (lastModified) {
+      if (!roundLastModified[key] || lastModified > roundLastModified[key]) {
+        roundLastModified[key] = lastModified;
+      }
+    }
+  });
+  
+  // Check each round against user's last seen time
+  Object.entries(roundLastModified).forEach(([key, lastModified]) => {
     const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
     
-    if (lastModified && lastModified > userLastSeen) {
+    if (lastModified > userLastSeen) {
       console.log(`🆕 New update in ${key}:`, new Date(lastModified).toISOString());
       PENDING_UPDATES.roundResults.add(key);
+    } else {
+      // Remove from pending if user has seen it
+      PENDING_UPDATES.roundResults.delete(key);
     }
   });
 }
