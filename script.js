@@ -4889,36 +4889,50 @@ function updateTabBadge(tabButton, hasUpdate) {
 function applyRoundIndicators() {
   console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
   
-  // First remove all existing bubbles and indicators
-  document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
-  document.querySelectorAll('.round-header.has-update').forEach(header => {
-    header.classList.remove('has-update');
-  });
-  
-  // Then add indicators and bubbles for pending updates
-  PENDING_UPDATES.roundResults.forEach(roundKey => {
-    console.log(`🔍 Looking for round header with key: ${roundKey}`);
+  // Wait a moment for DOM to render
+  setTimeout(() => {
+    // First remove all existing bubbles and indicators
+    document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
+    document.querySelectorAll('.round-header.has-update').forEach(header => {
+      header.classList.remove('has-update');
+    });
     
-    // Try to find the header
-    const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
-    console.log(`   Found header:`, header);
-    
-    if (header) {
-      // Add visual indicator class
-      header.classList.add('has-update');
+    // Then add indicators and bubbles for pending updates
+    PENDING_UPDATES.roundResults.forEach(roundKey => {
+      console.log(`🔍 Looking for round header with key: ${roundKey}`);
       
-      // Add notification bubble
-      const bubble = document.createElement('div');
-      bubble.className = 'round-notification-bubble';
-      bubble.textContent = '🔴';
-      bubble.title = 'New lap times available';
-      header.appendChild(bubble);
+      // Find the details element first
+      const details = document.getElementById(`details-${roundKey}`);
+      console.log(`   Found details:`, details);
       
-      console.log(`   🔴 Added bubble to ${roundKey}`, bubble);
-    } else {
-      console.log(`   ❌ No header found for ${roundKey}`);
-    }
-  });
+      let header = null;
+      
+      if (details) {
+        // Get the parent round-group, then find the round-header inside it
+        const roundGroup = details.parentElement;
+        if (roundGroup && roundGroup.classList.contains('round-group')) {
+          header = roundGroup.querySelector('.round-header');
+          console.log(`   Found header via round-group:`, header);
+        }
+      }
+      
+      if (header) {
+        // Add visual indicator class
+        header.classList.add('has-update');
+        
+        // Add notification bubble
+        const bubble = document.createElement('div');
+        bubble.className = 'round-notification-bubble';
+        bubble.textContent = '🔴';
+        bubble.title = 'New lap times available';
+        header.appendChild(bubble);
+        
+        console.log(`   🔴 Added bubble to ${roundKey}`, bubble);
+      } else {
+        console.log(`   ❌ No header found for ${roundKey}`);
+      }
+    });
+  }, 200); // Wait 200ms for DOM to be ready
 }
 
 // Apply indicators to driver cards
