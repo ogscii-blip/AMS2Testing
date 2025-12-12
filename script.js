@@ -4861,7 +4861,7 @@ function updateTabBadge(tabButton, hasUpdate) {
 }
 
 // Apply indicators to round headers
-function applyRoundIndicators() {
+/*function applyRoundIndicators() {
   // First, remove all existing indicators
   document.querySelectorAll('.round-header.has-update').forEach(header => {
     const onclick = header.getAttribute('onclick');
@@ -4881,6 +4881,32 @@ function applyRoundIndicators() {
     const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
     if (header && !header.classList.contains('has-update')) {
       header.classList.add('has-update');
+    }
+  });
+}*/
+
+function applyRoundIndicators() {
+  // First remove all existing bubbles and indicators
+  document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
+  document.querySelectorAll('.round-header.has-update').forEach(header => {
+    header.classList.remove('has-update');
+  });
+  
+  // Then add indicators and bubbles for pending updates
+  PENDING_UPDATES.roundResults.forEach(roundKey => {
+    const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
+    if (header) {
+      // Add visual indicator class
+      header.classList.add('has-update');
+      
+      // Add notification bubble
+      const bubble = document.createElement('div');
+      bubble.className = 'round-notification-bubble';
+      bubble.textContent = '🔴';
+      bubble.title = 'New lap times available';
+      header.appendChild(bubble);
+      
+      console.log(`🔴 Added bubble to ${roundKey}`);
     }
   });
 }
