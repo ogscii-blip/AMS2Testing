@@ -4608,7 +4608,7 @@ function injectNotificationCSS() {
       pointer-events: none; /* Don't interfere with clicking the header */
     }
     
-    /* Visual indicator for rounds with updates - ENHANCED */
+    /* Visual indicator for rounds with updates */
     .round-header.has-update {
       border-left: 6px solid #ff4444 !important;
       box-shadow: 
@@ -4629,6 +4629,50 @@ function injectNotificationCSS() {
         box-shadow: 
           inset 6px 0 12px rgba(255, 68, 68, 0.4),
           0 0 30px rgba(255, 68, 68, 0.4);
+      }
+    }
+    
+    /* New lap row highlight */
+    .new-lap-row {
+      animation: new-lap-flash 3s ease-out;
+      position: relative;
+    }
+    
+    @keyframes new-lap-flash {
+      0% {
+        background-color: #fff3cd;
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
+      }
+      50% {
+        background-color: #fff8dc;
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+      }
+      100% {
+        background-color: transparent;
+        box-shadow: none;
+      }
+    }
+    
+    /* Pulsing indicator for new lap */
+    .new-lap-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #ffc107;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse-indicator 2s infinite;
+      vertical-align: middle;
+    }
+    
+    @keyframes pulse-indicator {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.3);
+        opacity: 0.7;
       }
     }
     
