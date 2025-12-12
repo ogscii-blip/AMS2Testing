@@ -355,6 +355,9 @@ function toggleRound(key) {
   if (!details) return;
   details.classList.toggle('expanded');
   if (icon) icon.classList.toggle('expanded');
+  if (currentUser && details.classList.contains('expanded')) {
+    setTimeout(() => markRoundResultAsSeen(key), 500);
+  }
 }
 
 /* -----------------------------
