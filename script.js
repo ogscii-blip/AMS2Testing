@@ -4757,6 +4757,25 @@ function applyRoundIndicators() {
 
 // Apply indicators to driver cards
 function applyDriverIndicators() {
+  // First, remove all existing profile indicators
+  document.querySelectorAll('.driver-card.has-update').forEach(card => {
+    const driverName = card.getAttribute('data-driver');
+    if (driverName && !PENDING_UPDATES.driverProfiles.has(driverName)) {
+      card.classList.remove('has-update');
+    }
+  });
+  
+  // Then remove all existing equipment indicators
+  document.querySelectorAll('.flip-card-button.pulsating').forEach(button => {
+    const card = button.closest('.driver-card');
+    if (card) {
+      const driverName = card.getAttribute('data-driver');
+      if (driverName && !PENDING_UPDATES.driverEquipment.has(driverName)) {
+        button.classList.remove('pulsating');
+      }
+    }
+  });
+  
   // Profile updates - glowing cards
   PENDING_UPDATES.driverProfiles.forEach(driverName => {
     const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
