@@ -4573,8 +4573,12 @@ function injectNotificationCSS() {
 
 // Initialize notification system when user logs in
 // Initialize notification system when user logs in
+// Initialize notification system when user logs in
 async function initializeNotificationSystem() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    console.log('⚠️ No user logged in, skipping notification init');
+    return;
+  }
   
   console.log('🔔 Initializing notification system for', currentUser.name);
   
@@ -4629,6 +4633,18 @@ async function initializeNotificationSystem() {
     if (!USER_LAST_SEEN.driverEquipment) USER_LAST_SEEN.driverEquipment = {};
     if (!USER_LAST_SEEN.setupRounds) USER_LAST_SEEN.setupRounds = {};
     
+    // ADD THIS: Check for pending updates on page load
+    const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+    const roundSnapshot = await window.firebaseGet(roundDataRef);
+    const roundData = roundSnapshot.val();
+    
+    if (roundData) {
+      console.log('🔍 Checking for updates on page load...');
+      checkForRoundResultUpdates(roundData);
+      console.log('🔔 Pending updates after page load check:', Array.from(PENDING_UPDATES.roundResults));
+      updateNotificationBadges();
+    }
+    
     // Start listening for updates
     startListeningForUpdates();
     
@@ -4636,6 +4652,7 @@ async function initializeNotificationSystem() {
     console.error('❌ Error initializing notification system:', error);
   }
 }
+
 // Start Firebase listeners for real-time updates
 function startListeningForUpdates() {
   console.log('👂 Starting real-time listeners...');
@@ -4896,6 +4913,7 @@ function updateTabBadge(tabButton, hasUpdate) {
 
 function applyRoundIndicators() {
   console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
+   console.log('   DOM ready state:', document.readyState);
   
   // Wait a moment for DOM to render
   setTimeout(() => {
