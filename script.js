@@ -4842,8 +4842,19 @@ function checkForRoundResultUpdates(roundData) {
     
     console.log(`   ${key}: current=${info.count}, saved=${previousCount}, timestamp=${info.mostRecent}, lastSeen=${previousTimestamp}`);
     
-    // CHANGED: Flag as new if lap count INCREASED (not just different)
-    if (info.count > previousCount) {
+    // NEW: Reset saved count if current is lower (lap was deleted)
+    if (info.count < previousCount) {
+      console.log(`      🗑️ Lap count decreased (deletion detected), resetting saved count`);
+      USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
+      USER_LAST_SEEN.roundResults[key] = info.mostRecent;
+      
+      // Save to Firebase immediately
+      const userKey = currentUser.name.replace(/\s+/g, '_');
+      const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
+      window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
+    }
+    // Check if lap count increased
+    else if (info.count > previousCount) {
       console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
       hasNewData = true;
