@@ -4612,8 +4612,8 @@ function checkForRoundResultUpdates(roundData) {
   
   const dataArray = Object.values(roundData || {});
   
-  // Group by round key and find the MOST RECENT Last_Modified for each round
-  const roundLastModified = {};
+  // Group by round key and count entries + get most recent timestamp
+  const roundInfo = {};
   
   dataArray.forEach(entry => {
     if (!entry || !entry.Season || !entry.Round) return;
@@ -4621,31 +4621,50 @@ function checkForRoundResultUpdates(roundData) {
     const key = `S${entry.Season}-R${entry.Round}`;
     const lastModified = entry.Last_Modified ? new Date(entry.Last_Modified).getTime() : null;
     
-    if (lastModified) {
-      // Keep only the NEWEST timestamp for this round
-      if (!roundLastModified[key] || lastModified > roundLastModified[key]) {
-        roundLastModified[key] = lastModified;
-      }
+    if (!roundInfo[key]) {
+      roundInfo[key] = {
+        count: 0,
+        mostRecent: 0,
+        drivers: new Set()
+      };
+    }
+    
+    roundInfo[key].count++;
+    roundInfo[key].drivers.add(entry.Driver);
+    
+    if (lastModified && lastModified > roundInfo[key].mostRecent) {
+      roundInfo[key].mostRecent = lastModified;
     }
   });
   
-  // Now check each round - only flag as updated if the NEWEST entry is newer than last seen
-  Object.entries(roundLastModified).forEach(([key, mostRecentModified]) => {
+  // Check each round
+  Object.entries(roundInfo).forEach(([key, info]) => {
     const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
     
-    if (mostRecentModified > userLastSeen) {
-      // This round has NEW data the user hasn't seen
+    // Store previous lap count if we haven't seen this round before
+    if (!USER_LAST_SEEN.roundResults[key + '_count']) {
+      USER_LAST_SEEN.roundResults[key + '_count'] = 0;
+    }
+    
+    const previousCount = USER_LAST_SEEN.roundResults[key + '_count'];
+    
+    // Round has updates if:
+    // 1. Last modified is newer than when we last viewed it, AND
+    // 2. The lap count increased (meaning new data was added)
+    if (info.mostRecent > userLastSeen && info.count > previousCount) {
       if (!PENDING_UPDATES.roundResults.has(key)) {
-        console.log(`🆕 New update in ${key}:`, new Date(mostRecentModified).toISOString());
+        console.log(`🆕 New lap in ${key}: ${info.count} laps (was ${previousCount})`);
       }
       PENDING_UPDATES.roundResults.add(key);
     } else {
-      // User has already seen the newest data in this round
+      // User has already seen this round's current data
       PENDING_UPDATES.roundResults.delete(key);
     }
+    
+    // Update the stored count
+    USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
   });
 }
-
 // Check for driver profile updates
 function checkForDriverProfileUpdates(profilesData) {
   if (!currentUser) return;
