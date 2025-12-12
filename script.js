@@ -3028,6 +3028,9 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
       Car_Name: roundSetup.Car_Name
     };
 
+    // ADD THIS FLAG:
+    window._justSubmittedLap = `S${seasonNumber}-R${roundNumber}`;
+
     await window.firebasePush(window.firebaseRef(window.firebaseDB, 'Form_responses_1'), lapTimeData);
     messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Lap time submitted! Server is calculating...';
 
@@ -3038,7 +3041,11 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     loadLeaderboard();
     loadRoundData();
 
-    setTimeout(()=> { messageDiv.style.display='none'; }, 4500);
+    setTimeout(()=> { 
+      messageDiv.style.display='none';
+      // CLEAR FLAG AFTER 3 SECONDS:
+      window._justSubmittedLap = null;
+    }, 4500);
   } catch (err) {
     console.error('lap submit err', err);
     messageDiv.style.background='#f8d7da'; messageDiv.style.color='#721c24'; messageDiv.textContent='❌ ' + err.message;
