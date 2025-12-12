@@ -239,6 +239,13 @@ function showTab(tabName, sourceButton = null) {
   } else if (tabName === 'admin') {
     loadAdminTools();
   }
+
+     if (currentUser) {
+    if (tabName === 'overall') {
+      setTimeout(() => markLeaderboardAsSeen(), 1000);
+    }
+    updateNotificationBadges();
+  }
 }
 
 // FIXED: Helper to pre-select current season when opening Round Results
