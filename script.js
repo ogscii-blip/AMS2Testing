@@ -1750,6 +1750,9 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       const i = document.getElementById(`toggle-${latestKey}`);
       if (d) d.classList.add('expanded');
       if (i) i.classList.add('expanded');
+      if (currentUser && d && d.classList.contains('expanded')) {
+      setTimeout(() => markRoundResultAsSeen(latestKey), 500);
+    }
     }, 150);
   }
 
