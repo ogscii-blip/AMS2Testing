@@ -4740,38 +4740,37 @@ function checkForSetupUpdates(setupData) {
 }
 
 // Check for leaderboard updates
-// Check for leaderboard updates
 async function checkForLeaderboardUpdates() {
   if (!currentUser) return;
   
-  try {
-    const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
-    const snapshot = await window.firebaseGet(leaderboardRef);
-    const leaderboardData = snapshot.val();
-    
-    if (!leaderboardData) return;
-    
-    // Get the most recent Last_Modified from any leaderboard entry
-    const dataArray = Object.values(leaderboardData);
-    let mostRecentUpdate = 0;
-    
-    dataArray.forEach(entry => {
-      if (entry.Last_Modified) {
-        const timestamp = new Date(entry.Last_Modified).getTime();
-        if (timestamp > mostRecentUpdate) {
-          mostRecentUpdate = timestamp;
-        }
+  const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
+  const snapshot = await window.firebaseGet(leaderboardRef);
+  
+  if (!snapshot.exists()) return;
+  
+  const data = snapshot.val();
+  const dataArray = Array.isArray(data) ? data : Object.values(data);
+  
+  let mostRecentUpdate = 0;
+  dataArray.forEach(entry => {
+    if (entry.Last_Modified) {
+      const timestamp = new Date(entry.Last_Modified).getTime();
+      if (timestamp > mostRecentUpdate) {
+        mostRecentUpdate = timestamp;
       }
-    });
-    
-    const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
-    
-    if (mostRecentUpdate > userLastSeen) {
-      console.log('🆕 Leaderboard has updates');
-      PENDING_UPDATES.leaderboard = true;
     }
-  } catch (error) {
-    console.error('Error checking leaderboard updates:', error);
+  });
+  
+  const userKey = currentUser.name.replace(/\s+/g, '_');
+  const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
+  
+  if (mostRecentUpdate > userLastSeen) {
+    console.log('🏆 LEADERBOARD CHANGED!', new Date(mostRecentUpdate).toISOString());
+    PENDING_UPDATES.leaderboard = true;
+    
+    // ADD THIS: Clear leaderboard cache
+    console.log('🗑️ Clearing leaderboard cache');
+    CACHE.leaderboardArray = null;
   }
 }
 
