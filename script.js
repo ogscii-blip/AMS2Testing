@@ -4890,10 +4890,13 @@ async function markLeaderboardAsSeen() {
 async function markRoundResultAsSeen(roundKey) {
   if (!currentUser) return;
   
-  USER_LAST_SEEN.roundResults[roundKey] = Date.now();
+  const now = Date.now();
+  USER_LAST_SEEN.roundResults[roundKey] = now;
   PENDING_UPDATES.roundResults.delete(roundKey);
   
   const userKey = encodeKey(currentUser.name);
+  
+  // Save both timestamp AND lap count to Firebase
   const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
   await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
   
@@ -4905,7 +4908,7 @@ async function markRoundResultAsSeen(roundKey) {
   }
   
   updateNotificationBadges();
-  console.log(`✅ Marked ${roundKey} as seen`);
+  console.log(`✅ Marked ${roundKey} as seen (${USER_LAST_SEEN.roundResults[roundKey + '_count']} laps)`);
 }
 
 // Mark driver profile as seen
