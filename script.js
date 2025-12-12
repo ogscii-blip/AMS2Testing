@@ -1744,17 +1744,24 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   });
 
   if (sortedKeys.length > 0) {
-    setTimeout(() => {
-      const latestKey = sortedKeys[0];
-      const d = document.getElementById(`details-${latestKey}`);
-      const i = document.getElementById(`toggle-${latestKey}`);
-      if (d) d.classList.add('expanded');
-      if (i) i.classList.add('expanded');
-      if (currentUser && d && d.classList.contains('expanded')) {
-      setTimeout(() => markRoundResultAsSeen(latestKey), 500);
+  setTimeout(() => {
+    const latestKey = sortedKeys[0];
+    const d = document.getElementById(`details-${latestKey}`);
+    const i = document.getElementById(`toggle-${latestKey}`);
+    if (d) d.classList.add('expanded');
+    if (i) i.classList.add('expanded');
+    
+    // CHANGED: Don't auto-mark if user just submitted to this round
+    if (currentUser && d && d.classList.contains('expanded')) {
+      // Check if this is the round the user just submitted to
+      if (window._justSubmittedLap !== latestKey) {
+        setTimeout(() => markRoundResultAsSeen(latestKey), 500);
+      } else {
+        console.log(`⏭️ Skipping auto-mark for ${latestKey} (user just submitted)`);
+      }
     }
-    }, 150);
-  }
+  }, 150);
+}
 
   document.getElementById('round-loading').style.display = 'none';
   document.getElementById('round-content').style.display = 'block';
