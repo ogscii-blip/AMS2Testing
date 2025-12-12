@@ -4887,7 +4887,8 @@ function updateTabBadge(tabButton, hasUpdate) {
 }*/
 
 function applyRoundIndicators() {
-    console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
+  console.log('🎯 applyRoundIndicators called, pending:', Array.from(PENDING_UPDATES.roundResults));
+  
   // First remove all existing bubbles and indicators
   document.querySelectorAll('.round-notification-bubble').forEach(b => b.remove());
   document.querySelectorAll('.round-header.has-update').forEach(header => {
@@ -4896,7 +4897,12 @@ function applyRoundIndicators() {
   
   // Then add indicators and bubbles for pending updates
   PENDING_UPDATES.roundResults.forEach(roundKey => {
+    console.log(`🔍 Looking for round header with key: ${roundKey}`);
+    
+    // Try to find the header
     const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
+    console.log(`   Found header:`, header);
+    
     if (header) {
       // Add visual indicator class
       header.classList.add('has-update');
@@ -4908,7 +4914,9 @@ function applyRoundIndicators() {
       bubble.title = 'New lap times available';
       header.appendChild(bubble);
       
-      console.log(`🔴 Added bubble to ${roundKey}`);
+      console.log(`   🔴 Added bubble to ${roundKey}`, bubble);
+    } else {
+      console.log(`   ❌ No header found for ${roundKey}`);
     }
   });
 }
