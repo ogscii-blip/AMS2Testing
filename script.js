@@ -4642,65 +4642,54 @@ function startListeningForUpdates() {
 }
 
 // Check for round result updates
-// Check for round result updates
 function checkForRoundResultUpdates(roundData) {
-  if (!currentUser) return;
+  if (!roundData || !currentUser) return;
   
-  const dataArray = Object.values(roundData || {});
-  
-  // Group by round key and count entries + get most recent timestamp
+  const dataArray = Array.isArray(roundData) ? roundData : Object.values(roundData);
   const roundInfo = {};
   
   dataArray.forEach(entry => {
-    if (!entry || !entry.Season || !entry.Round) return;
-    
     const key = `S${entry.Season}-R${entry.Round}`;
-    const lastModified = entry.Last_Modified ? new Date(entry.Last_Modified).getTime() : null;
-    
     if (!roundInfo[key]) {
-      roundInfo[key] = {
-        count: 0,
-        mostRecent: 0,
-        drivers: new Set()
-      };
+      roundInfo[key] = { count: 0, mostRecent: 0, drivers: new Set() };
     }
-    
     roundInfo[key].count++;
     roundInfo[key].drivers.add(entry.Driver);
     
-    if (lastModified && lastModified > roundInfo[key].mostRecent) {
-      roundInfo[key].mostRecent = lastModified;
+    const timestamp = entry.Last_Modified || entry.Timestamp;
+    if (timestamp) {
+      const ts = new Date(timestamp).getTime();
+      if (ts > roundInfo[key].mostRecent) {
+        roundInfo[key].mostRecent = ts;
+      }
     }
   });
   
-  // Check each round
+  const userKey = currentUser.name.replace(/\s+/g, '_');
+  const userLastSeen = USER_LAST_SEEN.roundResults || {};
+  
+  let hasNewData = false; // ADD THIS FLAG
+  
   Object.entries(roundInfo).forEach(([key, info]) => {
-    const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
+    const previousCount = userLastSeen[key + '_count'] || 0;
+    const previousTimestamp = userLastSeen[key] || 0;
     
-    // Store previous lap count if we haven't seen this round before
-    if (!USER_LAST_SEEN.roundResults[key + '_count']) {
-      USER_LAST_SEEN.roundResults[key + '_count'] = 0;
-    }
-    
-    const previousCount = USER_LAST_SEEN.roundResults[key + '_count'];
-    
-    // Round has updates if:
-    // 1. Last modified is newer than when we last viewed it, AND
-    // 2. The lap count increased (meaning new data was added)
-    if (info.mostRecent > userLastSeen && info.count > previousCount) {
-      if (!PENDING_UPDATES.roundResults.has(key)) {
-        console.log(`🆕 New lap in ${key}: ${info.count} laps (was ${previousCount})`);
-      }
+    if (info.mostRecent > previousTimestamp && info.count > previousCount) {
+      console.log(`🆕 New lap in ${key}: ${info.count} laps (was ${previousCount})`);
       PENDING_UPDATES.roundResults.add(key);
-    } else {
-      // User has already seen this round's current data
-      PENDING_UPDATES.roundResults.delete(key);
+      hasNewData = true; // SET FLAG
     }
     
-    // Update the stored count
     USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
   });
+  
+  // ADD THIS: Clear cache if new data detected
+  if (hasNewData) {
+    console.log('🗑️ Clearing round data cache due to new laps');
+    CACHE.roundDataArray = null;
+  }
 }
+
 // Check for driver profile updates
 function checkForDriverProfileUpdates(profilesData) {
   if (!currentUser) return;
