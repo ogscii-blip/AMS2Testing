@@ -1786,6 +1786,12 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       if (row.position === 1) tr.classList.add('position-1');
       if (row.position === 2) tr.classList.add('position-2');
       if (row.position === 3) tr.classList.add('position-3');
+    
+      const newLaps = window._newLapsByRound?.[key] || [];
+      const isNewLap = newLaps.some(lap => 
+       lap.driver === row.driver && 
+       Math.abs(lap.totalTime - row.totalTime) < 0.001 // Compare with small tolerance
+      );
 
       const sector1Html = row.purpleSector1 ? `<span class="purple-sector">${formatTime(row.sector1)}</span>` : formatTime(row.sector1);
       const sector2Html = row.purpleSector2 ? `<span class="purple-sector">${formatTime(row.sector2)}</span>` : formatTime(row.sector2);
