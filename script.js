@@ -4418,35 +4418,48 @@ function injectNotificationCSS() {
   const style = document.createElement('style');
   style.id = 'notification-styles';
   style.textContent = `
-    /* Notification badge on tabs */
+    /* Tab notification badges */
+    .tab-button {
+      position: relative;
+    }
+    
     .notification-badge {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 10px;
-      height: 10px;
-      background: #dc3545;
+      top: -8px;
+      right: -8px;
+      background: #ff4444;
+      color: white;
       border-radius: 50%;
-      animation: pulse-notification 2s ease-in-out infinite;
-      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-
-    @keyframes pulse-notification {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    
+    @keyframes pulse {
+      0%, 100% { 
+        transform: scale(1); 
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
       }
-      50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0);
+      50% { 
+        transform: scale(1.1); 
+        opacity: 0.8;
+        box-shadow: 0 0 0 4px rgba(255, 68, 68, 0);
       }
     }
-
+    
     /* Tab button pulse effect */
     .tab-button.has-notification {
       animation: tab-pulse 2s ease-in-out infinite;
     }
-
+    
     @keyframes tab-pulse {
       0%, 100% {
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -4455,12 +4468,57 @@ function injectNotificationCSS() {
         box-shadow: 0 2px 12px rgba(220, 53, 69, 0.4);
       }
     }
-
-    /* Flip button pulsate */
+    
+    /* Round header notification bubbles */
+    .round-header {
+      position: relative;
+    }
+    
+    .round-notification-bubble {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #ff4444;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+      z-index: 5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      pointer-events: none; /* Don't interfere with clicking the header */
+    }
+    
+    /* Visual indicator for rounds with updates */
+    .round-header.has-update {
+      border-left: 4px solid #ff4444;
+      background: linear-gradient(to right, rgba(255,68,68,0.1), transparent);
+      animation: round-pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes round-pulse {
+      0%, 100% {
+        background: linear-gradient(to right, rgba(255,68,68,0.1), transparent);
+      }
+      50% {
+        background: linear-gradient(to right, rgba(255,68,68,0.2), transparent);
+      }
+    }
+    
+    /* Driver card flip button pulsate */
     .flip-card-button.pulsating {
       animation: flip-button-pulse 1.5s ease-in-out infinite;
     }
-
+    
+    .flip-button.pulsate {
+      animation: flip-button-pulse 1.5s ease-in-out infinite;
+    }
+    
     @keyframes flip-button-pulse {
       0%, 100% {
         transform: scale(1);
@@ -4471,12 +4529,12 @@ function injectNotificationCSS() {
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
       }
     }
-
+    
     /* Glowing driver card */
     .driver-card.has-update {
       animation: card-glow 2s ease-in-out infinite;
     }
-
+    
     @keyframes card-glow {
       0%, 100% {
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -4485,38 +4543,12 @@ function injectNotificationCSS() {
         box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
       }
     }
-
-    /* Round header highlight */
-    .round-header.has-update {
-      animation: round-pulse 2s ease-in-out infinite;
-      position: relative;
-    }
-
-    .round-header.has-update::before {
-      content: '●';
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #dc3545;
-      font-size: 12px;
-      animation: pulse-notification 2s ease-in-out infinite;
-    }
-
-    @keyframes round-pulse {
-      0%, 100% {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      }
-      50% {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
-      }
-    }
-
+    
     /* Yellow flash when viewed */
     .highlight-flash {
       animation: highlight-animation 2s ease-out;
     }
-
+    
     @keyframes highlight-animation {
       0% {
         background-color: #fff3cd;
