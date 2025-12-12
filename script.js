@@ -4380,3 +4380,483 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 ========================================= */
+
+
+/* =========================================================
+   NOTIFICATION SYSTEM - Real-time update notifications
+   ========================================================= */
+
+// Inject CSS for notification badges and animations
+function injectNotificationCSS() {
+  if (document.getElementById('notification-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'notification-styles';
+  style.textContent = `
+    /* Notification badge on tabs */
+    .notification-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      background: #dc3545;
+      border-radius: 50%;
+      animation: pulse-notification 2s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    @keyframes pulse-notification {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0);
+      }
+    }
+
+    /* Tab button pulse effect */
+    .tab-button.has-notification {
+      animation: tab-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes tab-pulse {
+      0%, 100% {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        box-shadow: 0 2px 12px rgba(220, 53, 69, 0.4);
+      }
+    }
+
+    /* Flip button pulsate */
+    .flip-card-button.pulsating {
+      animation: flip-button-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes flip-button-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+      }
+    }
+
+    /* Glowing driver card */
+    .driver-card.has-update {
+      animation: card-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes card-glow {
+      0%, 100% {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+      50% {
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      }
+    }
+
+    /* Round header highlight */
+    .round-header.has-update {
+      animation: round-pulse 2s ease-in-out infinite;
+      position: relative;
+    }
+
+    .round-header.has-update::before {
+      content: '●';
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #dc3545;
+      font-size: 12px;
+      animation: pulse-notification 2s ease-in-out infinite;
+    }
+
+    @keyframes round-pulse {
+      0%, 100% {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      }
+      50% {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+      }
+    }
+
+    /* Yellow flash when viewed */
+    .highlight-flash {
+      animation: highlight-animation 2s ease-out;
+    }
+
+    @keyframes highlight-animation {
+      0% {
+        background-color: #fff3cd;
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+  `;
+  
+  document.head.appendChild(style);
+}
+
+// Initialize notification system when user logs in
+async function initializeNotificationSystem() {
+  if (!currentUser) return;
+  
+  console.log('🔔 Initializing notification system for', currentUser.name);
+  
+  try {
+    const userKey = encodeKey(currentUser.name);
+    const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}`);
+    const snapshot = await window.firebaseGet(lastSeenRef);
+    
+    if (snapshot.exists()) {
+      USER_LAST_SEEN = snapshot.val();
+      console.log('📥 Loaded last seen timestamps:', USER_LAST_SEEN);
+    } else {
+      // Initialize with current time
+      const now = Date.now();
+      USER_LAST_SEEN = {
+        leaderboard: now,
+        roundResults: {},
+        driverProfiles: {},
+        driverEquipment: {},
+        setupRounds: {}
+      };
+      
+      await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
+      console.log('✨ Initialized new last seen timestamps');
+    }
+    
+    // Ensure nested objects exist
+    if (!USER_LAST_SEEN.roundResults) USER_LAST_SEEN.roundResults = {};
+    if (!USER_LAST_SEEN.driverProfiles) USER_LAST_SEEN.driverProfiles = {};
+    if (!USER_LAST_SEEN.driverEquipment) USER_LAST_SEEN.driverEquipment = {};
+    if (!USER_LAST_SEEN.setupRounds) USER_LAST_SEEN.setupRounds = {};
+    
+    // Start listening for updates
+    startListeningForUpdates();
+    
+  } catch (error) {
+    console.error('❌ Error initializing notification system:', error);
+  }
+}
+
+// Start Firebase listeners for real-time updates
+function startListeningForUpdates() {
+  console.log('👂 Starting real-time listeners...');
+  
+  // Listen to Round_Data for lap time updates
+  const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+  window.firebaseOnValue(roundDataRef, (snapshot) => {
+    console.log('🔥 ROUND DATA CHANGED!', new Date().toISOString());
+    const data = snapshot.val();
+    if (data) {
+      checkForRoundResultUpdates(data);
+      updateNotificationBadges();
+    }
+  });
+  
+  // Listen to Driver_Profiles for profile/equipment updates
+  const profilesRef = window.firebaseRef(window.firebaseDB, 'Driver_Profiles');
+  window.firebaseOnValue(profilesRef, (snapshot) => {
+    console.log('👤 DRIVER PROFILES CHANGED!', new Date().toISOString());
+    const data = snapshot.val();
+    if (data) {
+      checkForDriverProfileUpdates(data);
+      updateNotificationBadges();
+    }
+  });
+  
+  // Listen to Form_responses_2 for round setup updates
+  const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
+  window.firebaseOnValue(setupRef, (snapshot) => {
+    console.log('🏁 ROUND SETUP CHANGED!', new Date().toISOString());
+    const data = snapshot.val();
+    if (data) {
+      checkForSetupUpdates(data);
+      updateNotificationBadges();
+    }
+  });
+  
+  // Listen to Leaderboard for overall standings updates
+  const leaderboardRef = window.firebaseRef(window.firebaseDB, 'Leaderboard');
+  window.firebaseOnValue(leaderboardRef, (snapshot) => {
+    console.log('🏆 LEADERBOARD CHANGED!', new Date().toISOString());
+    checkForLeaderboardUpdates();
+    updateNotificationBadges();
+  });
+}
+
+// Check for round result updates
+function checkForRoundResultUpdates(roundData) {
+  if (!currentUser) return;
+  
+  const dataArray = Object.values(roundData || {});
+  
+  dataArray.forEach(entry => {
+    if (!entry || !entry.Season || !entry.Round) return;
+    
+    const key = `S${entry.Season}-R${entry.Round}`;
+    const lastModified = entry.Last_Modified ? new Date(entry.Last_Modified).getTime() : null;
+    const userLastSeen = USER_LAST_SEEN.roundResults[key] || 0;
+    
+    if (lastModified && lastModified > userLastSeen) {
+      console.log(`🆕 New update in ${key}:`, new Date(lastModified).toISOString());
+      PENDING_UPDATES.roundResults.add(key);
+    }
+  });
+}
+
+// Check for driver profile updates
+function checkForDriverProfileUpdates(profilesData) {
+  if (!currentUser) return;
+  
+  const dataArray = Object.values(profilesData || {});
+  
+  dataArray.forEach(profile => {
+    if (!profile || !profile.Name) return;
+    
+    const driverName = profile.Name;
+    const lastModified = profile.Last_Modified ? new Date(profile.Last_Modified).getTime() : null;
+    const userLastSeen = USER_LAST_SEEN.driverProfiles[driverName] || 0;
+    
+    if (lastModified && lastModified > userLastSeen) {
+      console.log(`🆕 Profile updated for ${driverName}`);
+      PENDING_UPDATES.driverProfiles.add(driverName);
+    }
+    
+    // Check equipment updates separately
+    const equipmentModified = profile.equipment?.Last_Modified ? new Date(profile.equipment.Last_Modified).getTime() : null;
+    const equipmentLastSeen = USER_LAST_SEEN.driverEquipment[driverName] || 0;
+    
+    if (equipmentModified && equipmentModified > equipmentLastSeen) {
+      console.log(`🆕 Equipment updated for ${driverName}`);
+      PENDING_UPDATES.driverEquipment.add(driverName);
+    }
+  });
+}
+
+// Check for round setup updates
+function checkForSetupUpdates(setupData) {
+  if (!currentUser) return;
+  
+  const dataArray = Object.values(setupData || {});
+  
+  dataArray.forEach(setup => {
+    if (!setup || !setup.Season || !setup.Round_Number) return;
+    
+    const key = `S${setup.Season}-R${setup.Round_Number}`;
+    const timestamp = setup.Timestamp ? new Date(setup.Timestamp).getTime() : null;
+    const userLastSeen = USER_LAST_SEEN.setupRounds[key] || 0;
+    
+    if (timestamp && timestamp > userLastSeen) {
+      console.log(`🆕 Setup updated for ${key}`);
+      PENDING_UPDATES.setupRounds.add(key);
+    }
+  });
+}
+
+// Check for leaderboard updates
+function checkForLeaderboardUpdates() {
+  if (!currentUser) return;
+  
+  const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
+  const now = Date.now();
+  
+  // Simple time-based check (leaderboard updates when Round_Data changes)
+  if (now - userLastSeen > 1000) {
+    PENDING_UPDATES.leaderboard = true;
+  }
+}
+
+// Update notification badges in UI
+function updateNotificationBadges() {
+  if (!currentUser) return;
+  
+  // Overall Leaderboard badge
+  const overallTab = document.querySelector('.tab-button[onclick*="overall"]');
+  if (overallTab) {
+    updateTabBadge(overallTab, PENDING_UPDATES.leaderboard);
+  }
+  
+  // Round Results badge
+  const roundTab = document.querySelector('.tab-button[onclick*="round"]');
+  if (roundTab) {
+    updateTabBadge(roundTab, PENDING_UPDATES.roundResults.size > 0);
+  }
+  
+  // Drivers badge
+  const driversTab = document.querySelector('.tab-button[onclick*="drivers"]');
+  if (driversTab) {
+    const hasUpdates = PENDING_UPDATES.driverProfiles.size > 0 || PENDING_UPDATES.driverEquipment.size > 0;
+    updateTabBadge(driversTab, hasUpdates);
+  }
+  
+  // Round Setup badge
+  const setupTab = document.querySelector('.tab-button[onclick*="setup"]');
+  if (setupTab) {
+    updateTabBadge(setupTab, PENDING_UPDATES.setupRounds.size > 0);
+  }
+  
+  // Apply visual indicators to elements
+  applyRoundIndicators();
+  applyDriverIndicators();
+}
+
+// Update tab badge helper
+function updateTabBadge(tabButton, hasUpdate) {
+  let badge = tabButton.querySelector('.notification-badge');
+  
+  if (hasUpdate) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'notification-badge';
+      tabButton.style.position = 'relative';
+      tabButton.appendChild(badge);
+    }
+    tabButton.classList.add('has-notification');
+  } else {
+    if (badge) {
+      badge.remove();
+    }
+    tabButton.classList.remove('has-notification');
+  }
+}
+
+// Apply indicators to round headers
+function applyRoundIndicators() {
+  PENDING_UPDATES.roundResults.forEach(roundKey => {
+    const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
+    if (header && !header.classList.contains('has-update')) {
+      header.classList.add('has-update');
+    }
+  });
+}
+
+// Apply indicators to driver cards
+function applyDriverIndicators() {
+  // Profile updates - glowing cards
+  PENDING_UPDATES.driverProfiles.forEach(driverName => {
+    const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+    if (card && !card.classList.contains('has-update')) {
+      card.classList.add('has-update');
+    }
+  });
+  
+  // Equipment updates - pulsating flip buttons
+  PENDING_UPDATES.driverEquipment.forEach(driverName => {
+    const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+    if (card) {
+      const flipButton = card.querySelector('.flip-card-button');
+      if (flipButton && !flipButton.classList.contains('pulsating')) {
+        flipButton.classList.add('pulsating');
+      }
+    }
+  });
+}
+
+// Mark leaderboard as seen
+async function markLeaderboardAsSeen() {
+  if (!currentUser) return;
+  
+  USER_LAST_SEEN.leaderboard = Date.now();
+  PENDING_UPDATES.leaderboard = false;
+  
+  const userKey = encodeKey(currentUser.name);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/leaderboard`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.leaderboard);
+  
+  updateNotificationBadges();
+  console.log('✅ Marked leaderboard as seen');
+}
+
+// Mark round result as seen
+async function markRoundResultAsSeen(roundKey) {
+  if (!currentUser) return;
+  
+  USER_LAST_SEEN.roundResults[roundKey] = Date.now();
+  PENDING_UPDATES.roundResults.delete(roundKey);
+  
+  const userKey = encodeKey(currentUser.name);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults/${roundKey}`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults[roundKey]);
+  
+  // Remove visual indicator and add flash
+  const header = document.querySelector(`[onclick*="toggleRound('${roundKey}')"]`);
+  if (header) {
+    header.classList.remove('has-update');
+    highlightElement(header);
+  }
+  
+  updateNotificationBadges();
+  console.log(`✅ Marked ${roundKey} as seen`);
+}
+
+// Mark driver profile as seen
+async function markDriverProfileAsSeen(driverName) {
+  if (!currentUser) return;
+  
+  USER_LAST_SEEN.driverProfiles[driverName] = Date.now();
+  PENDING_UPDATES.driverProfiles.delete(driverName);
+  
+  const userKey = encodeKey(currentUser.name);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/driverProfiles/${driverName}`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.driverProfiles[driverName]);
+  
+  // Remove visual indicator
+  const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+  if (card) {
+    card.classList.remove('has-update');
+    highlightElement(card);
+  }
+  
+  updateNotificationBadges();
+  console.log(`✅ Marked profile for ${driverName} as seen`);
+}
+
+// Mark driver equipment as seen
+async function markDriverEquipmentAsSeen(driverName) {
+  if (!currentUser) return;
+  
+  USER_LAST_SEEN.driverEquipment[driverName] = Date.now();
+  PENDING_UPDATES.driverEquipment.delete(driverName);
+  
+  const userKey = encodeKey(currentUser.name);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/driverEquipment/${driverName}`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.driverEquipment[driverName]);
+  
+  updateNotificationBadges();
+  console.log(`✅ Marked equipment for ${driverName} as seen`);
+}
+
+// Remove pulsate effect from flip button
+function removePulsateFlipButton(driverName) {
+  const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+  if (card) {
+    const flipButton = card.querySelector('.flip-card-button');
+    if (flipButton) {
+      flipButton.classList.remove('pulsating');
+    }
+  }
+}
+
+// Highlight element with yellow flash
+function highlightElement(element) {
+  if (!element) return;
+  
+  element.classList.add('highlight-flash');
+  setTimeout(() => {
+    element.classList.remove('highlight-flash');
+  }, 2000);
+}
+
+/* ========================================
+   END OF NOTIFICATION SYSTEM
+   ======================================== */
