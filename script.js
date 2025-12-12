@@ -4842,16 +4842,14 @@ function checkForRoundResultUpdates(roundData) {
     
     console.log(`   ${key}: current=${info.count}, saved=${previousCount}, timestamp=${info.mostRecent}, lastSeen=${previousTimestamp}`);
     
-    if (info.mostRecent > previousTimestamp && info.count > previousCount) {
-      console.log(`      ✅ NEW DATA DETECTED for ${key}`);
+    // CHANGED: Flag as new if lap count INCREASED (not just different)
+    if (info.count > previousCount) {
+      console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
       hasNewData = true;
     } else {
       console.log(`      ⏭️ No new data for ${key}`);
     }
-    
-    // DON'T UPDATE THE COUNT HERE - only update when user actually views the round
-    // USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
   });
   
   if (hasNewData) {
