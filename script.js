@@ -84,6 +84,8 @@ function encodeKey(name) {
   return String(name).replace(/[.#$\[\]/]/g, '_');
 }
 
+console.log('🚀 SCRIPT LOADED at', new Date().toISOString());
+
 /* -----------------------------
    Global app state
    ----------------------------- */
