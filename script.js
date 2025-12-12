@@ -240,9 +240,13 @@ function showTab(tabName, sourceButton = null) {
     loadAdminTools();
   }
 
-     if (currentUser) {
+  // UPDATED: Mark tabs as seen
+  if (currentUser) {
     if (tabName === 'overall') {
       setTimeout(() => markLeaderboardAsSeen(), 1000);
+    } else if (tabName === 'setup') {
+      // NEW: Mark setup as seen
+      setTimeout(() => markSetupAsSeen(), 1000);
     }
     updateNotificationBadges();
   }
