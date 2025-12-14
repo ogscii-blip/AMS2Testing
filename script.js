@@ -1871,7 +1871,7 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       if (currentUser && d && d.classList.contains('expanded')) {
         // Check if this is the round the user just submitted to
         if (window._justSubmittedLap !== latestKey) {
-          setTimeout(() => markRoundResultAsSeen(latestKey), 500);
+          setTimeout(() => markRoundResultAsSeen(latestKey), 3500);
         } else {
           console.log(`⏭️ Skipping auto-mark for ${latestKey} (user just submitted)`);
         }
