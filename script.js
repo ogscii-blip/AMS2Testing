@@ -4817,6 +4817,7 @@ async function initializeNotificationSystem() {
     if (roundData) {
       console.log('🔍 Checking for updates on page load...');
       checkForRoundResultUpdates(roundData);
+      checkForFastestLapUpdates(); // Check for purple sectors
       console.log('🔔 Pending updates after page load check:', Array.from(PENDING_UPDATES.roundResults));
       updateNotificationBadges();
     }
@@ -4840,6 +4841,7 @@ function startListeningForUpdates() {
     const data = snapshot.val();
     if (data) {
       checkForRoundResultUpdates(data);
+      checkForFastestLapUpdates(); // Check for purple sector changes
       updateNotificationBadges();
     }
   });
@@ -5050,24 +5052,103 @@ function checkForDriverProfileUpdates(profilesData) {
   });
 }
 
-// Check for round setup updates
+// Check for round setup updates (fastest laps/purple sectors)
 function checkForSetupUpdates(setupData) {
   if (!currentUser) return;
   
-  const dataArray = Object.values(setupData || {});
+  // First check if round configuration changed (new rounds added)
+  const setupArray = Object.values(setupData || {});
   
-  dataArray.forEach(setup => {
+  setupArray.forEach(setup => {
     if (!setup || !setup.Season || !setup.Round_Number) return;
     
     const key = `S${setup.Season}-R${setup.Round_Number}`;
     const timestamp = setup.Timestamp ? new Date(setup.Timestamp).getTime() : null;
-    const userLastSeen = USER_LAST_SEEN.setupRounds[key] || 0;
+    const userLastSeen = USER_LAST_SEEN.setupRounds?.[key] || 0;
     
     if (timestamp && timestamp > userLastSeen) {
-      console.log(`🆕 Setup updated for ${key}`);
+      console.log(`🆕 New round configured: ${key}`);
+      PENDING_UPDATES.setupRounds.add(key);
+      if (!USER_LAST_SEEN.setupRounds) USER_LAST_SEEN.setupRounds = {};
+      USER_LAST_SEEN.setupRounds[key] = timestamp;
+    }
+  });
+}
+
+// NEW: Check for fastest lap updates (purple sectors)
+async function checkForFastestLapUpdates() {
+  if (!currentUser) return;
+  
+  const roundDataRef = window.firebaseRef(window.firebaseDB, 'Round_Data');
+  const snapshot = await window.firebaseGet(roundDataRef);
+  
+  if (!snapshot.exists()) return;
+  
+  const roundData = snapshot.val();
+  const dataArray = Array.isArray(roundData) ? roundData : Object.values(roundData);
+  
+  // Group by round and find fastest laps
+  const roundFastestLaps = {};
+  
+  dataArray.forEach(entry => {
+    if (!entry || !entry.Season || !entry.Round) return;
+    
+    const key = `S${entry.Season}-R${entry.Round}`;
+    if (!roundFastestLaps[key]) {
+      roundFastestLaps[key] = {
+        fastestLap: Infinity,
+        fastestS1: Infinity,
+        fastestS2: Infinity,
+        fastestS3: Infinity,
+        fastestLapDriver: null,
+        fastestS1Driver: null,
+        fastestS2Driver: null,
+        fastestS3Driver: null
+      };
+    }
+    
+    const totalTime = parseFloat(entry.Total_Lap_Time) || Infinity;
+    const s1 = parseFloat(entry.Sector_1) || Infinity;
+    const s2 = parseFloat(entry.Sector_2) || Infinity;
+    const s3 = parseFloat(entry.Sector_3) || Infinity;
+    
+    if (totalTime < roundFastestLaps[key].fastestLap) {
+      roundFastestLaps[key].fastestLap = totalTime;
+      roundFastestLaps[key].fastestLapDriver = entry.Driver;
+    }
+    if (s1 < roundFastestLaps[key].fastestS1) {
+      roundFastestLaps[key].fastestS1 = s1;
+      roundFastestLaps[key].fastestS1Driver = entry.Driver;
+    }
+    if (s2 < roundFastestLaps[key].fastestS2) {
+      roundFastestLaps[key].fastestS2 = s2;
+      roundFastestLaps[key].fastestS2Driver = entry.Driver;
+    }
+    if (s3 < roundFastestLaps[key].fastestS3) {
+      roundFastestLaps[key].fastestS3 = s3;
+      roundFastestLaps[key].fastestS3Driver = entry.Driver;
+    }
+  });
+  
+  const previousFastestLaps = USER_LAST_SEEN.fastestLaps || {};
+  
+  // Check if any fastest lap changed
+  Object.entries(roundFastestLaps).forEach(([key, current]) => {
+    const previous = previousFastestLaps[key];
+    
+    if (!previous ||
+        current.fastestLap !== previous.fastestLap ||
+        current.fastestS1 !== previous.fastestS1 ||
+        current.fastestS2 !== previous.fastestS2 ||
+        current.fastestS3 !== previous.fastestS3) {
+      
+      console.log(`⚡ Fastest lap updated for ${key}`);
       PENDING_UPDATES.setupRounds.add(key);
     }
   });
+  
+  // Always update saved data
+  USER_LAST_SEEN.fastestLaps = roundFastestLaps;
 }
 
 // Check for leaderboard updates
