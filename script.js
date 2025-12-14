@@ -1544,20 +1544,31 @@ function displayLeaderboard(data) {
   tbody.innerHTML = '';
   const frag = document.createDocumentFragment();
 
-  // Get which drivers have updates
+  // Get which drivers have updates - use the saved data that triggered notifications
   const previousData = USER_LAST_SEEN.leaderboard_data || {};
   const updatedDrivers = new Set();
   
+  // Check if this driver was flagged for update
   data.forEach(row => {
     const previous = previousData[row.driver];
-    if (previous && (
-      row.points !== previous.totalPoints ||
-      row.purpleSectors !== previous.purpleSectors ||
-      row.wins !== previous.wins
-    )) {
+    
+    // If no previous data exists, this is a new driver (highlight them)
+    if (!previous) {
       updatedDrivers.add(row.driver);
+      console.log(`🆕 New driver detected: ${row.driver}`);
+      return;
+    }
+    
+    // Check if any stats changed
+    if (row.points !== previous.totalPoints ||
+        row.purpleSectors !== previous.purpleSectors ||
+        row.wins !== previous.wins) {
+      updatedDrivers.add(row.driver);
+      console.log(`⭐ Updated driver: ${row.driver} - Points: ${previous.totalPoints}→${row.points}, Sectors: ${previous.purpleSectors}→${row.purpleSectors}, Wins: ${previous.wins}→${row.wins}`);
     }
   });
+  
+  console.log(`👀 Drivers to highlight:`, Array.from(updatedDrivers));
 
   data.forEach((row,index) => {
     const tr = document.createElement('tr');
@@ -1585,6 +1596,7 @@ function displayLeaderboard(data) {
     // Add glow class after appending
     if (isUpdated) {
       tr.classList.add('new-lap-row');
+      console.log(`✨ Added glow to ${row.driver}'s row`);
     }
   });
 
@@ -2708,6 +2720,31 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
 
     // Check if this round has updates
     const hasUpdate = PENDING_UPDATES.setupRounds.has(setupKey);
+    
+    // Determine which specific items changed
+    let changedItems = [];
+    if (hasUpdate && USER_LAST_SEEN.fastestLaps) {
+      const current = {
+        fastestLap: bestRoundTime?.totalTime || Infinity,
+        fastestS1: bestSector1?.sector1 || Infinity,
+        fastestS2: bestSector2?.sector2 || Infinity,
+        fastestS3: bestSector3?.sector3 || Infinity
+      };
+      const previous = USER_LAST_SEEN.fastestLaps[setupKey] || {};
+      
+      if (current.fastestLap !== previous.fastestLap && current.fastestLap !== Infinity) {
+        changedItems.push('fastestLap');
+      }
+      if (current.fastestS1 !== previous.fastestS1 && current.fastestS1 !== Infinity) {
+        changedItems.push('S1');
+      }
+      if (current.fastestS2 !== previous.fastestS2 && current.fastestS2 !== Infinity) {
+        changedItems.push('S2');
+      }
+      if (current.fastestS3 !== previous.fastestS3 && current.fastestS3 !== Infinity) {
+        changedItems.push('S3');
+      }
+    }
 
     card.innerHTML = `
       <div class="round-card-header ${hasUpdate ? 'has-update' : ''}">
@@ -2723,12 +2760,12 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
         <div class="round-card-image-container"><img src="${trackImage}" alt="${setup.trackLayout}" loading="lazy" onerror="this.src='${fallbackTrackImage}'"><p>${setup.trackLayout}</p></div>
         <div class="round-card-image-container"><img src="${carImage}" alt="${setup.car}" loading="lazy" onerror="this.src='${fallbackCarImage}'"><p>${setup.car}</p></div>
       </div>
-      <div class="round-card-body ${hasUpdate ? 'new-setup-glow' : ''}">
-        ${bestRoundTime ? `<div class="best-time-section"><h4>🏆 This Round's Best</h4><div class="best-time-item gold"><div><div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div><div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div></div><div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div></div></div>` : `<div class="best-time-section"><p style="color:#999;">No lap times recorded yet</p></div>`}
-        ${bestComboTime ? `<div class="best-time-section"><h4>⚡ All-Time Best (This Combo)</h4><div class="best-time-item"><div><div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div><div class="best-time-context">Round ${bestComboTime.round}${bestComboTime.season ? ` - Season ${bestComboTime.season}` : ''}</div></div><div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div></div>
-          ${bestSector1 ? `<div class="best-time-item"><div><div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div></div><div class="best-time-value">${formatTime(bestSector1.sector1)}</div></div>` : ''}
-          ${bestSector2 ? `<div class="best-time-item"><div><div class="best-time-label">S2: ${getFormattedDriverName(bestSector2.driver)}</div></div><div class="best-time-value">${formatTime(bestSector2.sector2)}</div></div>` : ''}
-          ${bestSector3 ? `<div class="best-time-item"><div><div class="best-time-label">S3: ${getFormattedDriverName(bestSector3.driver)}</div></div><div class="best-time-value">${formatTime(bestSector3.sector3)}</div></div>` : ''}
+      <div class="round-card-body">
+        ${bestRoundTime ? `<div class="best-time-section"><h4>🏆 This Round's Best</h4><div class="best-time-item gold ${changedItems.includes('fastestLap') ? 'new-fastest-time' : ''}"><div><div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div><div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div></div><div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div></div></div>` : `<div class="best-time-section"><p style="color:#999;">No lap times recorded yet</p></div>`}
+        ${bestComboTime ? `<div class="best-time-section"><h4>⚡ All-Time Best (This Combo)</h4><div class="best-time-item ${changedItems.includes('fastestLap') ? 'new-fastest-time' : ''}"><div><div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div><div class="best-time-context">Round ${bestComboTime.round}${bestComboTime.season ? ` - Season ${bestComboTime.season}` : ''}</div></div><div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div></div>
+          ${bestSector1 ? `<div class="best-time-item ${changedItems.includes('S1') ? 'new-fastest-time' : ''}"><div><div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div></div><div class="best-time-value">${formatTime(bestSector1.sector1)}</div></div>` : ''}
+          ${bestSector2 ? `<div class="best-time-item ${changedItems.includes('S2') ? 'new-fastest-time' : ''}"><div><div class="best-time-label">S2: ${getFormattedDriverName(bestSector2.driver)}</div></div><div class="best-time-value">${formatTime(bestSector2.sector2)}</div></div>` : ''}
+          ${bestSector3 ? `<div class="best-time-item ${changedItems.includes('S3') ? 'new-fastest-time' : ''}"><div><div class="best-time-label">S3: ${getFormattedDriverName(bestSector3.driver)}</div></div><div class="best-time-value">${formatTime(bestSector3.sector3)}</div></div>` : ''}
         </div>` : ''}
       </div>
     `;
@@ -2758,6 +2795,10 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
               card.querySelector('.round-card-header')?.classList.remove('has-update');
               card.querySelector('.round-notification-bubble')?.remove();
               card.querySelector('.round-card-body')?.classList.remove('new-setup-glow');
+              // Remove glow from individual time items
+              card.querySelectorAll('.new-fastest-time').forEach(item => {
+                item.classList.remove('new-fastest-time');
+              });
               observer.unobserve(card);
             }, 2000);
           }
@@ -4822,6 +4863,39 @@ function injectNotificationCSS() {
     
     .new-setup-glow {
       animation: setup-card-glow 6s ease-in-out;
+    }
+    
+    .new-fastest-time {
+      animation: fastest-time-glow 6s ease-in-out;
+      position: relative;
+    }
+    
+    @keyframes fastest-time-glow {
+      0% {
+        background: rgba(255, 193, 7, 0.3) !important;
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.6), inset 0 0 10px rgba(255, 193, 7, 0.3);
+        transform: scale(1.02);
+      }
+      25% {
+        background: rgba(255, 193, 7, 0.4) !important;
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), inset 0 0 15px rgba(255, 193, 7, 0.4);
+        transform: scale(1.03);
+      }
+      50% {
+        background: rgba(255, 193, 7, 0.5) !important;
+        box-shadow: 0 0 25px rgba(255, 193, 7, 0.9), inset 0 0 20px rgba(255, 193, 7, 0.5);
+        transform: scale(1.04);
+      }
+      75% {
+        background: rgba(255, 193, 7, 0.4) !important;
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), inset 0 0 15px rgba(255, 193, 7, 0.4);
+        transform: scale(1.03);
+      }
+      100% {
+        background: transparent !important;
+        box-shadow: none;
+        transform: scale(1);
+      }
     }
     
     @keyframes setup-card-glow {
