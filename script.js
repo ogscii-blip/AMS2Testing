@@ -3409,7 +3409,9 @@ function applyUserUI() {
   updateSubmitTabVisibility();
   updateAdminTabVisibility();
   injectNotificationCSS();
-  initializeNotificationSystem(); 
+  initializeNotificationSystem();
+  loadNotifications(); // Load notification history
+  updateNotificationUI(); // Update bell UI
 }
 
 function updateSubmitTabVisibility() {
@@ -5188,6 +5190,11 @@ function checkForRoundResultUpdates(roundData) {
       
       console.log(`      📍 New laps (${numNewLaps}):`, newLaps);
       
+      // Add notifications for new laps
+      newLaps.forEach(lap => {
+        addNotification('lap', `${lap.driver} posted a new lap in ${key}: ${formatTime(lap.totalTime)}`, { round: key, driver: lap.driver, time: lap.totalTime });
+      });
+      
       // Update saved lap times
       const currentLapTimes = {};
       info.laps.forEach(lap => {
@@ -5225,6 +5232,12 @@ function checkForRoundResultUpdates(roundData) {
         window._newLapsByRound[key] = improvedLaps;
         
         console.log(`      📍 Improved laps:`, improvedLaps);
+        
+        // Add notifications for improved laps
+        improvedLaps.forEach(lap => {
+          const previousTime = previousLaps[lap.driver];
+          addNotification('lap', `${lap.driver} improved their time in ${key}: ${formatTime(previousTime)} → ${formatTime(lap.totalTime)}`, { round: key, driver: lap.driver, oldTime: previousTime, newTime: lap.totalTime });
+        });
         
         hasNewData = true;
       }
@@ -5370,6 +5383,20 @@ async function checkForFastestLapUpdates() {
       
       console.log(`⚡ Fastest lap updated for ${key}`);
       PENDING_UPDATES.setupRounds.add(key);
+      
+      // Add notifications for specific purple sectors
+      if (current.fastestLap !== previous.fastestLap && current.fastestLap !== Infinity) {
+        addNotification('fastest', `${current.fastestLapDriver} set the fastest lap in ${key}: ${formatTime(current.fastestLap)}`, { round: key, driver: current.fastestLapDriver, time: current.fastestLap });
+      }
+      if (current.fastestS1 !== previous.fastestS1 && current.fastestS1 !== Infinity) {
+        addNotification('purple', `${current.fastestS1Driver} set purple S1 in ${key}: ${formatTime(current.fastestS1)}`, { round: key, driver: current.fastestS1Driver, sector: 'S1', time: current.fastestS1 });
+      }
+      if (current.fastestS2 !== previous.fastestS2 && current.fastestS2 !== Infinity) {
+        addNotification('purple', `${current.fastestS2Driver} set purple S2 in ${key}: ${formatTime(current.fastestS2)}`, { round: key, driver: current.fastestS2Driver, sector: 'S2', time: current.fastestS2 });
+      }
+      if (current.fastestS3 !== previous.fastestS3 && current.fastestS3 !== Infinity) {
+        addNotification('purple', `${current.fastestS3Driver} set purple S3 in ${key}: ${formatTime(current.fastestS3)}`, { round: key, driver: current.fastestS3Driver, sector: 'S3', time: current.fastestS3 });
+      }
     }
   });
   
@@ -5415,6 +5442,25 @@ async function checkForLeaderboardUpdates() {
         current.purpleSectors !== previous.purpleSectors) {
       console.log(`🏆 Leaderboard changed for ${driver}:`, current);
       hasChanges = true;
+      
+      // Add notification for leaderboard changes
+      if (previous) {
+        const changes = [];
+        if (current.totalPoints !== previous.totalPoints) {
+          changes.push(`${current.totalPoints} pts (+${current.totalPoints - previous.totalPoints})`);
+        }
+        if (current.purpleSectors !== previous.purpleSectors) {
+          changes.push(`${current.purpleSectors} purple sectors (+${current.purpleSectors - previous.purpleSectors})`);
+        }
+        if (current.wins !== previous.wins) {
+          changes.push(`${current.wins} wins (+${current.wins - previous.wins})`);
+        }
+        if (changes.length > 0) {
+          addNotification('leaderboard', `${driver}: ${changes.join(', ')}`, { driver, ...current });
+        }
+      } else {
+        addNotification('leaderboard', `${driver} joined the championship!`, { driver, ...current });
+      }
     }
   });
   
@@ -5781,4 +5827,200 @@ async function markSetupAsSeen() {
 
 /* ========================================
    END OF NOTIFICATION SYSTEM
+   ======================================== */
+
+/* ========================================
+   NOTIFICATION CENTER
+   ======================================== */
+
+// Global notification storage
+if (!window.NOTIFICATIONS) {
+  window.NOTIFICATIONS = [];
+}
+
+// Toggle notification panel
+function toggleNotificationPanel() {
+  const panel = document.getElementById('notificationPanel');
+  const overlay = document.getElementById('notificationOverlay');
+  
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    overlay.style.display = 'block';
+    // Mark all as read when opening
+    setTimeout(() => markAllNotificationsAsRead(), 500);
+  } else {
+    panel.style.display = 'none';
+    overlay.style.display = 'none';
+  }
+}
+
+// Add a notification
+function addNotification(type, message, data = {}) {
+  const notification = {
+    id: Date.now() + Math.random(),
+    type, // 'lap', 'purple', 'leaderboard', 'setup'
+    message,
+    data,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  
+  window.NOTIFICATIONS.unshift(notification); // Add to beginning
+  
+  // Keep only last 50 notifications
+  if (window.NOTIFICATIONS.length > 50) {
+    window.NOTIFICATIONS = window.NOTIFICATIONS.slice(0, 50);
+  }
+  
+  // Save to localStorage
+  saveNotifications();
+  
+  // Update UI
+  updateNotificationUI();
+  
+  console.log('📬 New notification:', message);
+}
+
+// Save notifications to localStorage
+function saveNotifications() {
+  if (!currentUser) return;
+  const key = `notifications_${encodeKey(currentUser.name)}`;
+  localStorage.setItem(key, JSON.stringify(window.NOTIFICATIONS));
+}
+
+// Load notifications from localStorage
+function loadNotifications() {
+  if (!currentUser) return;
+  const key = `notifications_${encodeKey(currentUser.name)}`;
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    try {
+      window.NOTIFICATIONS = JSON.parse(saved);
+    } catch (e) {
+      window.NOTIFICATIONS = [];
+    }
+  }
+  updateNotificationUI();
+}
+
+// Update notification UI
+function updateNotificationUI() {
+  const bell = document.getElementById('notificationBell');
+  const count = document.getElementById('notificationCount');
+  const list = document.getElementById('notificationList');
+  
+  if (!bell || !count || !list) return;
+  
+  // Show/hide bell for logged in users
+  if (currentUser) {
+    bell.style.display = 'block';
+  } else {
+    bell.style.display = 'none';
+    return;
+  }
+  
+  // Update count badge
+  const unreadCount = window.NOTIFICATIONS.filter(n => !n.read).length;
+  if (unreadCount > 0) {
+    count.style.display = 'flex';
+    count.textContent = unreadCount > 99 ? '99+' : unreadCount;
+  } else {
+    count.style.display = 'none';
+  }
+  
+  // Update notification list
+  if (window.NOTIFICATIONS.length === 0) {
+    list.innerHTML = '<p style="text-align: center; color: #999; padding: 40px 20px;">No notifications yet</p>';
+    return;
+  }
+  
+  list.innerHTML = window.NOTIFICATIONS.map(notif => {
+    const icon = getNotificationIcon(notif.type);
+    const timeAgo = getTimeAgo(notif.timestamp);
+    const bgColor = notif.read ? '#f8f9fa' : '#fff3cd';
+    
+    return `
+      <div class="notification-item" style="background: ${bgColor}; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid ${getNotificationColor(notif.type)}; position: relative; transition: all 0.3s;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="font-size: 24px; flex-shrink: 0;">${icon}</div>
+          <div style="flex: 1;">
+            <p style="margin: 0 0 5px 0; color: #333; font-weight: 500; line-height: 1.4;">${notif.message}</p>
+            <p style="margin: 0; color: #666; font-size: 0.85em;">${timeAgo}</p>
+          </div>
+          <button onclick="removeNotification('${notif.id}')" style="background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; flex-shrink: 0;">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Get notification icon based on type
+function getNotificationIcon(type) {
+  const icons = {
+    'lap': '🏁',
+    'purple': '💜',
+    'leaderboard': '🏆',
+    'setup': '🔧',
+    'fastest': '⚡'
+  };
+  return icons[type] || '📢';
+}
+
+// Get notification color based on type
+function getNotificationColor(type) {
+  const colors = {
+    'lap': '#4CAF50',
+    'purple': '#9c27b0',
+    'leaderboard': '#ff9800',
+    'setup': '#2196F3',
+    'fastest': '#ffc107'
+  };
+  return colors[type] || '#667eea';
+}
+
+// Get time ago string
+function getTimeAgo(timestamp) {
+  const now = new Date();
+  const then = new Date(timestamp);
+  const seconds = Math.floor((now - then) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return then.toLocaleDateString();
+}
+
+// Remove single notification
+function removeNotification(id) {
+  window.NOTIFICATIONS = window.NOTIFICATIONS.filter(n => n.id !== parseFloat(id));
+  saveNotifications();
+  updateNotificationUI();
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+  if (confirm('Clear all notifications?')) {
+    window.NOTIFICATIONS = [];
+    saveNotifications();
+    updateNotificationUI();
+  }
+}
+
+// Mark all as read
+function markAllAsRead() {
+  window.NOTIFICATIONS.forEach(n => n.read = true);
+  saveNotifications();
+  updateNotificationUI();
+}
+
+// Mark all notifications as read (silently)
+function markAllNotificationsAsRead() {
+  window.NOTIFICATIONS.forEach(n => n.read = true);
+  saveNotifications();
+  updateNotificationUI();
+}
+
+/* ========================================
+   END OF NOTIFICATION CENTER
    ======================================== */
