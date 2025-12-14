@@ -86,18 +86,17 @@
                                 <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">Sign Out</button>
                             </div>
                         </div>
-
-						<!-- Notification Bell -->
-						<div id="notificationBell" style="display: none; position: relative; margin-left: 15px;">
-						    <button onclick="toggleNotificationPanel()" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s; position: relative;">
-						        🔔
-						        <span id="notificationCount" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4444; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></span>
-						    </button>
-						</div>
 						
                     </div>
                 </div>
             </div>
+
+			<div id="notificationBell" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 9000;">
+			    <button onclick="toggleNotificationPanel()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.3s; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+			        🔔
+			        <span id="notificationCount" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4444; color: white; border-radius: 50%; width: 28px; height: 28px; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); animation: pulse-badge 2s infinite;"></span>
+			    </button>
+			</div>
         </header>
 
         <div class="tabs">
