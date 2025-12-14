@@ -4917,6 +4917,7 @@ function checkForRoundResultUpdates(roundData) {
   Object.entries(roundInfo).forEach(([key, info]) => {
     const previousCount = userLastSeen[key + '_count'] || 0;
     const previousTimestamp = userLastSeen[key] || 0;
+    const previousLaps = userLastSeen[key + '_laps'] || {}; // NEW: Track individual laps
     
     console.log(`   ${key}: current=${info.count}, saved=${previousCount}, timestamp=${info.mostRecent}, lastSeen=${previousTimestamp}`);
     
@@ -4926,11 +4927,18 @@ function checkForRoundResultUpdates(roundData) {
       USER_LAST_SEEN.roundResults[key + '_count'] = info.count;
       USER_LAST_SEEN.roundResults[key] = info.mostRecent;
       
+      // Build current lap times map
+      const currentLapTimes = {};
+      info.laps.forEach(lap => {
+        currentLapTimes[lap.driver] = lap.totalTime;
+      });
+      USER_LAST_SEEN.roundResults[key + '_laps'] = currentLapTimes;
+      
       const userKey = currentUser.name.replace(/\s+/g, '_');
       const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/roundResults`);
       window.firebaseSet(lastSeenRef, USER_LAST_SEEN.roundResults);
     }
-    // Check if lap count increased
+    // Check if lap count increased (new driver submitted)
     else if (info.count > previousCount) {
       console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
@@ -4952,26 +4960,53 @@ function checkForRoundResultUpdates(roundData) {
       
       console.log(`      📍 New laps (${numNewLaps}):`, newLaps);
       
+      // Update saved lap times
+      const currentLapTimes = {};
+      info.laps.forEach(lap => {
+        currentLapTimes[lap.driver] = lap.totalTime;
+      });
+      USER_LAST_SEEN.roundResults[key + '_laps'] = currentLapTimes;
+      
       hasNewData = true;
     }
-    // Check if any lap was improved (timestamp changed but count stayed same)
-    else if (info.count === previousCount && info.mostRecent > previousTimestamp) {
-      console.log(`      ⚡ LAP IMPROVED for ${key} (timestamp updated)`);
-      PENDING_UPDATES.roundResults.add(key);
-      
-      // Find which lap(s) were updated (timestamp > lastSeen)
-      const improvedLaps = info.laps.filter(lap => {
-        const lapTime = new Date(lap.timestamp).getTime();
-        return lapTime > previousTimestamp;
+    // Check if any driver improved their lap time (count same, but times changed)
+    else if (info.count === previousCount) {
+      // Build current lap times map
+      const currentLapTimes = {};
+      info.laps.forEach(lap => {
+        currentLapTimes[lap.driver] = lap.totalTime;
       });
       
-      // Store improved lap info for highlighting
-      if (!window._newLapsByRound) window._newLapsByRound = {};
-      window._newLapsByRound[key] = improvedLaps;
+      // Find which drivers improved their times
+      const improvedLaps = [];
+      info.laps.forEach(lap => {
+        const previousTime = previousLaps[lap.driver];
+        // Only flag if: driver exists in previous AND time changed
+        if (previousTime !== undefined && lap.totalTime !== previousTime) {
+          improvedLaps.push(lap);
+          console.log(`      ⚡ ${lap.driver} improved: ${previousTime} → ${lap.totalTime}`);
+        }
+      });
       
-      console.log(`      📍 Improved laps (${improvedLaps.length}):`, improvedLaps);
+      if (improvedLaps.length > 0) {
+        console.log(`      ⚡ LAP IMPROVED for ${key} (${improvedLaps.length} drivers)`);
+        PENDING_UPDATES.roundResults.add(key);
+        
+        // Store improved lap info for highlighting
+        if (!window._newLapsByRound) window._newLapsByRound = {};
+        window._newLapsByRound[key] = improvedLaps;
+        
+        console.log(`      📍 Improved laps:`, improvedLaps);
+        
+        hasNewData = true;
+      }
       
-      hasNewData = true;
+      // Always update saved lap times
+      USER_LAST_SEEN.roundResults[key + '_laps'] = currentLapTimes;
+      
+      if (improvedLaps.length === 0) {
+        console.log(`      ⏭️ No new data for ${key}`);
+      }
     }
     else {
       console.log(`      ⏭️ No new data for ${key}`);
