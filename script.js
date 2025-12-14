@@ -4641,19 +4641,29 @@ function injectNotificationCSS() {
     
     /* New lap row highlight */
     .new-lap-row td {
-      animation: new-lap-glow 3s ease-out;
+      animation: new-lap-glow 6s ease-in-out;
     }
     
     @keyframes new-lap-glow {
       0% {
         color: #ff6b00;
         text-shadow: 0 0 10px #ffc107, 0 0 20px #ffc107, 0 0 30px #ffc107;
-        transform: scale(1.02);
+        transform: scale(1.05);
       }
-      50% {
+      25% {
         color: #ff8800;
         text-shadow: 0 0 15px #ffc107, 0 0 25px #ffc107, 0 0 35px #ffc107;
-        transform: scale(1.03);
+        transform: scale(1.08);
+      }
+      50% {
+        color: #ff6b00;
+        text-shadow: 0 0 20px #ffc107, 0 0 30px #ffc107, 0 0 40px #ffc107;
+        transform: scale(1.05);
+      }
+      75% {
+        color: #ff8800;
+        text-shadow: 0 0 15px #ffc107, 0 0 25px #ffc107, 0 0 35px #ffc107;
+        transform: scale(1.08);
       }
       100% {
         color: inherit;
