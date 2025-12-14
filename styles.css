@@ -2740,3 +2740,37 @@ header p {
         font-size: 20px !important;
     }
 }
+
+@keyframes pulse-badge {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+#notificationBell button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    #notificationBell {
+        top: 15px !important;
+        right: 15px !important;
+    }
+    
+    #notificationBell button {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 24px !important;
+    }
+    
+    #notificationCount {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+    }
+}
