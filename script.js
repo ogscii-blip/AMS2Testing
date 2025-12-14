@@ -5082,27 +5082,46 @@ async function checkForLeaderboardUpdates() {
   const data = snapshot.val();
   const dataArray = Array.isArray(data) ? data : Object.values(data);
   
-  let mostRecentUpdate = 0;
+  // Build current driver points map
+  const currentPoints = {};
   dataArray.forEach(entry => {
-    if (entry.Last_Modified) {
-      const timestamp = new Date(entry.Last_Modified).getTime();
-      if (timestamp > mostRecentUpdate) {
-        mostRecentUpdate = timestamp;
-      }
+    if (entry && entry.Driver) {
+      currentPoints[entry.Driver] = {
+        totalPoints: parseInt(entry.Total_Points) || 0,
+        wins: parseInt(entry.Total_Wins) || 0,
+        purpleSectors: parseInt(entry.Total_Purple_Sectors) || 0
+      };
     }
   });
   
-  const userKey = currentUser.name.replace(/\s+/g, '_');
-  const userLastSeen = USER_LAST_SEEN.leaderboard || 0;
+  const previousPoints = USER_LAST_SEEN.leaderboard_data || {};
   
-  if (mostRecentUpdate > userLastSeen) {
-    console.log('🏆 LEADERBOARD CHANGED!', new Date(mostRecentUpdate).toISOString());
+  // Check if any driver's stats changed
+  let hasChanges = false;
+  Object.keys(currentPoints).forEach(driver => {
+    const current = currentPoints[driver];
+    const previous = previousPoints[driver];
+    
+    if (!previous || 
+        current.totalPoints !== previous.totalPoints ||
+        current.wins !== previous.wins ||
+        current.purpleSectors !== previous.purpleSectors) {
+      console.log(`🏆 Leaderboard changed for ${driver}:`, current);
+      hasChanges = true;
+    }
+  });
+  
+  if (hasChanges) {
+    console.log('🏆 LEADERBOARD UPDATED!');
     PENDING_UPDATES.leaderboard = true;
     
-    // ADD THIS: Clear leaderboard cache
+    // Clear leaderboard cache
     console.log('🗑️ Clearing leaderboard cache');
     CACHE.leaderboardArray = null;
   }
+  
+  // Always update saved data
+  USER_LAST_SEEN.leaderboard_data = currentPoints;
 }
 
 // Update notification badges in UI
@@ -5294,12 +5313,11 @@ function applyDriverIndicators() {
 async function markLeaderboardAsSeen() {
   if (!currentUser) return;
   
-  USER_LAST_SEEN.leaderboard = Date.now();
   PENDING_UPDATES.leaderboard = false;
   
   const userKey = encodeKey(currentUser.name);
-  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}/leaderboard`);
-  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN.leaderboard);
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
   
   updateNotificationBadges();
   console.log('✅ Marked leaderboard as seen');
