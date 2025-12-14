@@ -4935,7 +4935,7 @@ function checkForRoundResultUpdates(roundData) {
       console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
       
-      // FIXED: Sort laps by timestamp and only mark the NEWEST ones as new
+      // Sort laps by timestamp and only mark the NEWEST ones as new
       const sortedLaps = info.laps.sort((a, b) => {
         const timeA = new Date(a.timestamp).getTime();
         const timeB = new Date(b.timestamp).getTime();
@@ -4953,7 +4953,27 @@ function checkForRoundResultUpdates(roundData) {
       console.log(`      📍 New laps (${numNewLaps}):`, newLaps);
       
       hasNewData = true;
-    } else {
+    }
+    // Check if any lap was improved (timestamp changed but count stayed same)
+    else if (info.count === previousCount && info.mostRecent > previousTimestamp) {
+      console.log(`      ⚡ LAP IMPROVED for ${key} (timestamp updated)`);
+      PENDING_UPDATES.roundResults.add(key);
+      
+      // Find which lap(s) were updated (timestamp > lastSeen)
+      const improvedLaps = info.laps.filter(lap => {
+        const lapTime = new Date(lap.timestamp).getTime();
+        return lapTime > previousTimestamp;
+      });
+      
+      // Store improved lap info for highlighting
+      if (!window._newLapsByRound) window._newLapsByRound = {};
+      window._newLapsByRound[key] = improvedLaps;
+      
+      console.log(`      📍 Improved laps (${improvedLaps.length}):`, improvedLaps);
+      
+      hasNewData = true;
+    }
+    else {
       console.log(`      ⏭️ No new data for ${key}`);
     }
   });
