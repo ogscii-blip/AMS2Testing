@@ -1782,46 +1782,41 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     const winnerTime = results.length > 0 ? timeToSeconds(results[0].totalTime) : 0;
 
     results.forEach(row => {
-      const tr = document.createElement('tr');
-      if (row.position === 1) tr.classList.add('position-1');
-      if (row.position === 2) tr.classList.add('position-2');
-      if (row.position === 3) tr.classList.add('position-3');
-    
-      const newLaps = window._newLapsByRound?.[key] || [];
-      const isNewLap = newLaps.some(lap => 
-       lap.driver === row.driver && 
-       Math.abs(lap.totalTime - row.totalTime) < 0.001 // Compare with small tolerance
-      );
+  const tr = document.createElement('tr');
+  if (row.position === 1) tr.classList.add('position-1');
+  if (row.position === 2) tr.classList.add('position-2');
+  if (row.position === 3) tr.classList.add('position-3');
 
-      if (isNewLap) {
-       tr.classList.add('new-lap-row');
-       console.log(`⭐ Highlighting new lap for ${row.driver} in ${key}`);
-     }
+  const newLaps = window._newLapsByRound?.[key] || [];
+  const isNewLap = newLaps.some(lap => 
+    lap.driver === row.driver && 
+    Math.abs(lap.totalTime - row.totalTime) < 0.001
+  );
 
-      const sector1Html = row.purpleSector1 ? `<span class="purple-sector">${formatTime(row.sector1)}</span>` : formatTime(row.sector1);
-      const sector2Html = row.purpleSector2 ? `<span class="purple-sector">${formatTime(row.sector2)}</span>` : formatTime(row.sector2);
-      const sector3Html = row.purpleSector3 ? `<span class="purple-sector">${formatTime(row.sector3)}</span>` : formatTime(row.sector3);
+  const sector1Html = row.purpleSector1 ? `<span class="purple-sector">${formatTime(row.sector1)}</span>` : formatTime(row.sector1);
+  const sector2Html = row.purpleSector2 ? `<span class="purple-sector">${formatTime(row.sector2)}</span>` : formatTime(row.sector2);
+  const sector3Html = row.purpleSector3 ? `<span class="purple-sector">${formatTime(row.sector3)}</span>` : formatTime(row.sector3);
 
-      const formattedName = getFormattedDriverName(row.driver);
+  const formattedName = getFormattedDriverName(row.driver);
 
-      const driverDisplay = isNewLap 
-       ? `<span class="new-lap-indicator"></span>${formattedName}`
-       : formattedName;
+  const driverDisplay = isNewLap 
+    ? `<span class="new-lap-indicator"></span>${formattedName}`
+    : formattedName;
 
-      let gapHtml = '';
-      if (row.position === 1) {
-        gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Interval</span>';
-      } else {
-        const driverTime = timeToSeconds(row.totalTime);
-        const gap = driverTime - winnerTime;
-        if (gap > 0 && isFinite(gap)) {
-          gapHtml = `<span style="color:#e74c3c;">+${gap.toFixed(3)}s</span>`;
-        } else {
-          gapHtml = '-';
-        }
-      }
+  let gapHtml = '';
+  if (row.position === 1) {
+    gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Interval</span>';
+  } else {
+    const driverTime = timeToSeconds(row.totalTime);
+    const gap = driverTime - winnerTime;
+    if (gap > 0 && isFinite(gap)) {
+      gapHtml = `<span style="color:#e74c3c;">+${gap.toFixed(3)}s</span>`;
+    } else {
+      gapHtml = '-';
+    }
+  }
 
-      tr.innerHTML = `
+  tr.innerHTML = `
     <td data-label="Driver"><strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer;color:#667eea">${driverDisplay}</strong></td>
     <td data-label="Sector 1">${sector1Html}</td>
     <td data-label="Sector 2">${sector2Html}</td>
@@ -1832,6 +1827,13 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     <td data-label="Purple Sectors">${row.purpleSectors}</td>
     <td data-label="Points"><strong>${row.points}</strong></td>
   `;
+  
+  // ADD THE CLASS AFTER innerHTML (this is the key change!)
+  if (isNewLap) {
+    tr.classList.add('new-lap-row');
+    console.log(`⭐ Highlighting new lap for ${row.driver} in ${key}`);
+  }
+  
   tbody.appendChild(tr);
 });
 
