@@ -4640,9 +4640,8 @@ function injectNotificationCSS() {
     }
     
     /* New lap row highlight */
-    .new-lap-row {
+    .new-lap-row td {
       animation: new-lap-glow 3s ease-out;
-      position: relative;
     }
     
     @keyframes new-lap-glow {
