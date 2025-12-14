@@ -1544,6 +1544,21 @@ function displayLeaderboard(data) {
   tbody.innerHTML = '';
   const frag = document.createDocumentFragment();
 
+  // Get which drivers have updates
+  const previousData = USER_LAST_SEEN.leaderboard_data || {};
+  const updatedDrivers = new Set();
+  
+  data.forEach(row => {
+    const previous = previousData[row.driver];
+    if (previous && (
+      row.points !== previous.totalPoints ||
+      row.purpleSectors !== previous.purpleSectors ||
+      row.wins !== previous.wins
+    )) {
+      updatedDrivers.add(row.driver);
+    }
+  });
+
   data.forEach((row,index) => {
     const tr = document.createElement('tr');
     if (index === 0) tr.classList.add('position-1');
@@ -1553,15 +1568,24 @@ function displayLeaderboard(data) {
     const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
 
     const formattedName = getFormattedDriverName(row.driver);
+    
+    // Check if this driver has updates
+    const isUpdated = updatedDrivers.has(row.driver);
 
     tr.innerHTML = `
       <td data-label="Position"><span class="medal">${medal}</span>${row.position}</td>
-      <td data-label="Driver"><strong style="cursor:pointer;color:#667eea;" class="driver-link" data-driver="${row.driver}">${formattedName}</strong></td>
+      <td data-label="Driver"><strong style="cursor:pointer;color:#667eea;" class="driver-link" data-driver="${row.driver}">${isUpdated ? '<span class="new-lap-indicator"></span>' : ''}${formattedName}</strong></td>
       <td data-label="Points"><strong>${row.points}</strong></td>
       <td data-label="Purple Sectors">${row.purpleSectors}</td>
       <td data-label="Wins">${row.wins}</td>
     `;
+    
     frag.appendChild(tr);
+    
+    // Add glow class after appending
+    if (isUpdated) {
+      tr.classList.add('new-lap-row');
+    }
   });
 
   tbody.appendChild(frag);
@@ -1572,6 +1596,31 @@ function displayLeaderboard(data) {
       goToDriverCurrentRound(driverName);
     });
   });
+
+  // Use IntersectionObserver to mark updated rows as seen when they come into view
+  if (currentUser && updatedDrivers.size > 0) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const row = entry.target;
+          // Wait 3 seconds to let the glow animation play
+          setTimeout(() => {
+            row.classList.remove('new-lap-row');
+            const indicator = row.querySelector('.new-lap-indicator');
+            if (indicator) indicator.remove();
+            observer.unobserve(row);
+          }, 3000);
+        }
+      });
+    }, {
+      threshold: 0.7 // Row must be 70% visible
+    });
+
+    // Observe all updated rows
+    tbody.querySelectorAll('.new-lap-row').forEach(row => {
+      observer.observe(row);
+    });
+  }
 
   document.getElementById('leaderboard-loading').style.display = 'none';
   document.getElementById('leaderboard-content').style.display = 'block';
@@ -2644,6 +2693,7 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   setupData.sort((a,b) => a.season - b.season || a.round - b.round).forEach(setup => {
     const card = document.createElement('div'); card.className = 'round-card';
     const key = `${setup.season}-${setup.round}`;
+    const setupKey = `S${setup.season}-R${setup.round}`;
     const roundTimes = bySeasonRound[key] || [];
     const comboTimes = byCombo[`${setup.trackLayout}||${setup.car}`] || [];
 
@@ -2656,13 +2706,24 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
     const carImage = carsMap[setup.car] || fallbackCarImage;
 
+    // Check if this round has updates
+    const hasUpdate = PENDING_UPDATES.setupRounds.has(setupKey);
+
     card.innerHTML = `
-      <div class="round-card-header"><h3>Round ${setup.round}</h3><p class="season-number">${setup.season}</p></div>
+      <div class="round-card-header ${hasUpdate ? 'has-update' : ''}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div>
+            <h3>Round ${setup.round}</h3>
+            <p class="season-number">${setup.season}</p>
+          </div>
+          ${hasUpdate ? '<span class="round-notification-bubble">●</span>' : ''}
+        </div>
+      </div>
       <div class="round-card-images">
         <div class="round-card-image-container"><img src="${trackImage}" alt="${setup.trackLayout}" loading="lazy" onerror="this.src='${fallbackTrackImage}'"><p>${setup.trackLayout}</p></div>
         <div class="round-card-image-container"><img src="${carImage}" alt="${setup.car}" loading="lazy" onerror="this.src='${fallbackCarImage}'"><p>${setup.car}</p></div>
       </div>
-      <div class="round-card-body">
+      <div class="round-card-body ${hasUpdate ? 'new-setup-glow' : ''}">
         ${bestRoundTime ? `<div class="best-time-section"><h4>🏆 This Round's Best</h4><div class="best-time-item gold"><div><div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div><div class="best-time-context">Round ${setup.round} - Season ${setup.season}</div></div><div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div></div></div>` : `<div class="best-time-section"><p style="color:#999;">No lap times recorded yet</p></div>`}
         ${bestComboTime ? `<div class="best-time-section"><h4>⚡ All-Time Best (This Combo)</h4><div class="best-time-item"><div><div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div><div class="best-time-context">Round ${bestComboTime.round}${bestComboTime.season ? ` - Season ${bestComboTime.season}` : ''}</div></div><div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div></div>
           ${bestSector1 ? `<div class="best-time-item"><div><div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div></div><div class="best-time-value">${formatTime(bestSector1.sector1)}</div></div>` : ''}
@@ -2671,10 +2732,46 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
         </div>` : ''}
       </div>
     `;
+    
+    // Mark as seen when card comes into view
+    if (hasUpdate) {
+      card.setAttribute('data-round-key', setupKey);
+      card.classList.add('setup-card-pending');
+    }
+    
     frag.appendChild(card);
   });
 
   container.appendChild(frag);
+
+  // Use IntersectionObserver to mark cards as seen when they come into view
+  if (currentUser) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const card = entry.target;
+          const roundKey = card.getAttribute('data-round-key');
+          if (roundKey && PENDING_UPDATES.setupRounds.has(roundKey)) {
+            // Wait 2 seconds before marking as seen (so user has time to see the glow)
+            setTimeout(() => {
+              markSetupRoundAsSeen(roundKey);
+              card.querySelector('.round-card-header')?.classList.remove('has-update');
+              card.querySelector('.round-notification-bubble')?.remove();
+              card.querySelector('.round-card-body')?.classList.remove('new-setup-glow');
+              observer.unobserve(card);
+            }, 2000);
+          }
+        }
+      });
+    }, {
+      threshold: 0.5 // Card must be 50% visible
+    });
+
+    // Observe all pending setup cards
+    document.querySelectorAll('.setup-card-pending').forEach(card => {
+      observer.observe(card);
+    });
+  }
 
    updateNotificationBadges();
 }
@@ -4695,6 +4792,61 @@ function injectNotificationCSS() {
       }
     }
     
+    /* Round Setup Card Notifications */
+    .round-notification-bubble {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background: #ff4444;
+      border-radius: 50%;
+      animation: pulse-indicator 2s infinite;
+      box-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+      margin-left: 10px;
+    }
+    
+    .round-card-header.has-update {
+      background: linear-gradient(135deg, #ff4444 0%, #ff6666 100%);
+      animation: card-header-pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes card-header-pulse {
+      0%, 100% {
+        background: linear-gradient(135deg, #ff4444 0%, #ff6666 100%);
+        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+      }
+      50% {
+        background: linear-gradient(135deg, #ff6666 0%, #ff8888 100%);
+        box-shadow: 0 4px 15px rgba(255, 68, 68, 0.5);
+      }
+    }
+    
+    .new-setup-glow {
+      animation: setup-card-glow 6s ease-in-out;
+    }
+    
+    @keyframes setup-card-glow {
+      0% {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.6), inset 0 0 20px rgba(255, 193, 7, 0.2);
+        border: 2px solid #ffc107;
+      }
+      25% {
+        box-shadow: 0 0 30px rgba(255, 193, 7, 0.8), inset 0 0 30px rgba(255, 193, 7, 0.3);
+        border: 2px solid #ffb300;
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(255, 193, 7, 0.9), inset 0 0 40px rgba(255, 193, 7, 0.4);
+        border: 2px solid #ffa000;
+      }
+      75% {
+        box-shadow: 0 0 30px rgba(255, 193, 7, 0.8), inset 0 0 30px rgba(255, 193, 7, 0.3);
+        border: 2px solid #ffb300;
+      }
+      100% {
+        box-shadow: none;
+        border: 2px solid transparent;
+      }
+    }
+    
     /* Driver card flip button pulsate */
     .flip-card-button.pulsating {
       animation: flip-button-pulse 1.5s ease-in-out infinite;
@@ -5456,6 +5608,22 @@ async function markRoundResultAsSeen(roundKey) {
   }
   
   updateNotificationBadges();
+}
+
+// Mark setup round as seen
+async function markSetupRoundAsSeen(roundKey) {
+  if (!currentUser) return;
+  
+  console.log(`👁️ Marking setup ${roundKey} as seen`);
+  
+  PENDING_UPDATES.setupRounds.delete(roundKey);
+  
+  const userKey = currentUser.name.replace(/\s+/g, '_');
+  const lastSeenRef = window.firebaseRef(window.firebaseDB, `User_Last_Seen/${userKey}`);
+  await window.firebaseSet(lastSeenRef, USER_LAST_SEEN);
+  
+  updateNotificationBadges();
+  console.log(`✅ Marked setup ${roundKey} as seen`);
 }
 
 // Mark driver profile as seen
