@@ -4925,17 +4925,22 @@ function checkForRoundResultUpdates(roundData) {
       console.log(`      ✅ NEW DATA DETECTED for ${key} (lap count increased)`);
       PENDING_UPDATES.roundResults.add(key);
       
-      // NEW: Store which laps are new (laps with timestamp > lastSeen)
-      const newLaps = info.laps.filter(lap => {
-        const lapTime = new Date(lap.timestamp).getTime();
-        return lapTime > previousTimestamp;
+      // FIXED: Sort laps by timestamp and only mark the NEWEST ones as new
+      const sortedLaps = info.laps.sort((a, b) => {
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        return timeB - timeA; // Newest first
       });
+      
+      // Only take the number of new laps (count difference)
+      const numNewLaps = info.count - previousCount;
+      const newLaps = sortedLaps.slice(0, numNewLaps);
       
       // Store new lap info for highlighting
       if (!window._newLapsByRound) window._newLapsByRound = {};
       window._newLapsByRound[key] = newLaps;
       
-      console.log(`      📍 New laps:`, newLaps);
+      console.log(`      📍 New laps (${numNewLaps}):`, newLaps);
       
       hasNewData = true;
     } else {
