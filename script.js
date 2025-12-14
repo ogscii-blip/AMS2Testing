@@ -1827,14 +1827,14 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     <td data-label="Purple Sectors">${row.purpleSectors}</td>
     <td data-label="Points"><strong>${row.points}</strong></td>
   `;
-  
+
+tbody.appendChild(tr);
+       
   // ADD THE CLASS AFTER innerHTML (this is the key change!)
   if (isNewLap) {
     tr.classList.add('new-lap-row');
     console.log(`⭐ Highlighting new lap for ${row.driver} in ${key}`);
-  }
-  
-  tbody.appendChild(tr);
+  }  
 });
 
     details.appendChild(table);
