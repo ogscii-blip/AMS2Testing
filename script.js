@@ -4641,24 +4641,27 @@ function injectNotificationCSS() {
     
     /* New lap row highlight */
     .new-lap-row {
-      animation: new-lap-flash 3s ease-out;
+      animation: new-lap-glow 3s ease-out;
       position: relative;
     }
     
-    @keyframes new-lap-flash {
-  0% {
-    background: #fff3cd !important;  // ← Changed from background-color
-    box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
-  }
-  50% {
-    background: #fff8dc !important;  // ← Changed from background-color
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
-  }
-  100% {
-    background: transparent !important;  // ← Changed from background-color
-    box-shadow: none;
-  }
-}
+    @keyframes new-lap-glow {
+      0% {
+        color: #ff6b00;
+        text-shadow: 0 0 10px #ffc107, 0 0 20px #ffc107, 0 0 30px #ffc107;
+        transform: scale(1.02);
+      }
+      50% {
+        color: #ff8800;
+        text-shadow: 0 0 15px #ffc107, 0 0 25px #ffc107, 0 0 35px #ffc107;
+        transform: scale(1.03);
+      }
+      100% {
+        color: inherit;
+        text-shadow: none;
+        transform: scale(1);
+      }
+    }
     
     /* Pulsing indicator for new lap */
     .new-lap-indicator {
