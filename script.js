@@ -4646,19 +4646,19 @@ function injectNotificationCSS() {
     }
     
     @keyframes new-lap-flash {
-      0% {
-        background-color: #fff3cd;
-        box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
-      }
-      50% {
-        background-color: #fff8dc;
-        box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
-      }
-      100% {
-        background-color: transparent;
-        box-shadow: none;
-      }
-    }
+  0% {
+    background: #fff3cd !important;  // ← Changed from background-color
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
+  }
+  50% {
+    background: #fff8dc !important;  // ← Changed from background-color
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+  }
+  100% {
+    background: transparent !important;  // ← Changed from background-color
+    box-shadow: none;
+  }
+}
     
     /* Pulsing indicator for new lap */
     .new-lap-indicator {
