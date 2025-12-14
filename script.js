@@ -1793,6 +1793,11 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
        Math.abs(lap.totalTime - row.totalTime) < 0.001 // Compare with small tolerance
       );
 
+      if (isNewLap) {
+       tr.classList.add('new-lap-row');
+       console.log(`⭐ Highlighting new lap for ${row.driver} in ${key}`);
+     }
+
       const sector1Html = row.purpleSector1 ? `<span class="purple-sector">${formatTime(row.sector1)}</span>` : formatTime(row.sector1);
       const sector2Html = row.purpleSector2 ? `<span class="purple-sector">${formatTime(row.sector2)}</span>` : formatTime(row.sector2);
       const sector3Html = row.purpleSector3 ? `<span class="purple-sector">${formatTime(row.sector3)}</span>` : formatTime(row.sector3);
