@@ -50,9 +50,9 @@
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-card: #1e293b;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
+  --text-primary: #f1f5f9; /* Brighter white for better contrast */
+  --text-secondary: #cbd5e1; /* Lighter gray for better readability */
+  --border-color: #475569; /* More visible borders */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -123,6 +123,7 @@ header p {
   border-bottom: 2px solid var(--border-color);
   display: flex;
   overflow-x: auto;
+  overflow-y: hidden; /* Prevent vertical scrollbar */
   scrollbar-width: thin;
 }
 
@@ -252,6 +253,15 @@ button[type="submit"]:hover,
    MODERN FORMS
    ======================================== */
 
+label,
+.form-label,
+.lap-time-label {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  display: inline-block;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="number"],
@@ -261,7 +271,7 @@ textarea,
 .admin-search-input {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   font-size: 1em;
@@ -606,8 +616,81 @@ textarea:focus,
 }
 
 /* ========================================
-   UTILITY CLASSES
+   TEXT CONTRAST FIXES
    ======================================== */
+
+/* Ensure all headings are visible */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+}
+
+/* Ensure all paragraph text is visible */
+p {
+  color: var(--text-primary);
+}
+
+/* Driver names and important text */
+.driver-name,
+.section-title,
+.round-header h3,
+.driver-header h2,
+strong {
+  color: var(--text-primary) !important;
+}
+
+/* All-Time Best section text visibility */
+.best-time-item,
+.best-time-label,
+.best-time-context,
+.best-time-value {
+  color: var(--text-primary) !important;
+}
+
+/* Round Setup card text */
+.round-card-body .best-time-section h4 {
+  color: var(--text-primary) !important;
+}
+
+/* Personal best lap text in dark cards */
+.personal-best,
+.driver-records-section {
+  color: var(--text-primary) !important;
+}
+
+.personal-best * {
+  color: var(--text-primary) !important;
+}
+
+/* Admin table text */
+.admin-table td,
+.admin-table th,
+.admin-table {
+  color: var(--text-primary) !important;
+}
+
+/* Email logs and timestamp text */
+.timestamp-text,
+.error-reason {
+  color: var(--text-primary) !important;
+}
+
+/* Ensure dropdown selected values are visible */
+select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Fix placeholder text visibility */
+::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.7;
+}
 
 .text-primary { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
@@ -619,3 +702,81 @@ textarea:focus,
 .rounded-sm { border-radius: var(--radius-sm); }
 .rounded-md { border-radius: var(--radius-md); }
 .rounded-lg { border-radius: var(--radius-lg); }
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.text-primary { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.bg-card { background: var(--bg-card) !important; }
+.bg-primary { background: var(--bg-primary) !important; }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+
+/* ========================================
+   SPECIFIC CONTRAST OVERRIDES
+   ======================================== */
+
+/* Ensure dropdowns show their values */
+#seasonSelect,
+#roundSeasonSelect,
+#setupSeasonSelect,
+select {
+  color: var(--text-primary) !important;
+  background: var(--bg-card) !important;
+}
+
+/* Fix admin search inputs */
+.admin-search-input {
+  color: var(--text-primary) !important;
+  background: var(--bg-card) !important;
+}
+
+/* Fix driver profile text */
+.driver-card h2,
+.driver-card h3,
+.driver-card p,
+.driver-card span {
+  color: var(--text-primary) !important;
+}
+
+/* Fix round setup "This Round's Best" text in dark theme */
+[data-theme="dark"] .best-time-item {
+  background: rgba(30, 41, 59, 0.8) !important;
+}
+
+[data-theme="dark"] .best-time-item * {
+  color: #f1f5f9 !important;
+}
+
+/* Fix "Season:" and "Round:" labels specifically */
+[data-theme="dark"] label,
+[data-theme="dark"] .form-label {
+  color: #f1f5f9 !important;
+}
+
+/* Fix admin table timestamps and error messages */
+[data-theme="dark"] .admin-table td {
+  color: #f1f5f9 !important;
+}
+
+/* Ensure all text in cards is visible */
+.tab-content * {
+  color: var(--text-primary);
+}
+
+.tab-content h1,
+.tab-content h2,
+.tab-content h3,
+.tab-content h4,
+.tab-content h5,
+.tab-content h6,
+.tab-content label,
+.tab-content strong {
+  color: var(--text-primary) !important;
+}
