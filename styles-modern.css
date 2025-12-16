@@ -1,0 +1,621 @@
+/* ========================================
+   AMS2 Racing League - MODERN THEME
+   Add this AFTER your main styles.css
+   ======================================== */
+
+/* ========================================
+   ROOT VARIABLES & THEME SYSTEM
+   ======================================== */
+
+:root {
+  /* Light Theme (Default) */
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #2c3e50;
+  --text-secondary: #718096;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --primary: #667eea;
+  --primary-dark: #5568d3;
+  --secondary: #764ba2;
+  --accent: #4CAF50;
+  --danger: #ef4444;
+  --warning: #fbbf24;
+  --success: #10b981;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+  
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color var(--transition-base), 
+              color var(--transition-base), 
+              border-color var(--transition-base);
+}
+
+/* ========================================
+   GLOBAL OVERRIDES
+   ======================================== */
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  line-height: 1.6;
+  transition: background-color var(--transition-base);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* ========================================
+   MODERN HEADER
+   ======================================== */
+
+header {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: var(--spacing-lg) 0;
+  margin-bottom: 0;
+}
+
+header h1 {
+  font-size: 2.5em;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+header p {
+  color: var(--text-secondary);
+  font-size: 1.1em;
+}
+
+/* ========================================
+   MODERN TABS
+   ======================================== */
+
+.tabs {
+  background: transparent;
+  padding: 0;
+  margin: var(--spacing-xl) 0;
+  gap: var(--spacing-sm);
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.tab-button:hover {
+  color: var(--primary);
+  background: transparent;
+  transform: none;
+}
+
+.tab-button.active {
+  background: transparent;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* ========================================
+   MODERN CARDS
+   ======================================== */
+
+.tab-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card h3,
+.stat-card p {
+  color: #ffffff;
+}
+
+/* ========================================
+   MODERN TABLES
+   ======================================== */
+
+.leaderboard-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.leaderboard-table th {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.5px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.leaderboard-table td {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leaderboard-table tr:hover td {
+  background: var(--bg-secondary);
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ========================================
+   MODERN BUTTONS
+   ======================================== */
+
+.refresh-btn,
+button[type="submit"],
+.admin-btn-save,
+.admin-filter-btn {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.refresh-btn:hover,
+button[type="submit"]:hover,
+.admin-btn-save:hover,
+.admin-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========================================
+   MODERN FORMS
+   ======================================== */
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea,
+.admin-input,
+.admin-search-input {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 1em;
+  transition: all var(--transition-base);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.admin-input:focus,
+.admin-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ========================================
+   MODERN ROUND CARDS
+   ======================================== */
+
+.round-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+}
+
+.round-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+.round-card-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  padding: var(--spacing-lg);
+}
+
+.round-card-header h3,
+.round-card-header p {
+  color: white;
+}
+
+.round-card-body {
+  background: var(--bg-card);
+  padding: var(--spacing-lg);
+}
+
+.best-time-section {
+  background: var(--bg-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.best-time-section h4 {
+  color: var(--text-primary);
+}
+
+.best-time-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+/* ========================================
+   MODERN ROUND GROUPS (Round Results)
+   ======================================== */
+
+.round-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.round-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.round-header:hover {
+  background: var(--bg-primary);
+}
+
+.round-details {
+  background: var(--bg-card);
+}
+
+.round-details table {
+  background: var(--bg-card);
+}
+
+/* ========================================
+   MODERN DRIVER CARDS
+   ======================================== */
+
+.driver-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
+}
+
+.driver-header {
+  border-bottom: 3px solid var(--primary);
+}
+
+.stat-card-driver {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.driver-records-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.section-title {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+.record-item,
+.personal-best,
+.quick-stats {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.h2h-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+/* ========================================
+   THEME TOGGLE BUTTON (Profile Settings)
+   ======================================== */
+
+.theme-toggle-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.theme-toggle-section h3 {
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.theme-toggle-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.theme-option {
+  flex: 1;
+  min-width: 120px;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: center;
+  font-weight: 600;
+}
+
+.theme-option:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.theme-option.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.theme-option-icon {
+  font-size: 2em;
+  display: block;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ========================================
+   MODERN ADMIN INTERFACE
+   ======================================== */
+
+.admin-table {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-table thead {
+  background: var(--bg-secondary);
+}
+
+.admin-table th {
+  color: var(--text-primary);
+}
+
+.admin-table td {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.admin-add-new {
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+}
+
+.admin-modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* ========================================
+   MODERN NOTIFICATION PANEL
+   ======================================== */
+
+#notificationPanel {
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-color);
+}
+
+#notificationList {
+  background: var(--bg-primary);
+}
+
+.notification-item {
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.notification-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateX(-4px);
+}
+
+/* ========================================
+   GLASS-MORPHISM EFFECTS
+   ======================================== */
+
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .glass {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ========================================
+   MOBILE RESPONSIVE IMPROVEMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+  
+  header h1 {
+    font-size: 1.8em;
+  }
+  
+  .tab-content {
+    padding: var(--spacing-lg);
+  }
+  
+  .tabs {
+    overflow-x: scroll;
+    scrollbar-width: thin;
+  }
+  
+  .theme-toggle-buttons {
+    flex-direction: column;
+  }
+  
+  .theme-option {
+    min-width: 100%;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.bg-card { background: var(--bg-card); }
+.bg-primary { background: var(--bg-primary); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
