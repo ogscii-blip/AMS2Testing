@@ -4,22 +4,23 @@
    ======================================== */
 
 /* ========================================
-   NEW COLOR PALETTE
+   NEW COLOR PALETTE - REFINED
    ======================================== */
 
 :root {
-  /* Light Theme - Modern Professional */
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #e5e7eb;
+  /* Light Theme - Subtle & Professional */
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #e2e8f0;
   --bg-card: #ffffff;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --border-color: #d1d5db;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #cbd5e1;
   
-  /* Accent Colors - Racing Theme */
-  --accent-primary: #dc2626; /* Racing Red */
-  --accent-secondary: #ea580c; /* Orange */
-  --accent-tertiary: #f59e0b; /* Amber */
+  /* Accent Colors - Subtle Racing Theme */
+  --accent-primary: #64748b; /* Slate - main accent */
+  --accent-secondary: #475569; /* Darker slate */
+  --accent-tertiary: #94a3b8; /* Light slate */
+  --accent-highlight: #f59e0b; /* Gold for special items */
   
   /* Status Colors */
   --success: #10b981;
@@ -53,17 +54,18 @@
 
 /* Dark Theme - High Contrast */
 [data-theme="dark"] {
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #111827;
-  --bg-card: #1f2937;
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --border-color: #374151;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --border-color: #475569;
   
-  /* Keep same accent colors for consistency */
-  --accent-primary: #ef4444;
-  --accent-secondary: #f97316;
-  --accent-tertiary: #fbbf24;
+  /* Keep subtle accent colors */
+  --accent-primary: #64748b;
+  --accent-secondary: #94a3b8;
+  --accent-tertiary: #cbd5e1;
+  --accent-highlight: #fbbf24;
   
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
@@ -114,13 +116,13 @@ header {
 
 [data-theme="light"] #userInfo,
 [data-theme="light"] #loginForm {
-  background: rgba(220, 38, 38, 0.05) !important;
+  background: rgba(100, 116, 139, 0.05) !important;
   border: 2px solid var(--accent-primary) !important;
 }
 
-/* Notification Bell - Accent Color */
+/* Notification Bell - Slate Gradient */
 #notificationBell button {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #64748b, #475569) !important;
 }
 
 /* ========================================
@@ -163,12 +165,12 @@ header {
 }
 
 /* ========================================
-   STAT CARDS - NEW RACING GRADIENT
+   STAT CARDS - SUBTLE SLATE GRADIENT
    ======================================== */
 
 .stat-card,
 .stat-card-driver {
-  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%) !important;
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-lg);
@@ -179,7 +181,7 @@ header {
 .stat-card:hover,
 .stat-card-driver:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 20px 25px rgba(71, 85, 105, 0.3);
 }
 
 .stat-card h3,
@@ -221,7 +223,7 @@ header {
 }
 
 .round-header {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
   padding: var(--spacing-lg);
   cursor: pointer;
   transition: all var(--transition-base);
@@ -229,7 +231,7 @@ header {
 }
 
 .round-header:hover {
-  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-tertiary)) !important;
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
 }
 
 .round-header h3,
@@ -370,7 +372,7 @@ textarea:focus {
 /* Total Lap Time display */
 .total-lap-time-display,
 #totalLapTimeDisplay {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
   color: #ffffff !important;
   padding: var(--spacing-xl);
   border-radius: var(--radius-md);
@@ -393,7 +395,7 @@ button[type="submit"],
 .refresh-btn,
 .admin-btn-save,
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
   color: white !important;
   border: none;
   padding: var(--spacing-md) var(--spacing-xl);
@@ -410,12 +412,13 @@ button[type="submit"]:hover,
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
 }
 
 /* Replay button */
 .replay-btn,
 .race-replay-button {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
   color: white !important;
 }
 
@@ -442,7 +445,7 @@ button[type="submit"]:hover,
 }
 
 .round-card-header {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
   padding: var(--spacing-lg);
   border: none !important;
 }
@@ -514,7 +517,7 @@ button[type="submit"]:hover,
 
 /* Driver stat cards */
 .driver-card .stat-card {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  background: linear-gradient(135deg, #475569, #64748b) !important;
 }
 
 /* Purple Sectors, Favorite Track, etc boxes */
@@ -552,6 +555,20 @@ button[type="submit"]:hover,
 .driver-card-back h3,
 .flip-card-back h3 {
   color: var(--text-primary) !important;
+}
+
+/* Flip button icon */
+.flip-card-button,
+.flip-button {
+  background: var(--bg-secondary) !important;
+  border: 2px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.flip-card-button:hover,
+.flip-button:hover {
+  background: var(--accent-primary) !important;
+  color: white !important;
 }
 
 /* ========================================
@@ -613,7 +630,7 @@ button[type="submit"]:hover,
 
 .theme-option.active {
   border-color: var(--accent-primary);
-  background: var(--accent-primary);
+  background: linear-gradient(135deg, #475569, #64748b);
   color: white;
 }
 
@@ -678,4 +695,91 @@ button[type="submit"]:hover,
   .driver-card {
     margin-bottom: var(--spacing-md);
   }
+}
+
+/* ========================================
+   NOTIFICATION PANEL - REMOVE PURPLE
+   ======================================== */
+
+#notificationPanel {
+  background: var(--bg-card);
+  border-left: 2px solid var(--border-color);
+}
+
+#notificationPanel > div:first-child {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+.notification-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+/* ========================================
+   CHART - DARK MODE FIX
+   ======================================== */
+
+[data-theme="dark"] #progressionChart,
+[data-theme="dark"] .chart-container,
+[data-theme="dark"] canvas {
+  background: var(--bg-card) !important;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+/* Force chart background */
+[data-theme="dark"] #progressionChart canvas {
+  background-color: #1e293b !important;
+}
+
+/* Chart.js specific dark mode */
+[data-theme="dark"] .chartjs-render-monitor {
+  background: #1e293b !important;
+}
+
+/* ========================================
+   RACE ANIMATION - DARK MODE FIX
+   ======================================== */
+
+[data-theme="dark"] .race-animation-container,
+[data-theme="dark"] .race-animation-wrapper {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+[data-theme="dark"] .race-track,
+[data-theme="dark"] .race-track-container {
+  background: var(--bg-secondary) !important;
+  border: 2px solid var(--border-color);
+}
+
+[data-theme="dark"] .race-car,
+[data-theme="dark"] .car-icon {
+  filter: brightness(1.2);
+}
+
+[data-theme="dark"] .race-animation svg,
+[data-theme="dark"] .animation-canvas {
+  background: var(--bg-card) !important;
+}
+
+/* If race animation uses specific IDs/classes */
+[data-theme="dark"] #raceAnimationCanvas,
+[data-theme="dark"] #raceAnimation {
+  background: #1e293b !important;
+}
+
+/* ========================================
+   TAB HOVER COLORS
+   ======================================== */
+
+.tab-button:hover {
+  color: var(--accent-primary);
+}
+
+.tab-button.active {
+  color: #64748b;
+  border-bottom-color: #64748b;
 }
