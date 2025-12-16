@@ -5278,6 +5278,12 @@ function checkForDriverProfileUpdates(profilesData) {
     if (lastModified && lastModified > userLastSeen) {
       console.log(`🆕 Profile updated for ${driverName}`);
       PENDING_UPDATES.driverProfiles.add(driverName);
+      
+      // Add notification for profile update
+      addNotification('profile', `${driverName} updated their driver profile`, {
+        driver: driverName,
+        timestamp: lastModified
+      });
     }
     
     // Check equipment updates separately
@@ -5287,6 +5293,12 @@ function checkForDriverProfileUpdates(profilesData) {
     if (equipmentModified && equipmentModified > equipmentLastSeen) {
       console.log(`🆕 Equipment updated for ${driverName}`);
       PENDING_UPDATES.driverEquipment.add(driverName);
+      
+      // Add notification for equipment update
+      addNotification('profile', `${driverName} updated their racing equipment`, {
+        driver: driverName,
+        timestamp: equipmentModified
+      });
     }
   });
 }
@@ -5310,6 +5322,17 @@ function checkForSetupUpdates(setupData) {
       PENDING_UPDATES.setupRounds.add(key);
       if (!USER_LAST_SEEN.setupRounds) USER_LAST_SEEN.setupRounds = {};
       USER_LAST_SEEN.setupRounds[key] = timestamp;
+      
+      // Add notification for new round setup
+      const trackLayout = setup['Track-Layout'] || setup.trackLayout || 'Unknown Track';
+      const car = setup.Car_Name || setup.car || 'Unknown Car';
+      addNotification('setup', `New round configured: ${key} - ${trackLayout} with ${car}`, { 
+        round: key, 
+        track: trackLayout, 
+        car: car,
+        season: setup.Season,
+        roundNumber: setup.Round_Number
+      });
     }
   });
 }
@@ -5961,7 +5984,8 @@ function getNotificationIcon(type) {
     'purple': '💜',
     'leaderboard': '🏆',
     'setup': '🔧',
-    'fastest': '⚡'
+    'fastest': '⚡',
+    'profile': '👤'
   };
   return icons[type] || '📢';
 }
@@ -5973,7 +5997,8 @@ function getNotificationColor(type) {
     'purple': '#9c27b0',
     'leaderboard': '#ff9800',
     'setup': '#2196F3',
-    'fastest': '#ffc107'
+    'fastest': '#ffc107',
+    'profile': '#667eea'
   };
   return colors[type] || '#667eea';
 }
