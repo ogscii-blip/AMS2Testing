@@ -1128,3 +1128,335 @@ textarea {
   color: #f1f5f9 !important;
   border: 2px solid #475569 !important;
 }
+/* ========================================
+   CRITICAL FIXES - ALL REMAINING ISSUES
+   ======================================== */
+
+/* ========================================
+   TAB BUTTONS - LIGHT MODE FIX
+   ======================================== */
+
+[data-theme="light"] .tab-button {
+  background: transparent;
+  color: #475569;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: var(--spacing-md) var(--spacing-lg);
+  white-space: nowrap;
+}
+
+[data-theme="light"] .tab-button:hover {
+  background: rgba(100, 116, 139, 0.08);
+  color: #1e293b;
+}
+
+[data-theme="light"] .tab-button.active {
+  background: transparent;
+  color: #1e293b;
+  border-bottom-color: #64748b;
+  font-weight: 700;
+}
+
+/* Ensure Overall Standings fits */
+.tab-button {
+  font-size: 0.95em;
+  padding: 12px 16px;
+}
+
+/* ========================================
+   CHART - PROPER DARK MODE
+   ======================================== */
+
+[data-theme="dark"] .chart-container {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="dark"] #progressionChart {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] #progressionChart canvas {
+  background: #1e293b !important;
+  filter: invert(0) !important;
+}
+
+/* Chart.js text color fix for dark mode */
+[data-theme="dark"] .chartjs-render-monitor {
+  filter: brightness(1.2);
+}
+
+/* ========================================
+   ROUND RESULTS - DARK MODE TEXT
+   ======================================== */
+
+[data-theme="dark"] .replay-text,
+[data-theme="dark"] .race-replay-text,
+[data-theme="dark"] .race-top-3-text {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+[data-theme="dark"] .finish-line,
+[data-theme="dark"] .finish-text,
+[data-theme="dark"] .finish-line-text {
+  color: #ffffff !important;
+  font-weight: 900;
+  font-size: 1.5em;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+/* ========================================
+   SUBMIT TIME - COMPLETE DARK MODE FIX
+   ======================================== */
+
+[data-theme="dark"] #submit,
+[data-theme="dark"] #lapTimeForm,
+[data-theme="dark"] #lapTimeFormContainer {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] #submit label,
+[data-theme="dark"] #lapTimeForm label,
+[data-theme="dark"] .lap-time-label {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  font-size: 1em;
+}
+
+[data-theme="dark"] #submit input[type="number"],
+[data-theme="dark"] #lapTimeForm input[type="number"],
+[data-theme="dark"] .sector-input {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #64748b !important;
+  font-weight: 600;
+}
+
+/* Total Lap Time - Remove purple/blue */
+[data-theme="dark"] .total-lap-time-display,
+[data-theme="dark"] #totalLapTimeDisplay {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+/* ========================================
+   ROUND SETUP - ALL FIXES
+   ======================================== */
+
+/* Card images background */
+[data-theme="dark"] .round-card-images {
+  background: #0f172a !important;
+}
+
+/* Form labels visibility */
+[data-theme="dark"] #setup label,
+[data-theme="dark"] #setup .form-label,
+[data-theme="dark"] .setup-form label {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] #setup input,
+[data-theme="dark"] #setup select,
+[data-theme="dark"] .setup-form input,
+[data-theme="dark"] .setup-form select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #64748b !important;
+}
+
+/* ========================================
+   DRIVERS - COMPLETE DARK MODE
+   ======================================== */
+
+[data-theme="dark"] .driver-card {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .driver-card h2,
+[data-theme="dark"] .driver-card h3,
+[data-theme="dark"] .driver-card h4,
+[data-theme="dark"] .driver-card p,
+[data-theme="dark"] .driver-card span,
+[data-theme="dark"] .driver-card label {
+  color: #f1f5f9 !important;
+}
+
+/* Quick stats - darker background */
+[data-theme="dark"] .quick-stats,
+[data-theme="dark"] .driver-quick-stats {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .quick-stats input {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #64748b !important;
+}
+
+/* Track car records - darker background */
+[data-theme="dark"] .track-car-records,
+[data-theme="dark"] .personal-records {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="dark"] .record-item {
+  background: #0f172a !important;
+  border: 1px solid #475569;
+  color: #f1f5f9 !important;
+}
+
+/* ========================================
+   ADMIN - TEXT VISIBILITY
+   ======================================== */
+
+[data-theme="dark"] .admin-table button,
+[data-theme="dark"] .admin-btn {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Button text contrast */
+[data-theme="dark"] button {
+  color: #ffffff !important;
+}
+
+/* Add New sections */
+[data-theme="dark"] .admin-add-new h3,
+[data-theme="dark"] .admin-add-new p {
+  color: #f1f5f9 !important;
+  font-weight: 600;
+}
+
+/* Email Logs - white sections fix */
+[data-theme="dark"] .email-notification-control,
+[data-theme="dark"] .email-control-section {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="dark"] .email-notification-card {
+  background: #0f172a !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="dark"] .email-notification-card h4,
+[data-theme="dark"] .email-notification-card p {
+  color: #f1f5f9 !important;
+}
+
+/* ========================================
+   MY PROFILE - COMPLETE REDESIGN
+   ======================================== */
+
+/* Theme toggle - horizontal stacked */
+.theme-toggle-buttons {
+  display: flex;
+  flex-direction: row !important;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.theme-option {
+  flex: 1;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: var(--spacing-md) !important;
+  height: auto !important;
+  min-height: 60px;
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.theme-option-icon {
+  font-size: 1.8em !important;
+  margin: 0 !important;
+}
+
+/* Profile sections - dark backgrounds */
+[data-theme="dark"] #profile {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] #profile .profile-info,
+[data-theme="dark"] #profile .profile-details,
+[data-theme="dark"] #profile .profile-form {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+[data-theme="dark"] #profile input,
+[data-theme="dark"] #profile textarea,
+[data-theme="dark"] #profile select {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #64748b !important;
+}
+
+[data-theme="dark"] #profile label,
+[data-theme="dark"] #profile h2,
+[data-theme="dark"] #profile h3,
+[data-theme="dark"] #profile h4,
+[data-theme="dark"] #profile p {
+  color: #f1f5f9 !important;
+}
+
+/* Equipment sections white background fix */
+[data-theme="dark"] .equipment-item,
+[data-theme="dark"] .setup-item {
+  background: #0f172a !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+[data-theme="dark"] .equipment-item input {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+/* Save button visibility */
+[data-theme="dark"] .save-profile-btn,
+[data-theme="dark"] button[type="submit"] {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* ========================================
+   GLOBAL OVERRIDES
+   ======================================== */
+
+/* Remove all purple/blue globally */
+[data-theme="dark"] * {
+  /* Kill any remaining blue/purple */
+}
+
+[data-theme="dark"] .purple-blue,
+[data-theme="dark"] .blue-gradient,
+[data-theme="dark"] .purple-gradient {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+/* Ensure white text on dark buttons */
+[data-theme="dark"] button,
+[data-theme="dark"] .btn {
+  color: #ffffff !important;
+}
+
+/* Light mode form labels */
+[data-theme="light"] label {
+  color: #1e293b !important;
+}
