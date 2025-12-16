@@ -780,3 +780,253 @@ select {
 .tab-content strong {
   color: var(--text-primary) !important;
 }
+/* ========================================
+   COMPREHENSIVE CONTRAST FIXES V2
+   Add these to the END of styles-modern-FIXED.css
+   ======================================== */
+
+/* ========================================
+   ROUND RESULTS TABLE - FIT IN ONE ROW
+   ======================================== */
+
+/* Make driver column narrower */
+.leaderboard-table th:first-child,
+.leaderboard-table td:first-child {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ensure table fits properly */
+.round-details table {
+  table-layout: auto;
+  width: 100%;
+}
+
+.round-details th,
+.round-details td {
+  padding: 12px 8px !important;
+  white-space: nowrap;
+}
+
+/* ========================================
+   SUBMIT TIME FORM - FIX ALL LABELS
+   ======================================== */
+
+/* Force all form labels to be visible */
+#submit label,
+#submit .form-label,
+#submit h3,
+#submit h4,
+#submit p {
+  color: var(--text-primary) !important;
+}
+
+/* Lap time form specifically */
+#lapTimeFormContainer label,
+#lapTimeFormContainer .lap-time-label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Instructions box text */
+.instructions-box,
+.instructions-box p,
+.instructions-box li {
+  color: #8b5a00 !important; /* Dark brown for yellow bg */
+}
+
+/* ========================================
+   ROUND SETUP (ADMIN) - FIX FORM
+   ======================================== */
+
+/* Admin form labels */
+.admin-form label,
+.admin-form h3,
+.admin-form h4,
+.admin-modal-content label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Admin form inputs */
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+/* ========================================
+   DRIVERS TAB - FIX WHITE BOXES
+   ======================================== */
+
+/* Purple Sectors, Favorite Track, Favorite Car boxes */
+.driver-card input[type="text"],
+.driver-card input[readonly],
+.quick-stats input {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+/* Ensure driver profile text boxes are readable */
+[data-theme="dark"] .driver-card input[type="text"],
+[data-theme="dark"] .quick-stats input {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+/* ========================================
+   RULES & SCORING - FIX INVISIBLE TEXT
+   ======================================== */
+
+/* Rules tab content boxes */
+#rules .content-box,
+#rules .scoring-box,
+#rules .rules-section {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+#rules h2,
+#rules h3,
+#rules h4,
+#rules p,
+#rules li {
+  color: var(--text-primary) !important;
+}
+
+/* Specific rules boxes that might have light backgrounds */
+#rules .info-box,
+#rules .warning-box {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ========================================
+   ADMIN BANNER - TONE DOWN WHITE
+   ======================================== */
+
+/* Yellow/cream banner instead of pure white */
+.admin-banner,
+.admin-warning,
+.admin-info-box {
+  background: #fef3c7 !important; /* Soft yellow */
+  color: #78350f !important; /* Dark brown text */
+  border: 2px solid #fbbf24;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .admin-banner,
+[data-theme="dark"] .admin-warning,
+[data-theme="dark"] .admin-info-box {
+  background: #422006 !important; /* Dark brown */
+  color: #fbbf24 !important; /* Yellow text */
+  border: 2px solid #78350f;
+}
+
+/* ========================================
+   EMAIL LOGS - FIX LOW CONTRAST
+   ======================================== */
+
+/* Email logs titles and labels */
+.email-logs-section h3,
+.email-logs-section h4,
+.email-logs-section label,
+.email-control-title {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Email logs subtitle text */
+.email-logs-section p,
+.email-control-subtitle {
+  color: var(--text-secondary) !important;
+}
+
+/* Email notification cards */
+.email-notification-card {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+.email-notification-card h4,
+.email-notification-card p {
+  color: var(--text-primary) !important;
+}
+
+/* ========================================
+   GLOBAL TEXT VISIBILITY ENFORCEMENT
+   ======================================== */
+
+/* Nuclear option - force all text to be visible */
+.tab-content input:not([type="submit"]):not([type="button"]),
+.tab-content textarea,
+.tab-content select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+/* All headings everywhere */
+h1, h2, h3, h4, h5, h6,
+.tab-content h1,
+.tab-content h2,
+.tab-content h3,
+.tab-content h4,
+.tab-content h5,
+.tab-content h6 {
+  color: var(--text-primary) !important;
+}
+
+/* All labels everywhere */
+label,
+.form-label,
+.input-label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* All paragraph text */
+p {
+  color: var(--text-primary) !important;
+}
+
+/* ========================================
+   SPECIFIC DARK MODE OVERRIDES
+   ======================================== */
+
+[data-theme="dark"] #rules {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] #rules * {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .instructions-box {
+  background: #422006 !important;
+  color: #fbbf24 !important;
+  border-color: #78350f !important;
+}
+
+/* Fix any remaining white text on white background */
+[data-theme="light"] *:not(.gradient-text):not(.stat-card *):not(.round-card-header *) {
+  color: #2c3e50 !important;
+}
+
+/* Ensure stat cards keep their white text on gradient */
+.stat-card,
+.stat-card *,
+.round-card-header,
+.round-card-header * {
+  color: white !important;
+}
