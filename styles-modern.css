@@ -1766,3 +1766,134 @@ textarea {
   background: rgba(248, 250, 252, 0.8) !important;
   border: 2px solid #cbd5e1 !important;
 }
+/* ========================================
+   FINAL POLISH - REMAINING ISSUES
+   ======================================== */
+
+/* ========================================
+   ROUND RESULTS - REMOVE DARK HIGHLIGHTER
+   ======================================== */
+
+/* Remove background highlighting from driver names and purple sectors */
+.round-details td:first-child,
+.leaderboard-table td:first-child,
+.driver-name-cell {
+  background: inherit !important;
+}
+
+.purple-sector {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Remove any highlighting on table cells */
+.round-details td,
+.leaderboard-table td {
+  background: inherit !important;
+}
+
+.round-details tr:hover td {
+  background: var(--bg-secondary) !important;
+}
+
+/* ========================================
+   RULES & SCORING - ALWAYS LIGHT COLORS
+   ======================================== */
+
+/* Force Rules & Scoring to use light mode colors regardless of theme */
+#rules,
+#rules * {
+  /* Remove theme-specific styling */
+}
+
+#rules {
+  background: #ffffff !important;
+  color: #1e293b !important;
+}
+
+#rules .content-box,
+#rules .rules-section,
+#rules .scoring-section {
+  background: #f8fafc !important;
+  border: 2px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+#rules h1,
+#rules h2,
+#rules h3,
+#rules h4,
+#rules h5,
+#rules h6 {
+  color: #0f172a !important;
+}
+
+#rules p,
+#rules li,
+#rules span {
+  color: #1e293b !important;
+}
+
+#rules .highlight-box,
+#rules .info-box {
+  background: #fef3c7 !important;
+  border: 2px solid #fbbf24 !important;
+  color: #78350f !important;
+}
+
+/* Override dark mode for Rules & Scoring */
+[data-theme="dark"] #rules {
+  background: #ffffff !important;
+  color: #1e293b !important;
+}
+
+[data-theme="dark"] #rules .content-box,
+[data-theme="dark"] #rules .rules-section,
+[data-theme="dark"] #rules .scoring-section {
+  background: #f8fafc !important;
+  border: 2px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="dark"] #rules h1,
+[data-theme="dark"] #rules h2,
+[data-theme="dark"] #rules h3,
+[data-theme="dark"] #rules h4,
+[data-theme="dark"] #rules h5,
+[data-theme="dark"] #rules h6 {
+  color: #0f172a !important;
+}
+
+[data-theme="dark"] #rules p,
+[data-theme="dark"] #rules li,
+[data-theme="dark"] #rules span {
+  color: #1e293b !important;
+}
+
+/* ========================================
+   ADMIN SUB-MENU - SELECTED INDICATION
+   ======================================== */
+
+.admin-tab-button.active,
+.admin-sub-tab.active {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+  color: #ffffff !important;
+  border: 3px solid #334155 !important;
+  font-weight: 700;
+  box-shadow: 0 4px 8px rgba(71, 85, 105, 0.3);
+  transform: translateY(-2px);
+}
+
+[data-theme="light"] .admin-tab-button.active,
+[data-theme="light"] .admin-sub-tab.active {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+  color: #ffffff !important;
+  border: 3px solid #334155 !important;
+}
+
+[data-theme="dark"] .admin-tab-button.active,
+[data-theme="dark"] .admin-sub-tab.active {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+  border: 3px solid #475569 !important;
+}
