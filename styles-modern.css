@@ -783,3 +783,348 @@ button[type="submit"]:hover,
   color: #64748b;
   border-bottom-color: #64748b;
 }
+/* ========================================
+   FINAL REFINEMENTS - COMPREHENSIVE FIXES
+   Add to end of styles-modern-REFINED.css
+   ======================================== */
+
+/* ========================================
+   DARK MODE FIXES
+   ======================================== */
+
+/* Overall Standings - Button padding fix */
+[data-theme="dark"] .tab-button {
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-right: var(--spacing-sm);
+}
+
+/* Overall Standings - Chart container white bezel fix */
+[data-theme="dark"] .chart-container,
+[data-theme="dark"] #progressionChart {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color) !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] canvas {
+  background: transparent !important;
+}
+
+/* Round Results - Driver name no truncation */
+.leaderboard-table th:first-child,
+.leaderboard-table td:first-child,
+.round-details th:first-child,
+.round-details td:first-child {
+  min-width: 150px;
+  max-width: none !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+}
+
+/* Round Results - Table headers fit in one row */
+.round-details th {
+  font-size: 0.8em;
+  padding: 10px 6px !important;
+  white-space: nowrap;
+}
+
+.round-details td {
+  padding: 12px 8px !important;
+}
+
+/* Round Results - Replay button and text visibility */
+[data-theme="dark"] .replay-btn,
+[data-theme="dark"] .race-replay-button {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .replay-text,
+[data-theme="dark"] .race-replay-text {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .finish-line,
+[data-theme="dark"] .finish-text {
+  color: #f1f5f9 !important;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Submit Time - Form visibility */
+[data-theme="dark"] #submit label,
+[data-theme="dark"] #submit .form-label,
+[data-theme="dark"] #submit h3,
+[data-theme="dark"] #submit h4,
+[data-theme="dark"] #submit p {
+  color: #f1f5f9 !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] #submit input,
+[data-theme="dark"] #submit select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #475569 !important;
+}
+
+/* Round Setup - Best time text visibility */
+[data-theme="dark"] .best-time-label,
+[data-theme="dark"] .best-time-context {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .best-time-section h4 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .best-time-item {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .best-time-item * {
+  color: #f1f5f9 !important;
+}
+
+/* Drivers - Better visibility */
+[data-theme="dark"] .driver-name,
+[data-theme="dark"] .driver-header h2 {
+  color: #f1f5f9 !important;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .driver-bio,
+[data-theme="dark"] .bio-text {
+  color: #cbd5e1 !important;
+}
+
+/* Drivers - Darker background sections */
+[data-theme="dark"] .driver-records-section,
+[data-theme="dark"] .personal-best,
+[data-theme="dark"] .h2h-card {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="dark"] .vs-text {
+  color: #cbd5e1 !important;
+  font-weight: bold;
+}
+
+/* Admin - Time Submissions */
+[data-theme="dark"] .admin-filters,
+[data-theme="dark"] .admin-filter-section {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .admin-filter-btn,
+[data-theme="dark"] .clear-filters-btn {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+  color: #ffffff !important;
+}
+
+/* Admin - Add New sections */
+[data-theme="dark"] .admin-add-new {
+  background: #1e293b !important;
+  border: 2px dashed #475569 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Admin - Email Logs */
+[data-theme="dark"] .admin-email-toggle-selection,
+[data-theme="dark"] .email-toggle-container {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .admin-email-master-toggle {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+[data-theme="dark"] .stat-label,
+[data-theme="dark"] .email-stat-label {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #475569;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+}
+
+[data-theme="dark"] .admin-table td {
+  color: #f1f5f9 !important;
+}
+
+/* My Profile - Theme toggle buttons */
+[data-theme="dark"] .theme-toggle-section {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+}
+
+.theme-option {
+  flex: 1;
+  min-width: 140px !important;
+  padding: var(--spacing-lg) var(--spacing-xl) !important;
+  font-size: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.theme-option-icon {
+  font-size: 2.5em !important;
+}
+
+/* My Profile - Background sections */
+[data-theme="dark"] #profile {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] #profile .profile-section,
+[data-theme="dark"] #profile .content-section {
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Notification Panel - Dark background */
+[data-theme="dark"] #notificationPanel {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="dark"] #notificationList {
+  background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .notification-item {
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+}
+
+/* ========================================
+   LIGHT MODE FIXES
+   ======================================== */
+
+/* Better button selection color - replace green */
+.tab-button.active,
+button.selected,
+.selected-tab {
+  background: rgba(100, 116, 139, 0.1) !important;
+  border-color: #64748b !important;
+  color: #64748b !important;
+}
+
+/* Round Results - Lighter banners */
+[data-theme="light"] .round-header {
+  background: linear-gradient(135deg, #94a3b8, #cbd5e1) !important;
+}
+
+[data-theme="light"] .round-header:hover {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+}
+
+/* Round Setup - Darker card body */
+[data-theme="light"] .round-card-body {
+  background: #f8fafc !important;
+}
+
+/* Round Setup - Gray best time sections */
+[data-theme="light"] .best-time-section {
+  background: #e2e8f0 !important;
+  border: 2px solid #cbd5e1;
+}
+
+[data-theme="light"] .best-time-section h4 {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .best-time-item {
+  background: #f8fafc !important;
+  border: 2px solid #cbd5e1;
+}
+
+[data-theme="light"] .best-time-label,
+[data-theme="light"] .best-time-context,
+[data-theme="light"] .best-time-value {
+  color: #1e293b !important;
+}
+
+/* Drivers - Card back driver name */
+[data-theme="light"] .driver-card-back h2,
+[data-theme="light"] .driver-card-back .driver-name,
+[data-theme="light"] .flip-card-back h2,
+[data-theme="light"] .flip-card-back .driver-name {
+  color: #0f172a !important;
+  font-weight: bold;
+}
+
+/* ========================================
+   GLOBAL FIXES
+   ======================================== */
+
+/* Notification bell - smaller size */
+#notificationBell button {
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 22px !important;
+}
+
+#notificationCount {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 11px !important;
+}
+
+@media (max-width: 768px) {
+  #notificationBell button {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* Remove blue/purple from all buttons globally */
+button:not(.theme-option),
+.btn,
+.admin-btn {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+button:not(.theme-option):hover {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+}
+
+/* Ensure all form labels are visible */
+label,
+.form-label,
+.input-label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Ensure all inputs have good contrast */
+input,
+select,
+textarea {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 2px solid #475569 !important;
+}
