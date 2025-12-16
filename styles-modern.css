@@ -1606,3 +1606,163 @@ textarea {
 [data-theme="light"] button:not(.theme-option):hover {
   background: linear-gradient(135deg, #475569, #64748b) !important;
 }
+/* ========================================
+   FINAL LIGHT MODE FIXES - PRECISE TARGETING
+   ======================================== */
+
+/* ========================================
+   MENU BUTTONS - SELECTED INDICATION
+   ======================================== */
+
+[data-theme="light"] .tab-button.active {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #64748b !important;
+  border-bottom-color: #f8fafc !important;
+  box-shadow: 0 -2px 8px rgba(100, 116, 139, 0.2);
+}
+
+/* ========================================
+   TOP RIGHT USER INFO - DRIVER ELEMENTS
+   ======================================== */
+
+/* Driver name in user info section */
+[data-theme="light"] #userInfo .driver-name,
+[data-theme="light"] #userInfo h3,
+[data-theme="light"] #userInfo span.driver-name {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* Driver number badge - top right */
+[data-theme="light"] #userInfo .driver-number,
+[data-theme="light"] #userInfo .driver-badge,
+[data-theme="light"] .user-badge {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+  border: 2px solid #475569 !important;
+}
+
+/* Driver photo circle - black outline */
+[data-theme="light"] #userInfo img,
+[data-theme="light"] #userInfo .driver-photo,
+[data-theme="light"] #userInfo .user-avatar,
+[data-theme="light"] .user-profile-photo {
+  border: 4px solid #0f172a !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Number badge circle - black outline */
+[data-theme="light"] #userInfo .driver-number,
+[data-theme="light"] .user-number-badge {
+  border: 3px solid #0f172a !important;
+}
+
+/* ========================================
+   SUBMIT TIME - TOTAL LAP TIME
+   ======================================== */
+
+[data-theme="light"] #totalLapTimeDisplay,
+[data-theme="light"] .total-lap-time-display,
+[data-theme="light"] .total-time-display {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+  border: 2px solid #475569 !important;
+}
+
+/* Kill any remaining purple/blue in submit time */
+[data-theme="light"] #submit .purple,
+[data-theme="light"] #submit .blue,
+[data-theme="light"] #lapTimeForm .purple,
+[data-theme="light"] #lapTimeForm .blue {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+}
+
+/* ========================================
+   ROUND SETUP - MATCHING BACKGROUNDS
+   ======================================== */
+
+[data-theme="light"] .round-card-body {
+  background: #cbd5e1 !important;
+}
+
+[data-theme="light"] .round-card-images {
+  background: #cbd5e1 !important;
+}
+
+/* ========================================
+   ADMIN - EMAIL MASTER TOGGLE LIGHTER
+   ======================================== */
+
+[data-theme="light"] .admin-email-master-toggle,
+[data-theme="light"] .admin-email-toggle-row.master,
+[data-theme="light"] .email-master-control {
+  background: linear-gradient(135deg, #94a3b8, #cbd5e1) !important;
+  border: 2px solid #64748b !important;
+}
+
+[data-theme="light"] .admin-email-master-toggle h3,
+[data-theme="light"] .admin-email-master-toggle p,
+[data-theme="light"] .admin-email-toggle-row.master h3,
+[data-theme="light"] .admin-email-toggle-row.master p {
+  color: #0f172a !important;
+}
+
+/* ========================================
+   MY PROFILE - LIGHT MODE BUTTON
+   ======================================== */
+
+/* Light mode button - much lighter */
+.theme-option[data-theme="light"] {
+  background: #f8fafc !important;
+  border: 2px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.theme-option[data-theme="light"]:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+.theme-option[data-theme="light"].active {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  border: 3px solid #64748b !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);
+}
+
+/* Dark mode button appearance in both themes */
+[data-theme="light"] .theme-option[data-theme="dark"] {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
+
+[data-theme="dark"] .theme-option[data-theme="light"] {
+  background: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* ========================================
+   ADDITIONAL SAFETY OVERRIDES
+   ======================================== */
+
+/* Kill ALL purple/blue in light mode - nuclear option */
+[data-theme="light"] * {
+  /* Scan for any remaining purple/blue */
+}
+
+[data-theme="light"] [style*="rgb(102, 126, 234)"],
+[data-theme="light"] [style*="rgb(118, 75, 162)"],
+[data-theme="light"] [style*="#667eea"],
+[data-theme="light"] [style*="#764ba2"],
+[data-theme="light"] [class*="purple"],
+[data-theme="light"] [class*="blue"],
+[data-theme="light"] [id*="purple"],
+[data-theme="light"] [id*="blue"] {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+}
+
+/* Ensure user info section contrast */
+[data-theme="light"] #userInfo {
+  background: rgba(248, 250, 252, 0.8) !important;
+  border: 2px solid #cbd5e1 !important;
+}
