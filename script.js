@@ -328,6 +328,8 @@ function showTab(tabName, sourceButton = null) {
     loadDriverStats();
   } else if (tabName === 'profile') {
     loadProfile();
+    // Add theme toggle to profile
+    setTimeout(() => addThemeToggleToProfile(), 100);
   } else if (tabName === 'setup') {
     loadRoundSetup();
   } else if (tabName === 'admin') {
@@ -6049,3 +6051,88 @@ function markAllNotificationsAsRead() {
 /* ========================================
    END OF NOTIFICATION CENTER
    ======================================== */
+
+/* ========================================
+   THEME SYSTEM
+   ======================================== */
+
+// Initialize theme on page load
+function initializeTheme() {
+  const savedTheme = localStorage.getItem('racing-league-theme') || 'light';
+  setTheme(savedTheme);
+}
+
+// Set theme
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('racing-league-theme', theme);
+  
+  // Update active button if on profile page
+  updateThemeButtons(theme);
+  
+  console.log(`🎨 Theme set to: ${theme}`);
+}
+
+// Toggle theme
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  setTheme(newTheme);
+}
+
+// Update theme button states
+function updateThemeButtons(activeTheme) {
+  const buttons = document.querySelectorAll('.theme-option');
+  buttons.forEach(button => {
+    if (button.getAttribute('data-theme') === activeTheme) {
+      button.classList.add('active');
+    } else {
+      button.classList.remove('active');
+    }
+  });
+}
+
+// Add theme toggle to profile tab
+function addThemeToggleToProfile() {
+  const profileContent = document.getElementById('profile');
+  if (!profileContent) return;
+  
+  // Check if already added
+  if (document.getElementById('themeToggleSection')) return;
+  
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  
+  const themeSection = document.createElement('div');
+  themeSection.id = 'themeToggleSection';
+  themeSection.className = 'theme-toggle-section';
+  themeSection.innerHTML = `
+    <h3>🎨 Theme Preference</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 16px;">Choose your preferred color scheme</p>
+    <div class="theme-toggle-buttons">
+      <button class="theme-option ${currentTheme === 'light' ? 'active' : ''}" data-theme="light" onclick="setTheme('light')">
+        <span class="theme-option-icon">☀️</span>
+        Light Mode
+      </button>
+      <button class="theme-option ${currentTheme === 'dark' ? 'active' : ''}" data-theme="dark" onclick="setTheme('dark')">
+        <span class="theme-option-icon">🌙</span>
+        Dark Mode
+      </button>
+    </div>
+  `;
+  
+  // Insert at the top of profile content
+  const firstChild = profileContent.firstElementChild;
+  if (firstChild) {
+    profileContent.insertBefore(themeSection, firstChild);
+  } else {
+    profileContent.appendChild(themeSection);
+  }
+}
+
+/* ========================================
+   END OF THEME SYSTEM
+   ======================================== */
+
+// Initialize theme on page load
+initializeTheme();
+
