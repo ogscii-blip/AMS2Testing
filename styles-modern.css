@@ -1460,3 +1460,149 @@ textarea {
 [data-theme="light"] label {
   color: #1e293b !important;
 }
+/* ========================================
+   LIGHT MODE - COMPREHENSIVE FIXES
+   ======================================== */
+
+/* ========================================
+   MENU BUTTONS - VISIBILITY
+   ======================================== */
+
+[data-theme="light"] .tab-button {
+  background: #cbd5e1;
+  color: #1e293b;
+  border: 2px solid #94a3b8;
+  border-bottom: 3px solid transparent;
+  padding: 12px 20px;
+  font-weight: 600;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+[data-theme="light"] .tab-button:hover {
+  background: #94a3b8;
+  color: #0f172a;
+  border-color: #64748b;
+}
+
+[data-theme="light"] .tab-button.active {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #64748b;
+  border-bottom-color: #ffffff;
+  font-weight: 700;
+}
+
+/* ========================================
+   DRIVER ELEMENTS
+   ======================================== */
+
+/* Driver name visibility */
+[data-theme="light"] .driver-name,
+[data-theme="light"] .driver-header h2 {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+/* Driver number - remove purple */
+[data-theme="light"] .driver-number,
+[data-theme="light"] .driver-badge {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+}
+
+/* Driver circles - black outline */
+[data-theme="light"] .driver-avatar,
+[data-theme="light"] .driver-circle,
+[data-theme="light"] .driver-photo {
+  border: 3px solid #0f172a !important;
+}
+
+/* ========================================
+   SUBMIT TIME - REMOVE PURPLE
+   ======================================== */
+
+[data-theme="light"] .total-lap-time-display,
+[data-theme="light"] #totalLapTimeDisplay {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+}
+
+/* ========================================
+   ROUND SETUP - DARKER BACKGROUNDS
+   ======================================== */
+
+[data-theme="light"] .round-card-images {
+  background: #cbd5e1 !important;
+}
+
+[data-theme="light"] .round-card-body {
+  background: #e2e8f0 !important;
+}
+
+[data-theme="light"] .best-time-section {
+  background: #f1f5f9 !important;
+}
+
+/* ========================================
+   ADMIN - SUB-MENU BUTTONS
+   ======================================== */
+
+[data-theme="light"] .admin-tab-button,
+[data-theme="light"] .admin-sub-tab {
+  background: #cbd5e1 !important;
+  color: #1e293b !important;
+  border: 2px solid #94a3b8 !important;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-weight: 600;
+}
+
+[data-theme="light"] .admin-tab-button:hover,
+[data-theme="light"] .admin-sub-tab:hover {
+  background: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .admin-tab-button.active,
+[data-theme="light"] .admin-sub-tab.active {
+  background: #64748b !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+/* ========================================
+   ADMIN - EMAIL MASTER TOGGLE
+   ======================================== */
+
+[data-theme="light"] .admin-email-master-toggle,
+[data-theme="light"] .admin-email-toggle-row.master {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  border: 2px solid #475569 !important;
+}
+
+[data-theme="light"] .admin-email-master-toggle h3,
+[data-theme="light"] .admin-email-master-toggle p {
+  color: #ffffff !important;
+}
+
+/* ========================================
+   GLOBAL LIGHT MODE OVERRIDES
+   ======================================== */
+
+/* Kill all purple/blue in light mode */
+[data-theme="light"] .purple-gradient,
+[data-theme="light"] .blue-gradient,
+[data-theme="light"] .purple-bg,
+[data-theme="light"] .blue-bg {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+}
+
+/* Ensure buttons have good contrast */
+[data-theme="light"] button:not(.theme-option) {
+  background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+[data-theme="light"] button:not(.theme-option):hover {
+  background: linear-gradient(135deg, #475569, #64748b) !important;
+}
