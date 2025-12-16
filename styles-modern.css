@@ -1,30 +1,36 @@
 /* ========================================
-   AMS2 Racing League - MODERN THEME
-   Add this AFTER your main styles.css
+   AMS2 RACING LEAGUE - REDESIGNED THEME
+   COMPLETE OVERHAUL - NO MORE BLUE/PURPLE
    ======================================== */
 
 /* ========================================
-   ROOT VARIABLES & THEME SYSTEM
+   NEW COLOR PALETTE
    ======================================== */
 
 :root {
-  /* Light Theme (Default) */
-  --bg-primary: #f5f7fa;
-  --bg-secondary: #ffffff;
+  /* Light Theme - Modern Professional */
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #e5e7eb;
   --bg-card: #ffffff;
-  --text-primary: #2c3e50;
-  --text-secondary: #718096;
-  --border-color: #e2e8f0;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-  --primary: #667eea;
-  --primary-dark: #5568d3;
-  --secondary: #764ba2;
-  --accent: #4CAF50;
-  --danger: #ef4444;
-  --warning: #fbbf24;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #d1d5db;
+  
+  /* Accent Colors - Racing Theme */
+  --accent-primary: #dc2626; /* Racing Red */
+  --accent-secondary: #ea580c; /* Orange */
+  --accent-tertiary: #f59e0b; /* Amber */
+  
+  /* Status Colors */
   --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #06b6d4;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -45,17 +51,23 @@
   --spacing-xl: 32px;
 }
 
-/* Dark Theme */
+/* Dark Theme - High Contrast */
 [data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: #1e293b;
-  --text-primary: #f1f5f9; /* Brighter white for better contrast */
-  --text-secondary: #cbd5e1; /* Lighter gray for better readability */
-  --border-color: #475569; /* More visible borders */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color: #374151;
+  
+  /* Keep same accent colors for consistency */
+  --accent-primary: #ef4444;
+  --accent-secondary: #f97316;
+  --accent-tertiary: #fbbf24;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 }
 
 /* Smooth theme transitions */
@@ -66,7 +78,7 @@
 }
 
 /* ========================================
-   GLOBAL OVERRIDES
+   GLOBAL STYLES
    ======================================== */
 
 body {
@@ -74,45 +86,45 @@ body {
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
   line-height: 1.6;
-  transition: background-color var(--transition-base);
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: var(--spacing-lg);
 }
 
 /* ========================================
-   MODERN HEADER
+   HEADER & AUTH SECTION
    ======================================== */
 
 header {
   background: var(--bg-card);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+  border-bottom: 2px solid var(--border-color);
+  box-shadow: var(--shadow-md);
   position: sticky;
   top: 0;
   z-index: 1000;
   padding: var(--spacing-lg) 0;
-  margin-bottom: 0;
 }
 
-header h1 {
-  font-size: 2.5em;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
+/* Auth section - More contrast */
+#userInfo,
+#loginForm {
+  background: var(--bg-secondary) !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
-header p {
-  color: var(--text-secondary);
-  font-size: 1.1em;
+[data-theme="light"] #userInfo,
+[data-theme="light"] #loginForm {
+  background: rgba(220, 38, 38, 0.05) !important;
+  border: 2px solid var(--accent-primary) !important;
+}
+
+/* Notification Bell - Accent Color */
+#notificationBell button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
 }
 
 /* ========================================
-   MODERN TABS
+   TABS
    ======================================== */
 
 .tabs {
@@ -123,7 +135,7 @@ header p {
   border-bottom: 2px solid var(--border-color);
   display: flex;
   overflow-x: auto;
-  overflow-y: hidden; /* Prevent vertical scrollbar */
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 
@@ -138,65 +150,135 @@ header p {
   cursor: pointer;
   transition: all var(--transition-base);
   white-space: nowrap;
-  position: relative;
   margin-bottom: -2px;
 }
 
 .tab-button:hover {
-  color: var(--primary);
-  background: transparent;
-  transform: none;
+  color: var(--accent-primary);
 }
 
 .tab-button.active {
-  background: transparent;
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
 }
 
 /* ========================================
-   MODERN CARDS
+   STAT CARDS - NEW RACING GRADIENT
+   ======================================== */
+
+.stat-card,
+.stat-card-driver {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  border: none !important;
+}
+
+.stat-card:hover,
+.stat-card-driver:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px rgba(220, 38, 38, 0.3);
+}
+
+.stat-card h3,
+.stat-card p,
+.stat-card-driver h3,
+.stat-card-driver p {
+  color: #ffffff !important;
+}
+
+/* ========================================
+   CARDS & CONTENT
    ======================================== */
 
 .tab-content {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-md);
   color: var(--text-primary);
 }
 
-.stat-card {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-md);
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.stat-card h3,
-.stat-card p {
-  color: #ffffff;
+/* Add more definition to cards in light mode */
+[data-theme="light"] .tab-content {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* ========================================
-   MODERN TABLES
+   ROUND RESULTS - MORE CONTRAST
    ======================================== */
 
-.leaderboard-table {
+.round-group {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.round-header {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: none !important;
+}
+
+.round-header:hover {
+  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-tertiary)) !important;
+}
+
+.round-header h3,
+.round-header p,
+.round-header span {
+  color: #ffffff !important;
+}
+
+.round-details {
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-color);
+}
+
+/* Purple sectors color */
+[data-theme="light"] .purple-sector {
+  color: #9333ea !important;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .purple-sector {
+  color: #a855f7 !important;
+  font-weight: bold;
+}
+
+/* Gap colors */
+.gap-interval {
+  color: var(--success) !important;
+  font-weight: bold;
+}
+
+.gap-positive {
+  color: var(--danger) !important;
+  font-weight: bold;
+}
+
+/* ========================================
+   TABLES
+   ======================================== */
+
+.leaderboard-table,
+.round-details table {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
 }
 
-.leaderboard-table th {
+.leaderboard-table th,
+.round-details th {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-weight: 600;
@@ -207,70 +289,49 @@ header p {
   border-bottom: 2px solid var(--border-color);
 }
 
-.leaderboard-table td {
+.leaderboard-table td,
+.round-details td {
   background: var(--bg-card);
   color: var(--text-primary);
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
 }
 
-.leaderboard-table tr:hover td {
+.leaderboard-table tr:hover td,
+.round-details tr:hover td {
   background: var(--bg-secondary);
 }
 
-.leaderboard-table tr:last-child td {
-  border-bottom: none;
+/* Driver column width fix */
+.leaderboard-table th:first-child,
+.leaderboard-table td:first-child,
+.round-details th:first-child,
+.round-details td:first-child {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ========================================
-   MODERN BUTTONS
-   ======================================== */
-
-.refresh-btn,
-button[type="submit"],
-.admin-btn-save,
-.admin-filter-btn {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-  border: none;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
-}
-
-.refresh-btn:hover,
-button[type="submit"]:hover,
-.admin-btn-save:hover,
-.admin-filter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   MODERN FORMS
+   FORMS & INPUTS
    ======================================== */
 
 label,
-.form-label,
-.lap-time-label {
+.form-label {
   color: var(--text-primary) !important;
   font-weight: 600;
   margin-bottom: var(--spacing-sm);
-  display: inline-block;
+  display: block;
 }
 
 input[type="text"],
 input[type="password"],
 input[type="number"],
 select,
-textarea,
-.admin-input,
-.admin-search-input {
-  background: var(--bg-card);
-  border: 2px solid var(--border-color);
+textarea {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color) !important;
   color: var(--text-primary) !important;
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
@@ -280,40 +341,115 @@ textarea,
 
 input:focus,
 select:focus,
-textarea:focus,
-.admin-input:focus,
-.admin-search-input:focus {
+textarea:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Submit Time - Better contrast */
+#submit {
+  background: var(--bg-card);
+}
+
+/* Instructions box */
+.instructions-box {
+  background: var(--accent-tertiary) !important;
+  color: #78350f !important;
+  border: 2px solid var(--accent-secondary) !important;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="dark"] .instructions-box {
+  background: rgba(251, 191, 36, 0.1) !important;
+  color: var(--accent-tertiary) !important;
+  border: 2px solid var(--accent-tertiary) !important;
+}
+
+/* Total Lap Time display */
+.total-lap-time-display,
+#totalLapTimeDisplay {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  color: #ffffff !important;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-size: 2em;
+  font-weight: bold;
+  box-shadow: var(--shadow-lg);
+}
+
+.total-lap-time-display h3,
+#totalLapTimeDisplay h3 {
+  color: #ffffff !important;
 }
 
 /* ========================================
-   MODERN ROUND CARDS
+   BUTTONS
+   ======================================== */
+
+button[type="submit"],
+.refresh-btn,
+.admin-btn-save,
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  color: white !important;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+button[type="submit"]:hover,
+.refresh-btn:hover,
+.admin-btn-save:hover,
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Replay button */
+.replay-btn,
+.race-replay-button {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  color: white !important;
+}
+
+/* ========================================
+   ROUND SETUP CARDS
    ======================================== */
 
 .round-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   transition: all var(--transition-base);
+}
+
+[data-theme="light"] .round-card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .round-card:hover {
   transform: translateY(-6px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
 }
 
 .round-card-header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
   padding: var(--spacing-lg);
+  border: none !important;
 }
 
 .round-card-header h3,
 .round-card-header p {
-  color: white;
+  color: #ffffff !important;
 }
 
 .round-card-body {
@@ -321,230 +457,194 @@ textarea:focus,
   padding: var(--spacing-lg);
 }
 
+/* Track/Car images container */
+.round-card-images {
+  background: var(--bg-secondary) !important;
+  padding: var(--spacing-md);
+}
+
+[data-theme="dark"] .round-card-images {
+  background: var(--bg-secondary) !important;
+}
+
+.round-card-image-container {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+}
+
+/* Best time sections */
 .best-time-section {
   background: var(--bg-secondary);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md);
-}
-
-.best-time-section h4 {
-  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .best-time-item {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.best-time-item.gold {
+  border-color: var(--accent-tertiary);
+  background: rgba(251, 191, 36, 0.1);
 }
 
 /* ========================================
-   MODERN ROUND GROUPS (Round Results)
-   ======================================== */
-
-.round-group {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: var(--spacing-md);
-  box-shadow: var(--shadow-sm);
-}
-
-.round-header {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  transition: all var(--transition-base);
-}
-
-.round-header:hover {
-  background: var(--bg-primary);
-}
-
-.round-details {
-  background: var(--bg-card);
-}
-
-.round-details table {
-  background: var(--bg-card);
-}
-
-/* ========================================
-   MODERN DRIVER CARDS
+   DRIVER CARDS
    ======================================== */
 
 .driver-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
   border-radius: var(--radius-lg);
 }
 
 .driver-header {
-  border-bottom: 3px solid var(--primary);
+  border-bottom: 4px solid var(--accent-primary);
+  padding: var(--spacing-lg);
 }
 
-.stat-card-driver {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+/* Driver stat cards */
+.driver-card .stat-card {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
 }
 
-.driver-records-section {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+/* Purple Sectors, Favorite Track, etc boxes */
+.driver-card input[type="text"],
+.driver-card input[readonly],
+.quick-stats input {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--border-color) !important;
 }
 
-.section-title {
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--primary);
-}
-
-.record-item,
-.personal-best,
-.quick-stats {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-}
-
+/* Head-to-head section */
 .h2h-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.h2h-card h4 {
+  color: var(--text-primary) !important;
+}
+
+.vs-text {
+  color: var(--text-secondary) !important;
+}
+
+/* Driver card back */
+.driver-card-back,
+.flip-card-back {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color);
+}
+
+.driver-card-back h3,
+.flip-card-back h3 {
+  color: var(--text-primary) !important;
 }
 
 /* ========================================
-   THEME TOGGLE BUTTON (Profile Settings)
+   RACE ANIMATION - DARK MODE FIX
    ======================================== */
+
+.race-animation-container {
+  background: var(--bg-card) !important;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+[data-theme="dark"] .race-animation-container {
+  background: var(--bg-secondary) !important;
+}
+
+.race-track {
+  background: var(--bg-secondary) !important;
+  border: 2px solid var(--border-color);
+}
+
+/* ========================================
+   CHART - DARK MODE
+   ======================================== */
+
+[data-theme="dark"] #progressionChart {
+  background: var(--bg-card) !important;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+/* ========================================
+   MY PROFILE - DARK MODE FIX
+   ======================================== */
+
+#profile {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+#profile h2,
+#profile h3,
+#profile p,
+#profile label {
+  color: var(--text-primary) !important;
+}
 
 .theme-toggle-section {
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  margin: var(--spacing-lg) 0;
-}
-
-.theme-toggle-section h3 {
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-md);
-}
-
-.theme-toggle-buttons {
-  display: flex;
-  gap: var(--spacing-md);
-  flex-wrap: wrap;
+  border: 2px solid var(--border-color);
 }
 
 .theme-option {
-  flex: 1;
-  min-width: 120px;
-  padding: var(--spacing-md);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
   background: var(--bg-card);
+  border: 2px solid var(--border-color);
   color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  text-align: center;
-  font-weight: 600;
-}
-
-.theme-option:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
 }
 
 .theme-option.active {
-  border-color: var(--primary);
-  background: var(--primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
   color: white;
-  box-shadow: var(--shadow-md);
-}
-
-.theme-option-icon {
-  font-size: 2em;
-  display: block;
-  margin-bottom: var(--spacing-sm);
 }
 
 /* ========================================
-   MODERN ADMIN INTERFACE
+   ADMIN - REFINEMENTS
    ======================================== */
+
+.admin-banner,
+.admin-warning {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: var(--text-primary) !important;
+  border: 2px solid var(--accent-tertiary);
+}
 
 .admin-table {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.admin-table thead {
-  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
 }
 
 .admin-table th {
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
 .admin-table td {
-  background: var(--bg-card);
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
 }
 
-.admin-table tbody tr:hover {
-  background: var(--bg-secondary);
-}
-
-.admin-add-new {
-  background: var(--bg-secondary);
-  border: 2px dashed var(--border-color);
-}
-
-.admin-modal-content {
-  background: var(--bg-card);
-  color: var(--text-primary);
-}
-
 /* ========================================
-   MODERN NOTIFICATION PANEL
-   ======================================== */
-
-#notificationPanel {
-  background: var(--bg-card);
-  border-left: 1px solid var(--border-color);
-}
-
-#notificationList {
-  background: var(--bg-primary);
-}
-
-.notification-item {
-  border: 1px solid var(--border-color);
-  transition: all var(--transition-base);
-}
-
-.notification-item:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateX(-4px);
-}
-
-/* ========================================
-   GLASS-MORPHISM EFFECTS
-   ======================================== */
-
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] .glass {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* ========================================
-   SCROLLBAR STYLING
+   SCROLLBAR
    ======================================== */
 
 ::-webkit-scrollbar {
@@ -562,471 +662,20 @@ textarea:focus,
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--accent-primary);
 }
 
 /* ========================================
-   MOBILE RESPONSIVE IMPROVEMENTS
+   MOBILE RESPONSIVE
    ======================================== */
 
 @media (max-width: 768px) {
-  .container {
-    padding: var(--spacing-md);
-  }
-  
-  header h1 {
-    font-size: 1.8em;
-  }
-  
-  .tab-content {
-    padding: var(--spacing-lg);
-  }
-  
   .tabs {
     overflow-x: scroll;
-    scrollbar-width: thin;
   }
   
-  .theme-toggle-buttons {
-    flex-direction: column;
+  .stat-card,
+  .driver-card {
+    margin-bottom: var(--spacing-md);
   }
-  
-  .theme-option {
-    min-width: 100%;
-  }
-}
-
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-/* ========================================
-   TEXT CONTRAST FIXES
-   ======================================== */
-
-/* Ensure all headings are visible */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--text-primary) !important;
-}
-
-/* Ensure all paragraph text is visible */
-p {
-  color: var(--text-primary);
-}
-
-/* Driver names and important text */
-.driver-name,
-.section-title,
-.round-header h3,
-.driver-header h2,
-strong {
-  color: var(--text-primary) !important;
-}
-
-/* All-Time Best section text visibility */
-.best-time-item,
-.best-time-label,
-.best-time-context,
-.best-time-value {
-  color: var(--text-primary) !important;
-}
-
-/* Round Setup card text */
-.round-card-body .best-time-section h4 {
-  color: var(--text-primary) !important;
-}
-
-/* Personal best lap text in dark cards */
-.personal-best,
-.driver-records-section {
-  color: var(--text-primary) !important;
-}
-
-.personal-best * {
-  color: var(--text-primary) !important;
-}
-
-/* Admin table text */
-.admin-table td,
-.admin-table th,
-.admin-table {
-  color: var(--text-primary) !important;
-}
-
-/* Email logs and timestamp text */
-.timestamp-text,
-.error-reason {
-  color: var(--text-primary) !important;
-}
-
-/* Ensure dropdown selected values are visible */
-select option {
-  background: var(--bg-card);
-  color: var(--text-primary);
-}
-
-/* Fix placeholder text visibility */
-::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.7;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--text-secondary) !important;
-  opacity: 0.7;
-}
-
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.bg-card { background: var(--bg-card); }
-.bg-primary { background: var(--bg-primary); }
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-md { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-
-/* ========================================
-   UTILITY CLASSES
-   ======================================== */
-
-.text-primary { color: var(--text-primary) !important; }
-.text-secondary { color: var(--text-secondary) !important; }
-.bg-card { background: var(--bg-card) !important; }
-.bg-primary { background: var(--bg-primary) !important; }
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-md { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-
-/* ========================================
-   SPECIFIC CONTRAST OVERRIDES
-   ======================================== */
-
-/* Ensure dropdowns show their values */
-#seasonSelect,
-#roundSeasonSelect,
-#setupSeasonSelect,
-select {
-  color: var(--text-primary) !important;
-  background: var(--bg-card) !important;
-}
-
-/* Fix admin search inputs */
-.admin-search-input {
-  color: var(--text-primary) !important;
-  background: var(--bg-card) !important;
-}
-
-/* Fix driver profile text */
-.driver-card h2,
-.driver-card h3,
-.driver-card p,
-.driver-card span {
-  color: var(--text-primary) !important;
-}
-
-/* Fix round setup "This Round's Best" text in dark theme */
-[data-theme="dark"] .best-time-item {
-  background: rgba(30, 41, 59, 0.8) !important;
-}
-
-[data-theme="dark"] .best-time-item * {
-  color: #f1f5f9 !important;
-}
-
-/* Fix "Season:" and "Round:" labels specifically */
-[data-theme="dark"] label,
-[data-theme="dark"] .form-label {
-  color: #f1f5f9 !important;
-}
-
-/* Fix admin table timestamps and error messages */
-[data-theme="dark"] .admin-table td {
-  color: #f1f5f9 !important;
-}
-
-/* Ensure all text in cards is visible */
-.tab-content * {
-  color: var(--text-primary);
-}
-
-.tab-content h1,
-.tab-content h2,
-.tab-content h3,
-.tab-content h4,
-.tab-content h5,
-.tab-content h6,
-.tab-content label,
-.tab-content strong {
-  color: var(--text-primary) !important;
-}
-/* ========================================
-   COMPREHENSIVE CONTRAST FIXES V2
-   Add these to the END of styles-modern-FIXED.css
-   ======================================== */
-
-/* ========================================
-   ROUND RESULTS TABLE - FIT IN ONE ROW
-   ======================================== */
-
-/* Make driver column narrower */
-.leaderboard-table th:first-child,
-.leaderboard-table td:first-child {
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Ensure table fits properly */
-.round-details table {
-  table-layout: auto;
-  width: 100%;
-}
-
-.round-details th,
-.round-details td {
-  padding: 12px 8px !important;
-  white-space: nowrap;
-}
-
-/* ========================================
-   SUBMIT TIME FORM - FIX ALL LABELS
-   ======================================== */
-
-/* Force all form labels to be visible */
-#submit label,
-#submit .form-label,
-#submit h3,
-#submit h4,
-#submit p {
-  color: var(--text-primary) !important;
-}
-
-/* Lap time form specifically */
-#lapTimeFormContainer label,
-#lapTimeFormContainer .lap-time-label {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-  margin-bottom: 8px !important;
-}
-
-/* Instructions box text */
-.instructions-box,
-.instructions-box p,
-.instructions-box li {
-  color: #8b5a00 !important; /* Dark brown for yellow bg */
-}
-
-/* ========================================
-   ROUND SETUP (ADMIN) - FIX FORM
-   ======================================== */
-
-/* Admin form labels */
-.admin-form label,
-.admin-form h3,
-.admin-form h4,
-.admin-modal-content label {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Admin form inputs */
-.admin-form input,
-.admin-form select,
-.admin-form textarea {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
-  border: 2px solid var(--border-color) !important;
-}
-
-/* ========================================
-   DRIVERS TAB - FIX WHITE BOXES
-   ======================================== */
-
-/* Purple Sectors, Favorite Track, Favorite Car boxes */
-.driver-card input[type="text"],
-.driver-card input[readonly],
-.quick-stats input {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border: 2px solid var(--border-color) !important;
-}
-
-/* Ensure driver profile text boxes are readable */
-[data-theme="dark"] .driver-card input[type="text"],
-[data-theme="dark"] .quick-stats input {
-  background: #1e293b !important;
-  color: #f1f5f9 !important;
-}
-
-/* ========================================
-   RULES & SCORING - FIX INVISIBLE TEXT
-   ======================================== */
-
-/* Rules tab content boxes */
-#rules .content-box,
-#rules .scoring-box,
-#rules .rules-section {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
-  padding: 24px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-}
-
-#rules h2,
-#rules h3,
-#rules h4,
-#rules p,
-#rules li {
-  color: var(--text-primary) !important;
-}
-
-/* Specific rules boxes that might have light backgrounds */
-#rules .info-box,
-#rules .warning-box {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-}
-
-/* ========================================
-   ADMIN BANNER - TONE DOWN WHITE
-   ======================================== */
-
-/* Yellow/cream banner instead of pure white */
-.admin-banner,
-.admin-warning,
-.admin-info-box {
-  background: #fef3c7 !important; /* Soft yellow */
-  color: #78350f !important; /* Dark brown text */
-  border: 2px solid #fbbf24;
-  padding: 20px;
-  border-radius: 12px;
-}
-
-[data-theme="dark"] .admin-banner,
-[data-theme="dark"] .admin-warning,
-[data-theme="dark"] .admin-info-box {
-  background: #422006 !important; /* Dark brown */
-  color: #fbbf24 !important; /* Yellow text */
-  border: 2px solid #78350f;
-}
-
-/* ========================================
-   EMAIL LOGS - FIX LOW CONTRAST
-   ======================================== */
-
-/* Email logs titles and labels */
-.email-logs-section h3,
-.email-logs-section h4,
-.email-logs-section label,
-.email-control-title {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Email logs subtitle text */
-.email-logs-section p,
-.email-control-subtitle {
-  color: var(--text-secondary) !important;
-}
-
-/* Email notification cards */
-.email-notification-card {
-  background: var(--bg-card) !important;
-  border: 2px solid var(--border-color) !important;
-}
-
-.email-notification-card h4,
-.email-notification-card p {
-  color: var(--text-primary) !important;
-}
-
-/* ========================================
-   GLOBAL TEXT VISIBILITY ENFORCEMENT
-   ======================================== */
-
-/* Nuclear option - force all text to be visible */
-.tab-content input:not([type="submit"]):not([type="button"]),
-.tab-content textarea,
-.tab-content select {
-  background: var(--bg-card) !important;
-  color: var(--text-primary) !important;
-  border: 2px solid var(--border-color) !important;
-}
-
-/* All headings everywhere */
-h1, h2, h3, h4, h5, h6,
-.tab-content h1,
-.tab-content h2,
-.tab-content h3,
-.tab-content h4,
-.tab-content h5,
-.tab-content h6 {
-  color: var(--text-primary) !important;
-}
-
-/* All labels everywhere */
-label,
-.form-label,
-.input-label {
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* All paragraph text */
-p {
-  color: var(--text-primary) !important;
-}
-
-/* ========================================
-   SPECIFIC DARK MODE OVERRIDES
-   ======================================== */
-
-[data-theme="dark"] #rules {
-  background: #0f172a !important;
-}
-
-[data-theme="dark"] #rules * {
-  color: #f1f5f9 !important;
-}
-
-[data-theme="dark"] .instructions-box {
-  background: #422006 !important;
-  color: #fbbf24 !important;
-  border-color: #78350f !important;
-}
-
-/* Fix any remaining white text on white background */
-[data-theme="light"] *:not(.gradient-text):not(.stat-card *):not(.round-card-header *) {
-  color: #2c3e50 !important;
-}
-
-/* Ensure stat cards keep their white text on gradient */
-.stat-card,
-.stat-card *,
-.round-card-header,
-.round-card-header * {
-  color: white !important;
 }
