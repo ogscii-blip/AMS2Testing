@@ -12,7 +12,7 @@
 body {
     /*font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
     font-family: 'Roboto', Arial, Helvetica, sans-serif;
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    /*<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">*/
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     color: #fff;
     min-height: 100vh;
@@ -350,7 +350,7 @@ header p {
     text-align: center;
     /*font-family: 'Courier New', monospace;*/
     font-family: 'Roboto', Arial, Helvetica, sans-serif;
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    /*<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">*/
     letter-spacing: 1px;
 }
 
